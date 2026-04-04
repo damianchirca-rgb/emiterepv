@@ -469,6 +469,7 @@ function renderList() {
     const contact = getField(u,'DataUrmatorContact') || '';
     const days = getDaysUntil(contact);
 
+    const poza = u._poza || null;
     const urgCls = contact && days!==null ? (days<0?'urgenta':days<=14?'aproape':'ok-contact') : '';
 
     let inds = '';
@@ -487,11 +488,14 @@ function renderList() {
     return `<div class="uat-card ${urgCls}" onclick="openUat('${id}')">
       <div class="uat-card-inner">
         <div class="card-top">
-          <div>
-            <div class="card-name">${localitate}</div>
-            <div class="card-judet"><span class="judet-badge">${cod}</span> ${judet}</div>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+            ${poza ? `<img src="${poza}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--surface3)" onerror="this.style.display='none'">` : `<div style="width:42px;height:42px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏛️</div>`}
+            <div style="min-width:0">
+              <div class="card-name">${localitate}</div>
+              <div class="card-judet"><span class="judet-badge">${cod}</span> ${judet}</div>
+            </div>
           </div>
-          <div class="status-badge ${badgeClass}">${badgeText}</div>
+          <div class="status-badge ${badgeClass}" style="flex-shrink:0">${badgeText}</div>
         </div>
         ${inds?`<div class="card-indicators">${inds}</div>`:''}
         <div class="card-footer">
@@ -598,11 +602,27 @@ function openUat(id) {
   const dayLabel=days===null?'':(days<0?` (${-days}z trecut!)`:(days===0?' (AZI!)':` (peste ${days}z)`));
   const lat=getField(u,'Lat'); const lng=getField(u,'Lng');
   const nc=getField(u,'NoteCalendar');
+  const poza=u._poza||null;
   const contracte=u._contracte||[];
   const aplicatii=u._aplicatii||[];
 
   document.getElementById('drawer-title').textContent=localitate;
   document.getElementById('drawer-subtitle').textContent=`${judet} · ${cod}`;
+
+  // Adauga poza in header drawer
+  const drawerHeader = document.getElementById('drawer-header');
+  drawerHeader.style.display = 'flex';
+  drawerHeader.style.alignItems = 'center';
+  drawerHeader.style.gap = '12px';
+  if (poza) {
+    let img = drawerHeader.querySelector('.primar-poza');
+    if (!img) { img = document.createElement('img'); img.className='primar-poza'; drawerHeader.insertBefore(img, drawerHeader.firstChild); }
+    img.src = poza; img.style.cssText='width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3);flex-shrink:0';
+    img.onerror = () => img.style.display='none';
+  } else {
+    const existing = drawerHeader.querySelector('.primar-poza');
+    if (existing) existing.remove();
+  }
 
   // Facturi
   let facturiHtml='';
