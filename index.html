@@ -247,6 +247,35 @@
     <div id="contacts-list"></div>
   </div>
 
+  <div id="cautare-view" class="view" style="flex-direction:column">
+    <div style="padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
+      <div style="display:flex;gap:8px">
+        <input id="cautare-input" type="text" placeholder="Caută în toate documentele…" 
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;outline:none"
+          onkeydown="if(event.key==='Enter')doCautare()">
+        <button onclick="doCautare()" style="padding:10px 16px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Caută</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="cautare-tip-filters">
+        <span class="filter-chip active" onclick="toggleTip('contract',this)">📄 Contracte</span>
+        <span class="filter-chip active" onclick="toggleTip('factura',this)">💰 Facturi</span>
+        <span class="filter-chip active" onclick="toggleTip('pv',this)">📋 PV-uri</span>
+        <span class="filter-chip active" onclick="toggleTip('util',this)">📁 Utile</span>
+      </div>
+    </div>
+    <div id="cautare-rezultate" style="flex:1;overflow-y:auto;padding:10px 12px">
+      <div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px">Introduceți un termen de căutare</div>
+    </div>
+  </div>
+
+  <div id="mentenanta-view" class="view" style="overflow-y:auto;padding:16px;flex-direction:column;gap:12px">
+    <div id="mentenanta-content">
+      <div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px">
+        <div class="spinner" style="margin:0 auto 16px"></div>
+        Se calculează…
+      </div>
+    </div>
+  </div>
+
   <div id="stats-view" class="view">
     <div class="stats-grid">
       <div class="stat-card a"><div class="num" id="s-activ">—</div><div class="lbl">UAT-uri active</div></div>
@@ -268,6 +297,14 @@
     <button class="nav-btn" id="nav-contacte" onclick="showView('contacte')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       <span>Contacte</span>
+    </button>
+    <button class="nav-btn" id="nav-cautare" onclick="showView('cautare')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <span>Căutare</span>
+    </button>
+    <button class="nav-btn" id="nav-mentenanta" onclick="showView('mentenanta')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Mentenanță</span>
     </button>
     <button class="nav-btn" id="nav-stats" onclick="showView('stats')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -747,7 +784,98 @@ function showView(v) {
   document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
   if(v==='lista'){document.getElementById('list-view').classList.add('active');document.getElementById('nav-lista').classList.add('active');renderList();}
   else if(v==='contacte'){document.getElementById('contacts-view').classList.add('active');document.getElementById('nav-contacte').classList.add('active');renderContacts();}
+  else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
+  else if(v==='mentenanta'){document.getElementById('mentenanta-view').classList.add('active');document.getElementById('nav-mentenanta').classList.add('active');loadMentenanta();}
   else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
+}
+
+// ─── CAUTARE ───────────────────────────────────────────────
+let activeTips = new Set(['contract','factura','pv','util']);
+function toggleTip(tip, el) {
+  if(activeTips.has(tip)) { activeTips.delete(tip); el.classList.remove('active'); }
+  else { activeTips.add(tip); el.classList.add('active'); }
+}
+
+async function doCautare() {
+  const q = document.getElementById('cautare-input').value.trim();
+  if(q.length < 2) { showToast('Minim 2 caractere'); return; }
+  const el = document.getElementById('cautare-rezultate');
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3)"><div class="spinner" style="margin:0 auto 12px"></div>Se caută…</div>';
+  try {
+    const resp = await fetch(`${API_URL}?action=cautare&q=${encodeURIComponent(q)}`, {cache:'no-store'});
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error);
+    const filtered = data.rezultate.filter(r => activeTips.has(r.tip));
+    if(!filtered.length) { el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Niciun rezultat găsit</div>'; return; }
+    const tipIcon = {contract:'📄',factura:'💰',pv:'📋',util:'📁'};
+    const tipLabel = {contract:'Contract',factura:'Factură',pv:'Proces verbal',util:'Fișier util'};
+    el.innerHTML = `<div style="font-size:11px;color:var(--text3);padding:4px 0 10px">${filtered.length} rezultate pentru „${q}"</div>` +
+      filtered.map(r => {
+        const uat = r.uatId ? uats.find(u=>String(u['ID'])===r.uatId) : null;
+        const uatName = uat ? getField(uat,'Localitate') : '';
+        const shortName = r.filename.replace(/^\d+_[^_]+_/,'').replace(/\.(pdf|PDF|jpg|jpeg|png)$/i,'');
+        const highlighted = r.snippet.replace(new RegExp(q,'gi'), m=>`<mark style="background:rgba(99,102,241,0.3);color:var(--text);border-radius:3px">${m}</mark>`);
+        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div>
+              <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:var(--surface2);color:var(--text2)">${tipIcon[r.tip]} ${tipLabel[r.tip]}</span>
+              ${uatName?`<span style="font-size:10px;margin-left:6px;color:var(--accent2)">${uatName}</span>`:''}
+            </div>
+          </div>
+          <div style="font-size:12px;font-weight:600;margin-bottom:4px;word-break:break-word">${shortName}</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.5">${highlighted}</div>
+        </div>`;
+      }).join('');
+  } catch(err) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
+  }
+}
+
+// ─── MENTENANTA ─────────────────────────────────────────────
+let mentenantaLoaded = false;
+async function loadMentenanta() {
+  if(mentenantaLoaded) return;
+  const el = document.getElementById('mentenanta-content');
+  try {
+    const resp = await fetch(`${API_URL}?action=mentenanta`, {cache:'no-store'});
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error);
+    mentenantaLoaded = true;
+    el.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Total mentenanță / lună</div>
+        <div style="font-size:36px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--activ)">${data.totalGeneral.toLocaleString('ro-RO')} Lei</div>
+        <div style="display:flex;gap:16px;margin-top:12px">
+          <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:4px">Daily Business S.R.L.</div>
+            <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent2)">${data.totalF1.toLocaleString('ro-RO')} Lei</div>
+          </div>
+          <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:4px">Daily Business Technology</div>
+            <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--semnat)">${data.totalF2.toLocaleString('ro-RO')} Lei</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 8px">Detaliu per UAT (${data.uatList.length})</div>
+      ${data.uatList.map(u=>`
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px" onclick="openUat('${u.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:14px;font-weight:600">${u.localitate}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">${u.judet}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:15px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--activ)">${u.total.toLocaleString('ro-RO')} Lei</div>
+              <div style="font-size:10px;color:var(--text3)">/lună</div>
+            </div>
+          </div>
+          ${u.aplicatii.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${u.aplicatii.map(a=>`<span style="font-size:10px;padding:2px 8px;background:var(--surface2);border-radius:6px;color:var(--text2)">${a.nume} · ${a.pret} Lei</span>`).join('')}</div>`:''}
+        </div>
+      `).join('')}
+    `;
+  } catch(err) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
+  }
 }
 function renderCurrent(){showView(currentView);}
 function setFilter(f,el){currentFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderList();if(currentView!=='lista')showView('lista');}
