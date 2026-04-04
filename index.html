@@ -845,11 +845,12 @@ async function doCautare() {
         const shortName = r.filename.replace(/^\d+_[^_]+_/,'').replace(/\.(pdf|PDF|jpg|jpeg|png)$/i,'');
         const highlighted = r.snippet.replace(new RegExp(q,'gi'), m=>`<mark style="background:rgba(99,102,241,0.3);color:var(--text);border-radius:3px">${m}</mark>`);
         return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
             <div>
               <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:var(--surface2);color:var(--text2)">${tipIcon[r.tip]} ${tipLabel[r.tip]}</span>
               ${uatName?`<span style="font-size:10px;margin-left:6px;color:var(--accent2)">${uatName}</span>`:''}
             </div>
+            ${r.viewUrl?`<a href="${r.viewUrl}" target="_blank" style="flex-shrink:0;padding:5px 10px;background:var(--accent);color:white;border-radius:8px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap">Deschide</a>`:''}
           </div>
           <div style="font-size:12px;font-weight:600;margin-bottom:4px;word-break:break-word">${shortName}</div>
           <div style="font-size:11px;color:var(--text2);line-height:1.5">${highlighted}</div>
