@@ -423,11 +423,9 @@ function showError(msg) {
 
 // ─── API CALLS ─────────────────────────────────────────────
 async function apiPost(action, payload) {
-  const resp = await fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action, ...payload }),
-    headers: { 'Content-Type': 'application/json' }
-  });
+  // Folosim GET cu parametri pentru a evita probleme CORS cu Apps Script
+  const params = new URLSearchParams({ action, ...payload });
+  const resp = await fetch(`${API_URL}?${params.toString()}`, { cache: 'no-store' });
   return resp.json();
 }
 
@@ -684,6 +682,7 @@ function openUat(id) {
         <input class="contact-input" id="ci-${id}" type="text" placeholder="ZZ.LL.AAAA" value="${contact}">
         ${days!==null?`<div style="font-size:11px;color:${days<0?'var(--eroare)':days<=14?'var(--inactiv)':'var(--activ)'};margin-top:4px">${dayLabel}</div>`:''}
         <button class="save-btn" id="sc-${id}" onclick="doSaveContact('${id}')">💾 Salvează data</button>
+        ${contact?`<a href="${buildCalendarUrl(localitate, contact, nc)}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px;padding:12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:14px;font-weight:600;text-decoration:none">📅 Adaugă în Google Calendar</a>`:''}
       </div>
       ${nc?`<div style="font-size:12px;color:var(--inactiv);padding:8px 10px;background:var(--inactiv-bg);border-radius:6px;margin-bottom:14px">📌 ${nc}</div>`:''}
       <div class="detail-section">
@@ -740,6 +739,16 @@ async function doSaveContact(id) {
     showToast('Eroare salvare: '+e.message);
   }
   setTimeout(()=>{btn.textContent='💾 Salvează data';btn.className='save-btn';},2500);
+}
+
+function buildCalendarUrl(localitate, contact, nota) {
+  const d = parseRoDate(contact);
+  if (!d) return '#';
+  const pad = n => String(n).padStart(2,'0');
+  const dateStr = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+  const title = encodeURIComponent(`Contact ${localitate}`);
+  const details = encodeURIComponent(nota || `Următor contact cu ${localitate}`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&details=${details}`;
 }
 
 function closeDrawer() {
