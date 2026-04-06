@@ -842,7 +842,10 @@ async function doCautare() {
       filtered.map(r => {
         const uat = r.uatId ? uats.find(u=>String(u['ID'])===r.uatId) : null;
         const uatName = uat ? getField(uat,'Localitate') : '';
-        const shortName = r.filename.replace(/^[\d]+_+[^_]+_/,'').replace(/\.(pdf|PDF|jpg|jpeg|png|JPG|JPEG|PNG)$/, '');
+        const shortName = r.filename
+          .replace(/^\d+_+(?:f1|f2|general)_+/i, '')
+          .replace(/\.(pdf|jpg|jpeg|png)$/i, '')
+          .replace(/_/g, ' ');
         const highlighted = r.snippet.replace(new RegExp(q,'gi'), m=>`<mark style="background:rgba(99,102,241,0.3);color:var(--text);border-radius:3px">${m}</mark>`);
         return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
