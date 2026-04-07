@@ -469,6 +469,10 @@ function renderList() {
     const days = getDaysUntil(contact);
 
     const poza = u._poza || null; // acum e file ID
+    const dataExpirare = getField(u,'DataIncetareContract');
+    const daysExp = getDaysUntil(dataExpirare);
+    const expColor = daysExp !== null && daysExp < 60 ? 'var(--eroare)' : 'var(--text3)';
+    const expDisplay = dataExpirare ? String(dataExpirare).substring(0,10) : null;
     const urgCls = contact && days!==null ? (days<0?'urgenta':days<=14?'aproape':'ok-contact') : '';
 
     let inds = '';
@@ -499,7 +503,10 @@ function renderList() {
         ${inds?`<div class="card-indicators">${inds}</div>`:''}
         <div class="card-footer">
           <div class="card-responsabil">👤 ${responsabil}</div>
-          ${ctDisp}
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+            ${expDisplay?`<span style="font-size:10px;color:${expColor};font-family:'JetBrains Mono',monospace">📋 ${expDisplay}</span>`:''}
+            ${ctDisp}
+          </div>
         </div>
       </div>
     </div>`;
