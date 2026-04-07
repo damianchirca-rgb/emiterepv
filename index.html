@@ -679,7 +679,7 @@ function openUat(id) {
       <button class="tab-btn" id="tab-btn-contracte" onclick="switchTab('contracte');loadFisiere('${id}')">Contracte</button>
       <button class="tab-btn" id="tab-btn-facturi" onclick="switchTab('facturi')">Facturi</button>
       <button class="tab-btn" id="tab-btn-aplicatii" onclick="switchTab('aplicatii')">Aplicații</button>
-      <button class="tab-btn" id="tab-btn-utile" onclick="switchTab('utile')">Utile</button>
+      <button class="tab-btn" id="tab-btn-utile" onclick="switchTab('utile');loadUtile('${id}')">Utile</button>
       <button class="tab-btn" id="tab-btn-harta" onclick="switchTab('harta')">Hartă</button>
     </div>
     <div id="tab-main" class="tab-content active">
@@ -715,6 +715,14 @@ function openUat(id) {
         <h3>📝 Notițe</h3>
         <textarea class="note-area" id="ni-${id}" placeholder="Adaugă o notiță…">${note}</textarea>
         <button class="save-btn" id="sn-${id}" onclick="doSaveNote('${id}')">💾 Salvează notița</button>
+      </div>
+      <div class="detail-section">
+        <h3>📎 Fișiere atașate</h3>
+        <div id="fisiere-utile-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
+      </div>
+      <div class="detail-section">
+        <h3>🎤 Înregistrări audio</h3>
+        <div id="audio-uat-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
       </div>
     </div>
     <div id="tab-harta" class="tab-content">
@@ -782,7 +790,61 @@ function closeDrawer() {
   document.getElementById('drawer').classList.remove('open');
 }
 
-async function loadFisiere(uatId) {
+async function loadUtile(uatId) {
+  loadFisiereUtile(uatId);
+  loadAudioUat(uatId);
+}
+
+async function loadFisiereUtile(uatId) {
+  const el = document.getElementById('fisiere-utile-' + uatId);
+  if (!el || el.dataset.loaded) return;
+  el.dataset.loaded = '1';
+  el.textContent = 'Se încarcă…';
+  try {
+    const resp = await fetch(`${API_URL}?action=fisiere_utile&uat_id=${uatId}`, {cache:'no-store'});
+    const data = await resp.json();
+    if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Niciun fișier atașat.'; return; }
+    const tipIcon = {pdf:'📄', imagine:'🖼', excel:'📊', word:'📝', text:'📋', fisier:'📎'};
+    el.innerHTML = data.fisiere.map(f => {
+      const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500">${tipIcon[f.tip]||'📎'} ${f.name}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div>
+        </div>
+        <a href="${f.view}" target="_blank" style="flex-shrink:0;margin-left:10px;padding:6px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">Deschide</a>
+      </div>`;
+    }).join('');
+  } catch(err) { el.textContent = 'Eroare: ' + err.message; }
+}
+
+async function loadAudioUat(uatId) {
+  const el = document.getElementById('audio-uat-' + uatId);
+  if (!el || el.dataset.loaded) return;
+  el.dataset.loaded = '1';
+  el.textContent = 'Se încarcă…';
+  try {
+    const resp = await fetch(`${API_URL}?action=audio_uat&uat_id=${uatId}`, {cache:'no-store'});
+    const data = await resp.json();
+    if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Nicio înregistrare audio.'; return; }
+    el.innerHTML = data.fisiere.map(f => {
+      const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
+      // Extrage data din nume fisier
+      const dateMatch = f.name.match(/(\d{4}-\d{2}-\d{2})/);
+      const dateStr = dateMatch ? dateMatch[1] : f.modified;
+      return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:500">🎤 ${dateStr}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div>
+            ${f.transcriere?`<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;font-style:italic">"${f.transcriere}…"</div>`:''}
+          </div>
+          <a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">▶ Ascultă</a>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(err) { el.textContent = 'Eroare: ' + err.message; }
+}
   const el = document.getElementById('fisiere-' + uatId);
   if (!el || el.dataset.loaded) return;
   el.dataset.loaded = '1';
