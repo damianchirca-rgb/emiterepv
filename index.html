@@ -845,6 +845,8 @@ async function loadAudioUat(uatId) {
     }).join('');
   } catch(err) { el.textContent = 'Eroare: ' + err.message; }
 }
+
+async function loadFisiere(uatId) {
   const el = document.getElementById('fisiere-' + uatId);
   if (!el || el.dataset.loaded) return;
   el.dataset.loaded = '1';
