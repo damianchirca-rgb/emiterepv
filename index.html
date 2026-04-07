@@ -30,6 +30,17 @@
     --radius: 16px; --radius-sm: 10px;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
+  html.light {
+    --bg: #f1f5f9; --surface: #ffffff; --surface2: #f8fafc; --surface3: #e2e8f0;
+    --border: rgba(0,0,0,0.08); --text: #0f172a; --text2: #475569; --text3: #94a3b8;
+    --activ: #059669; --activ-bg: rgba(5,150,105,0.10);
+    --inactiv: #d97706; --inactiv-bg: rgba(217,119,6,0.10);
+    --eroare: #dc2626; --eroare-bg: rgba(220,38,38,0.10);
+    --accent: #4f46e5; --accent2: #6366f1;
+    --semnat: #0891b2; --semnat-bg: rgba(8,145,178,0.10);
+  }
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; overflow:hidden; }
   #app { display:flex; flex-direction:column; height:100dvh; }
@@ -198,10 +209,13 @@
           <p id="last-sync">Se încarcă…</p>
         </div>
       </div>
-      <button id="sync-btn" onclick="syncData()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        Actualizează
-      </button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="theme-btn" onclick="toggleTheme()" style="width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px">🌙</button>
+        <button id="sync-btn" onclick="syncData()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Actualizează
+        </button>
+      </div>
     </div>
     <div id="search-row">
       <div id="search-wrap">
@@ -357,6 +371,21 @@ function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  document.getElementById('theme-btn').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+
+// Aplica tema salvata
+if (localStorage.getItem('theme') === 'light') {
+  document.documentElement.classList.add('light');
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = '☀️';
+  });
 }
 
 // ─── SYNC ──────────────────────────────────────────────────
