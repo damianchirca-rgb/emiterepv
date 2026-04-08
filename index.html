@@ -14,7 +14,7 @@
   if (window.self !== window.top) {
     window.top.location.href = window.location.href;
   }
-  // Register service worker pentru offline
+  // Service Worker offline
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
@@ -370,10 +370,10 @@ self.addEventListener('fetch', e => {
 <div id="toast"></div>
 
 <script>
-// ─── CONFIG ────────────────────────────────────────────────
+// CONFIG
 const API_URL = 'https://script.google.com/macros/s/AKfycbyrIKVxXAULXoHszaN60nQQqNAK6N_j_PqNmhAsRZ_D7fdvzf38euhpPH95Z0PHcw/exec';
 
-// ─── STATE ─────────────────────────────────────────────────
+// STATE
 let uats = [];
 let currentFilter = 'all';
 let currentSearch = '';
@@ -381,7 +381,7 @@ let currentView = 'lista';
 let filterBarOpen = false;
 let isOnline = navigator.onLine;
 
-// Detect online/offline
+// Online/offline detection
 window.addEventListener('online', () => { isOnline = true; updateOfflineBanner(); syncData(); });
 window.addEventListener('offline', () => { isOnline = false; updateOfflineBanner(); });
 
@@ -391,7 +391,7 @@ function updateOfflineBanner() {
   else { banner.classList.add('show'); }
 }
 
-// ─── HELPERS ───────────────────────────────────────────────
+// HELPERS
 function parseRoDate(s) {
   if (!s) return null;
   if (s instanceof Date) return s;
@@ -425,7 +425,7 @@ if (localStorage.getItem('theme') === 'light') {
   document.getElementById('theme-btn').textContent = '☀️';
 }
 
-// ─── SYNC ──────────────────────────────────────────────────
+// SYNC
 async function syncData() {
   const btn = document.getElementById('sync-btn');
   btn.className = 'syncing';
@@ -488,14 +488,14 @@ function showError(msg) {
   document.getElementById('error-msg').textContent = msg;
 }
 
-// ─── API CALLS ─────────────────────────────────────────────
+// API
 async function apiPost(action, payload) {
   const params = new URLSearchParams({ action, ...payload });
   const resp = await fetch(`${API_URL}?${params.toString()}`, { cache: 'no-store' });
   return resp.json();
 }
 
-// ─── FILTERING ─────────────────────────────────────────────
+// FILTERING
 function filteredUats() {
   let res = uats;
   const q = currentSearch.toLowerCase().trim();
@@ -515,7 +515,7 @@ function filteredUats() {
   return res;
 }
 
-// ─── RENDER LIST ───────────────────────────────────────────
+// RENDER LIST
 function renderList() {
   const list = document.getElementById('uat-list');
   const noRes = document.getElementById('no-results');
@@ -577,7 +577,7 @@ function renderList() {
   }).join('');
 }
 
-// ─── CONTACTS VIEW ─────────────────────────────────────────
+// CONTACTS
 function renderContacts() {
   const withContact = uats
     .filter(u => getField(u,'DataUrmatorContact'))
@@ -625,7 +625,7 @@ function renderContacts() {
   document.getElementById('contacts-list').innerHTML=html;
 }
 
-// ─── STATS ─────────────────────────────────────────────────
+// STATS
 function renderStats() {
   const activ=uats.filter(u=>getField(u,'BeneficiarActiv') !== 'NU').length;
   const inactiv=uats.filter(u=>getField(u,'BeneficiarActiv') === 'NU').length;
@@ -643,7 +643,7 @@ function renderStats() {
   ).join('');
 }
 
-// ─── DRAWER ────────────────────────────────────────────────
+// DRAWER
 function switchTab(tabId) {
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
@@ -679,7 +679,7 @@ function openUat(id) {
   document.getElementById('drawer-title').textContent=localitate;
   document.getElementById('drawer-subtitle').textContent=`${judet} · ${cod}`;
 
-  // Poza in header
+  // Poza
   const drawerHeader = document.getElementById('drawer-header');
   let img = drawerHeader.querySelector('.primar-poza');
   if (poza) {
@@ -945,7 +945,7 @@ async function loadFisiere(uatId) {
   }
 }
 
-// ─── NAV & FILTER ──────────────────────────────────────────
+// NAV & FILTER
 function showView(v) {
   currentView=v;
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
@@ -957,7 +957,7 @@ function showView(v) {
   else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
 }
 
-// ─── CAUTARE ───────────────────────────────────────────────
+// CAUTARE
 let activeTips = new Set(['contract','factura','pv','util']);
 function toggleTip(tip, el) {
   if(activeTips.has(tip)) { activeTips.delete(tip); el.classList.remove('active'); }
@@ -1003,7 +1003,7 @@ async function doCautare() {
   }
 }
 
-// ─── MENTENANTA ─────────────────────────────────────────────
+// MENTENANTA
 let mentenantaLoaded = false;
 async function loadMentenanta() {
   if(mentenantaLoaded) return;
@@ -1065,7 +1065,7 @@ let touchY=0;
 document.getElementById('drawer').addEventListener('touchstart',e=>{touchY=e.touches[0].clientY;},{passive:true});
 document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[0].clientY-touchY>80)closeDrawer();},{passive:true});
 
-// ─── INIT ──────────────────────────────────────────────────
+// INIT
 const cached=localStorage.getItem('uats_cache');
 if(cached){
   uats=JSON.parse(cached);
