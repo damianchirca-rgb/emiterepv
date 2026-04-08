@@ -11,9 +11,26 @@
   html { font-size: 16px !important; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 </style>
 <script>
-  // Daca suntem in iframe (Apps Script), deschide in tab nou
   if (window.self !== window.top) {
     window.top.location.href = window.location.href;
+  }
+  // Register service worker pentru offline
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
+const CACHE_NAME = 'emiterepv-v1';
+const URLS_TO_CACHE = ['/emiterepv/'];
+self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(URLS_TO_CACHE))); self.skipWaiting(); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(names => Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))))); self.clients.claim(); });
+self.addEventListener('fetch', e => {
+  if (e.request.url.includes('googleapis.com') || e.request.url.includes('google')) {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+  } else {
+    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)).catch(() => caches.match('/')));
+  }
+});
+      `)).catch(() => {});
+    });
   }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,11 +56,13 @@
     --accent: #4f46e5; --accent2: #6366f1;
     --semnat: #0891b2; --semnat-bg: rgba(8,145,178,0.10);
   }
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; overflow:hidden; }
   #app { display:flex; flex-direction:column; height:100dvh; }
+
+  /* OFFLINE BANNER */
+  #offline-banner { position:fixed;top:0;left:0;right:0;z-index:999;background:var(--eroare);color:white;padding:8px 12px;font-size:12px;font-weight:600;text-align:center;display:none; }
+  #offline-banner.show { display:block; }
 
   /* HEADER */
   #header { background:var(--surface); border-bottom:1px solid var(--border); padding:14px 16px 10px; flex-shrink:0; }
@@ -152,7 +171,8 @@
   #drawer { position:fixed;bottom:0;left:0;right:0;z-index:101;background:var(--surface);border-radius:24px 24px 0 0;max-height:92dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1); }
   #drawer.open { transform:translateY(0); }
   #drawer-handle { width:40px;height:4px;background:var(--surface3);border-radius:4px;margin:14px auto 0;flex-shrink:0; }
-  #drawer-header { padding:16px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--border); }
+  #drawer-header { padding:16px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px; }
+  #drawer-header-text { flex:1; }
   #drawer-title { font-size:18px;font-weight:700; }
   #drawer-subtitle { font-size:12px;color:var(--text3);margin-top:2px; }
   #drawer-body { overflow-y:auto;padding:0;padding-bottom:calc(20px + var(--safe-bottom));flex:1; }
@@ -193,12 +213,21 @@
   /* HARTA */
   .map-btn { display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;margin-bottom:12px; }
   .coord-box { background:var(--surface2);border-radius:var(--radius-sm);padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2); }
+  
+  /* AUDIO PLAYER */
+  .audio-player { background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:10px; }
+  .audio-player audio { width:100%;height:32px;margin-bottom:8px; }
+  .audio-info { font-size:11px;color:var(--text3); }
+  .audio-meta { font-size:12px;color:var(--text2);font-weight:500;margin-bottom:4px; }
+
   #toast { position:fixed;bottom:calc(80px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface3);color:var(--text);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:all .25s;white-space:nowrap;pointer-events:none; }
   #toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
   #last-sync { font-size:10px;color:var(--text3);text-align:center;padding:4px 0 0; }
 </style>
 </head>
 <body>
+<div id="offline-banner">⚠️ Mod offline – datele nu se sincronizează în timp real</div>
+
 <div id="app">
   <div id="header">
     <div id="header-top">
@@ -331,8 +360,10 @@
 <div id="drawer">
   <div id="drawer-handle"></div>
   <div id="drawer-header">
-    <div id="drawer-title"></div>
-    <div id="drawer-subtitle"></div>
+    <div id="drawer-header-text">
+      <div id="drawer-title"></div>
+      <div id="drawer-subtitle"></div>
+    </div>
   </div>
   <div id="drawer-body"></div>
 </div>
@@ -340,7 +371,6 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-// ÎNLOCUIEȘTE cu URL-ul tău după deploy în Apps Script!
 const API_URL = 'https://script.google.com/macros/s/AKfycbyrIKVxXAULXoHszaN60nQQqNAK6N_j_PqNmhAsRZ_D7fdvzf38euhpPH95Z0PHcw/exec';
 
 // ─── STATE ─────────────────────────────────────────────────
@@ -349,6 +379,17 @@ let currentFilter = 'all';
 let currentSearch = '';
 let currentView = 'lista';
 let filterBarOpen = false;
+let isOnline = navigator.onLine;
+
+// Detect online/offline
+window.addEventListener('online', () => { isOnline = true; updateOfflineBanner(); syncData(); });
+window.addEventListener('offline', () => { isOnline = false; updateOfflineBanner(); });
+
+function updateOfflineBanner() {
+  const banner = document.getElementById('offline-banner');
+  if (isOnline) { banner.classList.remove('show'); }
+  else { banner.classList.add('show'); }
+}
 
 // ─── HELPERS ───────────────────────────────────────────────
 function parseRoDate(s) {
@@ -379,23 +420,18 @@ function toggleTheme() {
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
 }
 
-// Aplica tema salvata
 if (localStorage.getItem('theme') === 'light') {
   document.documentElement.classList.add('light');
-  document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('theme-btn');
-    if (btn) btn.textContent = '☀️';
-  });
+  document.getElementById('theme-btn').textContent = '☀️';
 }
 
 // ─── SYNC ──────────────────────────────────────────────────
 async function syncData() {
   const btn = document.getElementById('sync-btn');
-  btn.className = 'syncing'; btn.querySelector('span') && (btn.querySelector('span').textContent = 'Se încarcă…');
+  btn.className = 'syncing';
 
-  // Verifică dacă URL-ul e setat
   if (API_URL === 'PUNE_URL_APPS_SCRIPT_AICI') {
-    showError('URL-ul Apps Script nu este configurat. Urmează instrucțiunile de setup.');
+    showError('URL-ul Apps Script nu este configurat.');
     return;
   }
 
@@ -406,7 +442,6 @@ async function syncData() {
     if (data.error) throw new Error(data.error);
 
     uats = data.uats;
-    // Salvează offline
     localStorage.setItem('uats_cache', JSON.stringify(uats));
     localStorage.setItem('uats_ts', new Date().toISOString());
 
@@ -415,11 +450,12 @@ async function syncData() {
     const ts = new Date().toLocaleTimeString('ro-RO', {hour:'2-digit',minute:'2-digit'});
     document.getElementById('last-sync').textContent = `Actualizat la ${ts} · ${uats.length} UAT-uri`;
     btn.className = 'ok';
+    isOnline = true;
+    updateOfflineBanner();
     setTimeout(() => { btn.className = ''; }, 3000);
 
   } catch(err) {
     console.error(err);
-    // Încearcă din cache
     const cached = localStorage.getItem('uats_cache');
     if (cached) {
       uats = JSON.parse(cached);
@@ -429,6 +465,8 @@ async function syncData() {
       renderCurrent();
       document.getElementById('last-sync').textContent = `⚠️ Offline · cache din ${d}`;
       btn.className = 'err';
+      isOnline = false;
+      updateOfflineBanner();
       showToast('Offline — date din cache');
     } else {
       showError('Nu s-a putut conecta: ' + err.message);
@@ -452,7 +490,6 @@ function showError(msg) {
 
 // ─── API CALLS ─────────────────────────────────────────────
 async function apiPost(action, payload) {
-  // Folosim GET cu parametri pentru a evita probleme CORS cu Apps Script
   const params = new URLSearchParams({ action, ...payload });
   const resp = await fetch(`${API_URL}?${params.toString()}`, { cache: 'no-store' });
   return resp.json();
@@ -513,8 +550,6 @@ function renderList() {
       inds += `<span class="indicator ${col}">📅 ${lbl}</span>`;
     }
 
-    const ctDisp = contact ? `<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${days!==null&&days<0?'var(--eroare)':'var(--text3)'}">${String(contact).substring(0,10)}</span>` : '';
-
     const badgeClass = isActiv ? 'status-ACTIV' : 'status-INACTIV';
     const badgeText = isActiv ? '✓ ACTIV' : '✕ INACTIV';
 
@@ -522,7 +557,7 @@ function renderList() {
       <div class="uat-card-inner">
         <div class="card-top">
           <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-            ${poza ? `<img src="${poza}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--surface3)" onerror="this.style.display='none'">` : `<div style="width:42px;height:42px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏛️</div>`}
+            ${poza ? `<img src="${poza}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--surface3)" loading="lazy" onerror="this.style.display='none'">` : `<div style="width:42px;height:42px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏛️</div>`}
             <div style="min-width:0">
               <div class="card-name">${localitate}</div>
               <div class="card-judet"><span class="judet-badge">${cod}</span> ${judet}</div>
@@ -644,20 +679,17 @@ function openUat(id) {
   document.getElementById('drawer-title').textContent=localitate;
   document.getElementById('drawer-subtitle').textContent=`${judet} · ${cod}`;
 
-  // Adauga poza in header drawer
+  // Poza in header
   const drawerHeader = document.getElementById('drawer-header');
-  drawerHeader.style.display = 'flex';
-  drawerHeader.style.alignItems = 'center';
-  drawerHeader.style.gap = '12px';
+  let img = drawerHeader.querySelector('.primar-poza');
   if (poza) {
-    let img = drawerHeader.querySelector('.primar-poza');
-    if (!img) { img = document.createElement('img'); img.className='primar-poza'; drawerHeader.insertBefore(img, drawerHeader.firstChild); }
+    if (!img) { img = document.createElement('img'); img.className='primar-poza'; drawerHeader.appendChild(img); }
     img.src = poza;
     img.style.cssText='width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3);flex-shrink:0';
+    img.loading = 'lazy';
     img.onerror = () => img.style.display='none';
   } else {
-    const existing = drawerHeader.querySelector('.primar-poza');
-    if (existing) existing.remove();
+    if (img) img.remove();
   }
 
   // Facturi
@@ -755,7 +787,7 @@ function openUat(id) {
         <div id="fisiere-utile-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
       </div>
       <div class="detail-section">
-        <h3>🎤 Înregistrări audio</h3>
+        <h3>🎙️ Înregistrări audio</h3>
         <div id="audio-uat-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
       </div>
     </div>
@@ -775,7 +807,6 @@ async function doSaveNote(id) {
   btn.textContent='Se salvează…'; btn.className='save-btn saving';
   try {
     await apiPost('save_note',{id,note:val});
-    // Update local
     const u=uats.find(x=>String(x['ID'])===String(id));
     if(u) u['Note']=val;
     localStorage.setItem('uats_cache',JSON.stringify(uats));
@@ -799,7 +830,6 @@ async function doSaveContact(id) {
     const u=uats.find(x=>String(x['ID'])===String(id));
     if(u){ u['DataUrmatorContact']=val; u['NoteCalendar']=ncVal; }
     localStorage.setItem('uats_cache',JSON.stringify(uats));
-    // Actualizeaza butonul calendar cu nota noua
     const calBtn=document.getElementById(`cal-btn-${id}`);
     if(calBtn && val) calBtn.href=buildCalendarUrl(u?getField(u,'Localitate'):'', val, ncVal);
     btn.textContent='✓ Salvat!'; btn.className='save-btn saved';
@@ -829,7 +859,6 @@ function closeDrawer() {
 }
 
 async function loadUtile(uatId) {
-  // Reseteaza flag-urile ca sa reîncarce
   const fe = document.getElementById('fisiere-utile-' + uatId);
   const ae = document.getElementById('audio-uat-' + uatId);
   if (fe) { fe.dataset.loaded = ''; fe.textContent = 'Se încarcă…'; }
@@ -872,18 +901,16 @@ async function loadAudioUat(uatId) {
     if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Nicio înregistrare audio.'; return; }
     el.innerHTML = data.fisiere.map(f => {
       const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
-      // Extrage data din nume fisier
       const dateMatch = f.name.match(/(\d{4}-\d{2}-\d{2})/);
       const dateStr = dateMatch ? dateMatch[1] : f.modified;
-      return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:500">🎤 ${dateStr}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div>
-            ${f.transcriere?`<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;font-style:italic">"${f.transcriere}…"</div>`:''}
-          </div>
-          <a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">▶ Ascultă</a>
-        </div>
+      return `<div class="audio-player">
+        <div class="audio-meta">🎤 ${dateStr}</div>
+        <audio controls style="width:100%;height:28px">
+          <source src="${f.downloadUrl}" type="audio/mpeg">
+          Browser nu suportă audio HTML5
+        </audio>
+        <div class="audio-info">${size} · ${f.modified}</div>
+        ${f.transcriere?`<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;font-style:italic;border-top:1px solid var(--border);padding-top:6px">"${f.transcriere}…"</div>`:''}
       </div>`;
     }).join('');
   } catch(err) { el.textContent = 'Eroare: ' + err.message; }
@@ -904,7 +931,6 @@ async function loadFisiere(uatId) {
     }
     el.innerHTML = data.fisiere.map(f => {
       const icon = f.type === 'pdf' ? '📄' : '🖼';
-      // Nume mai scurt - sterge prefixul ID_firma_
       const shortName = f.name.replace(/^\d+_[^_]+_/, '').replace(/\.(pdf|PDF|jpg|jpeg|png|JPG|JPEG|PNG)$/, '');
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
         <div style="flex:1;min-width:0">
@@ -1004,7 +1030,7 @@ async function loadMentenanta() {
       </div>
       <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 8px">Detaliu per UAT (${data.uatList.length})</div>
       ${data.uatList.map(u=>`
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px" onclick="openUat('${u.id}')">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer" onclick="openUat('${u.id}')">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div>
               <div style="font-size:14px;font-weight:600">${u.localitate}</div>
@@ -1023,6 +1049,7 @@ async function loadMentenanta() {
     el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
   }
 }
+
 function renderCurrent(){showView(currentView);}
 function setFilter(f,el){currentFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderList();if(currentView!=='lista')showView('lista');}
 function toggleFilterBar(){filterBarOpen=!filterBarOpen;document.getElementById('filter-bar').style.display=filterBarOpen?'flex':'none';document.getElementById('filter-btn').classList.toggle('active',filterBarOpen);}
@@ -1039,7 +1066,6 @@ document.getElementById('drawer').addEventListener('touchstart',e=>{touchY=e.tou
 document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[0].clientY-touchY>80)closeDrawer();},{passive:true});
 
 // ─── INIT ──────────────────────────────────────────────────
-// Încearcă cache offline primul, apoi sync
 const cached=localStorage.getItem('uats_cache');
 if(cached){
   uats=JSON.parse(cached);
@@ -1049,6 +1075,7 @@ if(cached){
   const d=ts?new Date(ts).toLocaleString('ro-RO'):'?';
   document.getElementById('last-sync').textContent=`Cache din ${d}`;
 }
+updateOfflineBanner();
 syncData();
 </script>
 </body>
