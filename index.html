@@ -497,11 +497,12 @@ function renderList() {
     const contact = getField(u,'DataUrmatorContact') || '';
     const days = getDaysUntil(contact);
 
-    const poza = u._poza || null; // acum e file ID
+    const poza = u._poza || null;
     const dataExpirare = getField(u,'DataIncetareContract');
     const daysExp = getDaysUntil(dataExpirare);
-    const expColor = daysExp !== null && daysExp < 60 ? 'var(--eroare)' : 'var(--text3)';
+    const expColor = daysExp !== null && daysExp < 60 ? 'var(--eroare)' : daysExp !== null && daysExp < 180 ? 'var(--inactiv)' : 'var(--text3)';
     const expDisplay = dataExpirare ? String(dataExpirare).substring(0,10) : null;
+    const expLabel = daysExp === null ? '' : daysExp < 0 ? ` · expirat` : daysExp === 0 ? ' · AZI' : ` · ${daysExp}z`;
     const urgCls = contact && days!==null ? (days<0?'urgenta':days<=14?'aproape':'ok-contact') : '';
 
     let inds = '';
@@ -533,7 +534,7 @@ function renderList() {
         <div class="card-footer">
           <div class="card-responsabil">👤 ${responsabil}</div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
-            ${expDisplay?`<span style="font-size:10px;color:${expColor};font-family:'JetBrains Mono',monospace">📋 ${expDisplay}</span>`:''}
+            ${expDisplay?`<span style="font-size:10px;color:${expColor};font-family:'JetBrains Mono',monospace">📋 ${expDisplay}${expLabel}</span>`:''}
           </div>
         </div>
       </div>
@@ -690,7 +691,7 @@ function openUat(id) {
         <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent2)">${firma}</div>
         <div class="detail-row"><div class="detail-label">Nr. contract</div><div class="detail-value" style="font-size:11px">${c.contract_nr||'—'}</div></div>
         <div class="detail-row"><div class="detail-label">Data</div><div class="detail-value mono">${c.data_contract||'—'}</div></div>
-        <div class="detail-row"><div class="detail-label">Expiră</div><div class="detail-value mono">${(c.data_incetare||'—').substring?.(0,10)||'—'}</div></div>
+        <div class="detail-row"><div class="detail-label">Expiră</div><div class="detail-value mono" style="color:${(()=>{const d=getDaysUntil(c.data_incetare);return d===null?'var(--text)':d<0?'var(--eroare)':d<60?'var(--eroare)':d<180?'var(--inactiv)':'var(--text)'})()}">${(c.data_incetare||'—').substring?.(0,10)||'—'}${(()=>{const d=getDaysUntil(c.data_incetare);return d===null?'':d<0?' · expirat':d===0?' · AZI':` · ${d}z`;})()}</div></div>
         ${c.valoare_lunara?`<div class="detail-row"><div class="detail-label">Valoare</div><div class="detail-value" style="color:var(--activ);font-weight:600">${c.valoare_lunara} Lei/lună</div></div>`:''}
       </div>`;
     });
@@ -698,7 +699,7 @@ function openUat(id) {
     contracteHtml=`<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px">
       <div class="detail-row"><div class="detail-label">Nr. contract</div><div class="detail-value" style="font-size:11px">${contractNr||'—'}</div></div>
       <div class="detail-row"><div class="detail-label">Data</div><div class="detail-value mono">${dataContract||'—'}</div></div>
-      <div class="detail-row"><div class="detail-label">Expiră</div><div class="detail-value mono">${(dataIncetare||'—').toString().substring(0,10)}</div></div>
+      <div class="detail-row"><div class="detail-label">Expiră</div><div class="detail-value mono" style="color:${(()=>{const d=getDaysUntil(dataIncetare);return d===null?'var(--text)':d<0||d<60?'var(--eroare)':d<180?'var(--inactiv)':'var(--text)'})()}">${(dataIncetare||'—').toString().substring(0,10)}${(()=>{const d=getDaysUntil(dataIncetare);return d===null?'':d<0?' · expirat':d===0?' · AZI':` · ${d}z`;})()}</div></div>
     </div>`;
   }
 
