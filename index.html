@@ -829,13 +829,18 @@ function closeDrawer() {
 }
 
 async function loadUtile(uatId) {
+  // Reseteaza flag-urile ca sa reîncarce
+  const fe = document.getElementById('fisiere-utile-' + uatId);
+  const ae = document.getElementById('audio-uat-' + uatId);
+  if (fe) { fe.dataset.loaded = ''; fe.textContent = 'Se încarcă…'; }
+  if (ae) { ae.dataset.loaded = ''; ae.textContent = 'Se încarcă…'; }
   loadFisiereUtile(uatId);
   loadAudioUat(uatId);
 }
 
 async function loadFisiereUtile(uatId) {
   const el = document.getElementById('fisiere-utile-' + uatId);
-  if (!el || el.dataset.loaded) return;
+  if (!el || el.dataset.loaded === '1') return;
   el.dataset.loaded = '1';
   el.textContent = 'Se încarcă…';
   try {
@@ -858,7 +863,7 @@ async function loadFisiereUtile(uatId) {
 
 async function loadAudioUat(uatId) {
   const el = document.getElementById('audio-uat-' + uatId);
-  if (!el || el.dataset.loaded) return;
+  if (!el || el.dataset.loaded === '1') return;
   el.dataset.loaded = '1';
   el.textContent = 'Se încarcă…';
   try {
