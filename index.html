@@ -737,8 +737,12 @@ function openUat(id) {
         <h3>📅 Data următor contact</h3>
         <input class="contact-input" id="ci-${id}" type="text" placeholder="ZZ.LL.AAAA" value="${contact}">
         ${days!==null?`<div style="font-size:11px;color:${days<0?'var(--eroare)':days<=14?'var(--inactiv)':'var(--activ)'};margin-top:4px">${dayLabel}</div>`:''}
-        <button class="save-btn" id="sc-${id}" onclick="doSaveContact('${id}')">💾 Salvează data</button>
-        ${contact?`<a href="${buildCalendarUrl(localitate, contact, nc)}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px;padding:12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:14px;font-weight:600;text-decoration:none">📅 Adaugă în Google Calendar</a>`:''}
+        <div style="margin-top:10px">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">Notă calendar</div>
+          <textarea class="note-area" id="nci-${id}" placeholder="Apare în descrierea evenimentului Google Calendar…" style="min-height:60px">${nc||''}</textarea>
+        </div>
+        <button class="save-btn" id="sc-${id}" onclick="doSaveContact('${id}')">💾 Salvează data și nota</button>
+        ${contact?`<a id="cal-btn-${id}" href="${buildCalendarUrl(localitate, contact, nc)}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px;padding:12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:14px;font-weight:600;text-decoration:none">📅 Adaugă în Google Calendar</a>`:''}
       </div>
       ${nc?`<div style="font-size:12px;color:var(--inactiv);padding:8px 10px;background:var(--inactiv-bg);border-radius:6px;margin-bottom:14px">📌 ${nc}</div>`:''}
       <div class="detail-section">
@@ -787,22 +791,26 @@ async function doSaveNote(id) {
 
 async function doSaveContact(id) {
   const val=document.getElementById(`ci-${id}`).value.trim();
+  const ncVal=document.getElementById(`nci-${id}`)?.value.trim()||'';
   const btn=document.getElementById(`sc-${id}`);
   btn.textContent='Se salvează…'; btn.className='save-btn saving';
   try {
-    await apiPost('save_contact',{id,contact:val});
+    await apiPost('save_contact',{id,contact:val,nota_calendar:ncVal});
     const u=uats.find(x=>String(x['ID'])===String(id));
-    if(u) u['DataUrmatorContact']=val;
+    if(u){ u['DataUrmatorContact']=val; u['NoteCalendar']=ncVal; }
     localStorage.setItem('uats_cache',JSON.stringify(uats));
+    // Actualizeaza butonul calendar cu nota noua
+    const calBtn=document.getElementById(`cal-btn-${id}`);
+    if(calBtn && val) calBtn.href=buildCalendarUrl(u?getField(u,'Localitate'):'', val, ncVal);
     btn.textContent='✓ Salvat!'; btn.className='save-btn saved';
-    showToast('Data salvată în Drive!');
+    showToast('Salvat în Drive!');
     if(currentView==='lista') renderList();
     else if(currentView==='contacte') renderContacts();
   } catch(e) {
     btn.textContent='⚠ Eroare'; btn.className='save-btn';
-    showToast('Eroare salvare: '+e.message);
+    showToast('Eroare: '+e.message);
   }
-  setTimeout(()=>{btn.textContent='💾 Salvează data';btn.className='save-btn';},2500);
+  setTimeout(()=>{btn.textContent='💾 Salvează data și nota';btn.className='save-btn';},2500);
 }
 
 function buildCalendarUrl(localitate, contact, nota) {
