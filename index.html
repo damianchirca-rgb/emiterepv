@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#0a0f1e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="/emiterepv/manifest.json">
 <title>EmiterePV</title>
 <style>
@@ -16,7 +17,7 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
-const CACHE_NAME = 'emiterepv-v4';
+const CACHE_NAME = 'emiterepv-v5';
 const URLS_TO_CACHE = ['/emiterepv/'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(URLS_TO_CACHE))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(names => Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))))); self.clients.claim(); });
@@ -390,9 +391,6 @@ function filteredUats() {
   else if (currentFilter === 'note') res = res.filter(u => getField(u,'Note'));
   else if (currentFilter === 'urgenta') res = res.filter(u => { const d=getDaysUntil(getField(u,'DataUrmatorContact')); return d!==null && d<30; });
   else if (['TL','CT','CL','GR','PH'].includes(currentFilter)) res = res.filter(u => getField(u,'CodJudet') === currentFilter);
-
-  // Sortare dupa data expirare contract crescator
-  // UAT-uri fara data expirare merg la final
   res = [...res].sort((a, b) => {
     const da = parseRoDate(getField(a,'DataIncetareContract'));
     const db = parseRoDate(getField(b,'DataIncetareContract'));
@@ -401,7 +399,6 @@ function filteredUats() {
     if (!db) return -1;
     return da - db;
   });
-
   return res;
 }
 function renderList() {
@@ -529,37 +526,28 @@ function showView(v) {
   currentView=v;
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
-
-  // Arata search si filtre doar in tab Lista
   const isLista = v === 'lista';
   document.getElementById('search-row').style.display = isLista ? 'flex' : 'none';
   document.getElementById('filter-bar').style.display = isLista && filterBarOpen ? 'flex' : 'none';
   document.getElementById('filter-btn').style.display = isLista ? 'flex' : 'none';
-
-  if(v==='lista'){
-    document.getElementById('list-view').classList.add('active');
-    document.getElementById('nav-lista').classList.add('active');
-    renderList();
-  } else if(v==='contacte'){
-    document.getElementById('contacts-view').classList.add('active');
-    document.getElementById('nav-contacte').classList.add('active');
-    renderContacts();
-  } else if(v==='cautare'){
-    document.getElementById('cautare-view').classList.add('active');
-    document.getElementById('nav-cautare').classList.add('active');
-    setTimeout(()=>document.getElementById('cautare-input').focus(),100);
-  } else if(v==='mentenanta'){
-    document.getElementById('mentenanta-view').classList.add('active');
-    document.getElementById('nav-mentenanta').classList.add('active');
-    loadMentenanta();
-  } else if(v==='stats'){
-    document.getElementById('stats-view').classList.add('active');
-    document.getElementById('nav-stats').classList.add('active');
-    renderStats();
-  }
+  if(v==='lista'){document.getElementById('list-view').classList.add('active');document.getElementById('nav-lista').classList.add('active');renderList();}
+  else if(v==='contacte'){document.getElementById('contacts-view').classList.add('active');document.getElementById('nav-contacte').classList.add('active');renderContacts();}
+  else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
+  else if(v==='mentenanta'){document.getElementById('mentenanta-view').classList.add('active');document.getElementById('nav-mentenanta').classList.add('active');loadMentenanta();}
+  else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
 }
-function setFilter(f,el){currentFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderList();if(currentView!=='lista')showView('lista');}
-function toggleFilterBar(){filterBarOpen=!filterBarOpen;document.getElementById('filter-bar').style.display=filterBarOpen?'flex':'none';document.getElementById('filter-btn').classList.toggle('active',filterBarOpen);}
+function setFilter(f,el){
+  currentFilter=f;
+  document.querySelectorAll('#filter-bar .filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+  if(currentView!=='lista')showView('lista');
+}
+function toggleFilterBar(){
+  filterBarOpen=!filterBarOpen;
+  document.getElementById('filter-bar').style.display=filterBarOpen?'flex':'none';
+  document.getElementById('filter-btn').classList.toggle('active',filterBarOpen);
+}
 function renderCurrent(){showView(currentView);}
 let activeTips = new Set(['contract','factura','pv','util']);
 function toggleTip(tip, el) {
@@ -574,7 +562,7 @@ document.getElementById('search').addEventListener('input',e=>{
 let touchY=0;
 document.getElementById('drawer').addEventListener('touchstart',e=>{touchY=e.touches[0].clientY;},{passive:true});
 document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[0].clientY-touchY>80)closeDrawer();},{passive:true});
-  async function openUat(id) {
+async function openUat(id) {
   const u = uats.find(x => String(x['ID']) === String(id));
   if(!u) return;
   const localitate=getField(u,'Localitate');
@@ -791,10 +779,7 @@ async function loadAudioUat(uatId) {
       return `<div class="audio-player" id="audio-item-${f.id}">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div class="audio-meta" style="margin:0">🎤 ${dateStr}</div>
-          <button onclick="deleteAudio('${uatId}','${f.id}',this)" 
-            style="padding:4px 10px;background:var(--eroare-bg);border:1px solid var(--eroare);border-radius:8px;color:var(--eroare);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer">
-            🗑 Șterge
-          </button>
+          <button onclick="deleteAudio('${uatId}','${f.id}',this)" style="padding:4px 10px;background:var(--eroare-bg);border:1px solid var(--eroare);border-radius:8px;color:var(--eroare);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer">🗑 Șterge</button>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <audio controls style="flex:1;height:32px"><source src="${f.downloadUrl}" type="audio/mpeg">Browser nu suportă audio HTML5</audio>
@@ -808,16 +793,14 @@ async function loadAudioUat(uatId) {
 }
 
 async function deleteAudio(uatId, fileId, btn) {
-  if (!confirm('Ștergi această înregistrare? Acțiunea nu poate fi anulată.')) return;
+  if(!confirm('Ștergi această înregistrare? Acțiunea nu poate fi anulată.')) return;
   btn.textContent='Se șterge…'; btn.disabled=true;
   try {
     const resp=await fetch(`${API_URL}?action=delete_audio&file_id=${fileId}`,{cache:'no-store'});
     const data=await resp.json();
     if(!data.ok) throw new Error(data.eroare||'Eroare necunoscută');
-    // Scoate elementul din UI
     document.getElementById('audio-item-'+fileId)?.remove();
     showToast('✓ Înregistrare ștearsă');
-    // Dacă nu mai sunt înregistrări
     const el=document.getElementById('audio-uat-'+uatId);
     if(el&&!el.querySelector('.audio-player')) el.textContent='Nicio înregistrare audio.';
   } catch(err){
@@ -825,6 +808,7 @@ async function deleteAudio(uatId, fileId, btn) {
     showToast('Eroare: '+err.message);
   }
 }
+
 async function loadFisiere(uatId) {
   const el=document.getElementById('fisiere-'+uatId);
   if(!el||el.dataset.loaded) return;
@@ -865,7 +849,6 @@ async function openCubeACRPicker(uatId) {
     </div>`;
   document.body.appendChild(modal);
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
-
   const listEl=document.getElementById('cube-acr-list');
   try {
     const resp=await fetch(`${API_URL}?action=list_cube_acr&max=50&ts=${Date.now()}`,{cache:'no-store'});
@@ -901,7 +884,6 @@ async function doAttach(uatId,idx,btn) {
   btn.textContent='Se copiază…'; btn.disabled=true; btn.style.opacity='0.6';
   try {
     const url=`${API_URL}?action=copy_to_audio&uat_id=${uatId}&file_id=${f.id}&file_name=${encodeURIComponent(f.name)}`;
-    console.log('URL:',url);
     const resp=await fetch(url,{cache:'no-store'});
     const text=await resp.text();
     console.log('Raspuns:',text);
