@@ -1,0 +1,22 @@
+{
+  "name": "EmiterePV",
+  "short_name": "EmiterePV",
+  "start_url": "/emiterepv/",
+  "scope": "/emiterepv/",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://damianchirca-rgb.github.io/emiterepv/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://damianchirca-rgb.github.io/emiterepv/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
