@@ -825,20 +825,34 @@ async function openCubeACRPicker(uatId) {
       return;
     }
 
-    listEl.innerHTML = data.fisiere.map(f => {
-      const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
-      const safeName = f.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:10px">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🎤 ${f.name}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px">${size} · ${f.modified}</div>
-        </div>
-        <button onclick="attachAudioToUat('${uatId}','${f.id}','${safeName}',this)"
-          style="flex-shrink:0;padding:8px 14px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">
-          📎 Atașează
-        </button>
-      </div>`;
-    }).join('');
+    listEl.innerHTML = data.fisiere.map((f, idx) => {
+  const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:10px">
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🎤 ${f.name}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">${size} · ${f.modified}</div>
+    </div>
+    <button 
+      data-uat="${uatId}"
+      data-id="${f.id}"
+      data-name="${encodeURIComponent(f.name)}"
+      data-idx="${idx}"
+      class="acr-attach-btn"
+      style="flex-shrink:0;padding:8px 14px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">
+      📎 Atașează
+    </button>
+  </div>`;
+}).join('');
+
+// Event listener separat - fara probleme cu caractere speciale
+listEl.querySelectorAll('.acr-attach-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const uatId = this.dataset.uat;
+    const fileId = this.dataset.id;
+    const fileName = decodeURIComponent(this.dataset.name);
+    attachAudioToUat(uatId, fileId, fileName, this);
+  });
+});
 
   } catch(err) {
     console.error('Cube ACR error:', err);
