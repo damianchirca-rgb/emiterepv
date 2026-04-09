@@ -389,6 +389,18 @@ function filteredUats() {
   else if (currentFilter === 'note') res = res.filter(u => getField(u,'Note'));
   else if (currentFilter === 'urgenta') res = res.filter(u => { const d=getDaysUntil(getField(u,'DataUrmatorContact')); return d!==null && d<30; });
   else if (['TL','CT','CL','GR','PH'].includes(currentFilter)) res = res.filter(u => getField(u,'CodJudet') === currentFilter);
+
+  // Sortare dupa data expirare contract crescator
+  // UAT-uri fara data expirare merg la final
+  res = [...res].sort((a, b) => {
+    const da = parseRoDate(getField(a,'DataIncetareContract'));
+    const db = parseRoDate(getField(b,'DataIncetareContract'));
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return da - db;
+  });
+
   return res;
 }
 function renderList() {
