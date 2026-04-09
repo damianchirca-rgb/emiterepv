@@ -808,12 +808,15 @@ async function openCubeACRPicker(uatId) {
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   const listEl=document.getElementById('cube-acr-list');
   try {
-    const resp=await fetch(`${API_URL}?action=list_cube_acr`,{cache:'no-store'});
+    const resp = await fetch(`${API_URL}?action=list_cube_acr&max=50`, { cache: 'no-store' });
     const data=await resp.json();
     if(!data.fisiere||!data.fisiere.length){listEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Niciun fișier audio găsit în Cube ACR</div>';return;}
     listEl.innerHTML=data.fisiere.map(f=>{
       const size=f.size>1048576?(f.size/1048576).toFixed(1)+'MB':(f.size/1024).toFixed(0)+'KB';
       const safeName=f.name.replace(/'/g,"\\'");
+      if (data.total > 50) {
+  listEl.innerHTML += `<div style="text-align:center;padding:12px;font-size:12px;color:var(--text3)">Se afișează ultimele 50 din ${data.total} înregistrări</div>`;
+}
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:10px">
         <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🎤 ${f.name}</div><div style="font-size:11px;color:var(--text3);margin-top:3px">${size} · ${f.modified}</div></div>
         <button onclick="attachAudioToUat('${uatId}','${f.id}','${safeName}',this)" style="flex-shrink:0;padding:8px 14px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">📎 Atașează</button>
