@@ -15,7 +15,7 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
-const CACHE_NAME = 'emiterepv-v3';
+const CACHE_NAME = 'emiterepv-v4';
 const URLS_TO_CACHE = ['/emiterepv/'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(URLS_TO_CACHE))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(names => Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))))); self.clients.claim(); });
@@ -286,6 +286,7 @@ self.addEventListener('fetch', e => {
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbyrIKVxXAULXoHszaN60nQQqNAK6N_j_PqNmhAsRZ_D7fdvzf38euhpPH95Z0PHcw/exec';
 let uats = [], currentFilter = 'all', currentSearch = '', currentView = 'lista', filterBarOpen = false, isOnline = navigator.onLine;
+let cubeAcrFiles = [];
 
 window.addEventListener('online', () => { isOnline = true; updateOfflineBanner(); syncData(); });
 window.addEventListener('offline', () => { isOnline = false; updateOfflineBanner(); });
@@ -443,7 +444,7 @@ function renderList() {
 function renderContacts() {
   const withContact = uats
     .filter(u => getField(u,'DataUrmatorContact'))
-    .map(u => ({...u, _days: getDaysUntil(getField(u,'DataUrmatorContact')), _ct: getField(u,'DataUrmatorContact')}))
+    .map(u => ({...u, _days:getDaysUntil(getField(u,'DataUrmatorContact')), _ct:getField(u,'DataUrmatorContact')}))
     .sort((a,b) => { const da=parseRoDate(a._ct),db=parseRoDate(b._ct); if(!da&&!db)return 0; if(!da)return 1; if(!db)return -1; return da-db; });
   const overdue=withContact.filter(u=>u._days!==null&&u._days<0);
   const soon=withContact.filter(u=>u._days!==null&&u._days>=0&&u._days<=30);
@@ -537,7 +538,7 @@ document.getElementById('search').addEventListener('input',e=>{
 let touchY=0;
 document.getElementById('drawer').addEventListener('touchstart',e=>{touchY=e.touches[0].clientY;},{passive:true});
 document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[0].clientY-touchY>80)closeDrawer();},{passive:true});
-async function openUat(id) {
+  async function openUat(id) {
   const u = uats.find(x => String(x['ID']) === String(id));
   if(!u) return;
   const localitate=getField(u,'Localitate');
@@ -569,10 +570,8 @@ async function openUat(id) {
   let img=drawerHeader.querySelector('.primar-poza');
   if(poza){
     if(!img){img=document.createElement('img');img.className='primar-poza';drawerHeader.appendChild(img);}
-    img.src=poza;
-    img.style.cssText='width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3);flex-shrink:0';
-    img.loading='lazy';
-    img.onerror=()=>img.style.display='none';
+    img.src=poza; img.style.cssText='width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3);flex-shrink:0';
+    img.loading='lazy'; img.onerror=()=>img.style.display='none';
   } else { if(img) img.remove(); }
 
   let facturiHtml='';
@@ -788,12 +787,12 @@ async function loadFisiere(uatId) {
 }
 
 async function openCubeACRPicker(uatId) {
-  let modal = document.getElementById('cube-acr-modal');
-  if (modal) modal.remove();
-  modal = document.createElement('div');
-  modal.id = 'cube-acr-modal';
-  modal.className = 'cube-acr-modal-wrap';
-  modal.innerHTML = `
+  let modal=document.getElementById('cube-acr-modal');
+  if(modal) modal.remove();
+  modal=document.createElement('div');
+  modal.id='cube-acr-modal';
+  modal.className='cube-acr-modal-wrap';
+  modal.innerHTML=`
     <div class="cube-acr-sheet">
       <div style="width:40px;height:4px;background:var(--surface3);border-radius:4px;margin:14px auto 0"></div>
       <div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
@@ -801,69 +800,52 @@ async function openCubeACRPicker(uatId) {
         <button onclick="document.getElementById('cube-acr-modal').remove()" style="width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:16px;cursor:pointer">✕</button>
       </div>
       <div id="cube-acr-list" style="overflow-y:auto;padding:10px 16px;flex:1;min-height:200px">
-        <div style="text-align:center;padding:30px;color:var(--text3)">
-          <div class="spinner" style="margin:0 auto 12px"></div>
-          Se încarcă…
-        </div>
+        <div style="text-align:center;padding:30px;color:var(--text3)"><div class="spinner" style="margin:0 auto 12px"></div>Se încarcă…</div>
       </div>
     </div>`;
   document.body.appendChild(modal);
-  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
 
-  const listEl = document.getElementById('cube-acr-list');
-
+  const listEl=document.getElementById('cube-acr-list');
   try {
-    // Adaugă timestamp ca să forțezi bypass cache
-    const resp = await fetch(`${API_URL}?action=list_cube_acr&max=50&ts=${Date.now()}`, { cache: 'no-store' });
-    const text = await resp.text();
-    console.log('Cube ACR raw:', text.substring(0, 300));
-    const data = JSON.parse(text);
-
-    if (data.eroare) throw new Error(data.eroare);
-    if (!data.fisiere || data.fisiere.length === 0) {
-      listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Niciun fișier audio găsit</div>';
+    const resp=await fetch(`${API_URL}?action=list_cube_acr&max=50&ts=${Date.now()}`,{cache:'no-store'});
+    const text=await resp.text();
+    console.log('Cube ACR raw:',text.substring(0,200));
+    const data=JSON.parse(text);
+    if(data.eroare) throw new Error(data.eroare);
+    if(!data.fisiere||!data.fisiere.length){
+      listEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Niciun fișier audio găsit</div>';
       return;
     }
-
-    listEl.innerHTML = data.fisiere.map((f, idx) => {
-  const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
-  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:10px">
-    <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🎤 ${f.name}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:3px">${size} · ${f.modified}</div>
-    </div>
-    <button 
-      data-uat="${uatId}"
-      data-id="${f.id}"
-      data-name="${encodeURIComponent(f.name)}"
-      data-idx="${idx}"
-      class="acr-attach-btn"
-      style="flex-shrink:0;padding:8px 14px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">
-      📎 Atașează
-    </button>
-  </div>`;
-}).join('');
-
-// Event listener separat - fara probleme cu caractere speciale
-listEl.querySelectorAll('.acr-attach-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    const uatId = this.dataset.uat;
-    const fileId = this.dataset.id;
-    const fileName = decodeURIComponent(this.dataset.name);
-    attachAudioToUat(uatId, fileId, fileName, this);
-  });
-});
-
-  } catch(err) {
-    console.error('Cube ACR error:', err);
-    listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
+    cubeAcrFiles=data.fisiere;
+    listEl.innerHTML=data.fisiere.map((f,idx)=>{
+      const size=f.size>1048576?(f.size/1048576).toFixed(1)+'MB':(f.size/1024).toFixed(0)+'KB';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🎤 ${f.name}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">${size} · ${f.modified}</div>
+        </div>
+        <button onclick="doAttach('${uatId}',${idx},this)" style="flex-shrink:0;padding:8px 14px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">📎 Atașează</button>
+      </div>`;
+    }).join('');
+  } catch(err){
+    console.error('Cube ACR error:',err);
+    listEl.innerHTML=`<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
   }
 }
-async function attachAudioToUat(uatId,fileId,fileName,btn) {
+
+async function doAttach(uatId,idx,btn) {
+  const f=cubeAcrFiles[idx];
+  console.log('doAttach:',uatId,idx,f);
+  if(!f){showToast('Eroare: fișier negăsit');return;}
   btn.textContent='Se copiază…'; btn.disabled=true; btn.style.opacity='0.6';
   try {
-    const resp=await fetch(`${API_URL}?action=copy_to_audio&uat_id=${uatId}&file_id=${fileId}&file_name=${encodeURIComponent(fileName)}`,{cache:'no-store'});
-    const data=await resp.json();
+    const url=`${API_URL}?action=copy_to_audio&uat_id=${uatId}&file_id=${f.id}&file_name=${encodeURIComponent(f.name)}`;
+    console.log('URL:',url);
+    const resp=await fetch(url,{cache:'no-store'});
+    const text=await resp.text();
+    console.log('Raspuns:',text);
+    const data=JSON.parse(text);
     if(!data.ok) throw new Error(data.eroare||'Eroare necunoscută');
     btn.textContent='✓ Atașat!'; btn.style.background='var(--activ)';
     showToast(`✓ ${data.newName} copiat în audio_uat/`);
@@ -873,7 +855,9 @@ async function attachAudioToUat(uatId,fileId,fileName,btn) {
       if(audioEl){audioEl.dataset.loaded='';loadAudioUat(uatId);}
     },1200);
   } catch(err){
-    btn.textContent='⚠ Eroare'; btn.style.background='var(--eroare)'; btn.disabled=false; btn.style.opacity='1';
+    console.error('Eroare atasare:',err);
+    btn.textContent='⚠ Eroare'; btn.style.background='var(--eroare)';
+    btn.disabled=false; btn.style.opacity='1';
     showToast('Eroare: '+err.message);
     setTimeout(()=>{btn.textContent='📎 Atașează';btn.style.background='var(--accent)';},2500);
   }
@@ -945,8 +929,7 @@ async function loadMentenanta() {
             <div style="text-align:right"><div style="font-size:15px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--activ)">${u.total.toLocaleString('ro-RO')} Lei</div><div style="font-size:10px;color:var(--text3)">/lună</div></div>
           </div>
           ${u.aplicatii.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${u.aplicatii.map(a=>`<span style="font-size:10px;padding:2px 8px;background:var(--surface2);border-radius:6px;color:var(--text2)">${a.nume} · ${a.pret} Lei</span>`).join('')}</div>`:''}
-        </div>
-      `).join('')}`;
+        </div>`).join('')}`;
   } catch(err){el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;}
 }
 
