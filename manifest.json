@@ -1,8 +1,8 @@
 {
   "name": "EmiterePV",
   "short_name": "EmiterePV",
-  "start_url": "/emiterepv/",
-  "scope": "/emiterepv/",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
   "background_color": "#0a0f1e",
   "theme_color": "#6366f1",
