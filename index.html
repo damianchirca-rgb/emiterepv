@@ -528,11 +528,34 @@ function showView(v) {
   currentView=v;
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
-  if(v==='lista'){document.getElementById('list-view').classList.add('active');document.getElementById('nav-lista').classList.add('active');renderList();}
-  else if(v==='contacte'){document.getElementById('contacts-view').classList.add('active');document.getElementById('nav-contacte').classList.add('active');renderContacts();}
-  else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
-  else if(v==='mentenanta'){document.getElementById('mentenanta-view').classList.add('active');document.getElementById('nav-mentenanta').classList.add('active');loadMentenanta();}
-  else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
+
+  // Arata search si filtre doar in tab Lista
+  const isLista = v === 'lista';
+  document.getElementById('search-row').style.display = isLista ? 'flex' : 'none';
+  document.getElementById('filter-bar').style.display = isLista && filterBarOpen ? 'flex' : 'none';
+  document.getElementById('filter-btn').style.display = isLista ? 'flex' : 'none';
+
+  if(v==='lista'){
+    document.getElementById('list-view').classList.add('active');
+    document.getElementById('nav-lista').classList.add('active');
+    renderList();
+  } else if(v==='contacte'){
+    document.getElementById('contacts-view').classList.add('active');
+    document.getElementById('nav-contacte').classList.add('active');
+    renderContacts();
+  } else if(v==='cautare'){
+    document.getElementById('cautare-view').classList.add('active');
+    document.getElementById('nav-cautare').classList.add('active');
+    setTimeout(()=>document.getElementById('cautare-input').focus(),100);
+  } else if(v==='mentenanta'){
+    document.getElementById('mentenanta-view').classList.add('active');
+    document.getElementById('nav-mentenanta').classList.add('active');
+    loadMentenanta();
+  } else if(v==='stats'){
+    document.getElementById('stats-view').classList.add('active');
+    document.getElementById('nav-stats').classList.add('active');
+    renderStats();
+  }
 }
 function setFilter(f,el){currentFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderList();if(currentView!=='lista')showView('lista');}
 function toggleFilterBar(){filterBarOpen=!filterBarOpen;document.getElementById('filter-bar').style.display=filterBarOpen?'flex':'none';document.getElementById('filter-btn').classList.toggle('active',filterBarOpen);}
