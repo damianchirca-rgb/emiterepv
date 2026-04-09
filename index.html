@@ -752,8 +752,14 @@ async function loadAudioUat(uatId) {
       const size=f.size>1048576?(f.size/1048576).toFixed(1)+'MB':(f.size/1024).toFixed(0)+'KB';
       const dateMatch=f.name.match(/(\d{4}-\d{2}-\d{2})/);
       const dateStr=dateMatch?dateMatch[1]:f.modified;
-      return `<div class="audio-player">
-        <div class="audio-meta">🎤 ${dateStr}</div>
+      return `<div class="audio-player" id="audio-item-${f.id}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="audio-meta" style="margin:0">🎤 ${dateStr}</div>
+          <button onclick="deleteAudio('${uatId}','${f.id}',this)" 
+            style="padding:4px 10px;background:var(--eroare-bg);border:1px solid var(--eroare);border-radius:8px;color:var(--eroare);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer">
+            🗑 Șterge
+          </button>
+        </div>
         <div style="display:flex;gap:8px;align-items:center">
           <audio controls style="flex:1;height:32px"><source src="${f.downloadUrl}" type="audio/mpeg">Browser nu suportă audio HTML5</audio>
           <a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;display:flex;align-items:center;justify-content:center;min-width:45px">▶</a>
@@ -765,6 +771,24 @@ async function loadAudioUat(uatId) {
   } catch(err){el.textContent='Eroare: '+err.message;}
 }
 
+async function deleteAudio(uatId, fileId, btn) {
+  if (!confirm('Ștergi această înregistrare? Acțiunea nu poate fi anulată.')) return;
+  btn.textContent='Se șterge…'; btn.disabled=true;
+  try {
+    const resp=await fetch(`${API_URL}?action=delete_audio&file_id=${fileId}`,{cache:'no-store'});
+    const data=await resp.json();
+    if(!data.ok) throw new Error(data.eroare||'Eroare necunoscută');
+    // Scoate elementul din UI
+    document.getElementById('audio-item-'+fileId)?.remove();
+    showToast('✓ Înregistrare ștearsă');
+    // Dacă nu mai sunt înregistrări
+    const el=document.getElementById('audio-uat-'+uatId);
+    if(el&&!el.querySelector('.audio-player')) el.textContent='Nicio înregistrare audio.';
+  } catch(err){
+    btn.textContent='🗑 Șterge'; btn.disabled=false;
+    showToast('Eroare: '+err.message);
+  }
+}
 async function loadFisiere(uatId) {
   const el=document.getElementById('fisiere-'+uatId);
   if(!el||el.dataset.loaded) return;
