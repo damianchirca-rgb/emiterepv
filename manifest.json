@@ -1,6 +1,6 @@
 {
-  "name": "EmiterePV",
-  "short_name": "EmiterePV",
+  "name": "Mentenanță",
+  "short_name": "Mentenanță",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
@@ -9,8 +9,8 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icon.svg",
-      "sizes": "192x192",
+      "src": "https://damianchirca-rgb.github.io/emiterepv/icon.svg",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
