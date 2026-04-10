@@ -17,7 +17,7 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
-const CACHE_NAME = 'emiterepv-v5';
+const CACHE_NAME = 'emiterepv-v6';
 const URLS_TO_CACHE = ['/emiterepv/'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(URLS_TO_CACHE))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(names => Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))))); self.clients.claim(); });
@@ -389,7 +389,10 @@ function filteredUats() {
   else if (currentFilter === 'INACTIV') res = res.filter(u => getField(u,'BeneficiarActiv') === 'NU');
   else if (currentFilter === 'contact') res = res.filter(u => getField(u,'DataUrmatorContact'));
   else if (currentFilter === 'note') res = res.filter(u => getField(u,'Note'));
-  else if (currentFilter === 'urgenta') res = res.filter(u => { const d=getDaysUntil(getField(u,'DataUrmatorContact')); return d!==null && d<30; });
+  else if (currentFilter === 'urgenta') res = res.filter(u => {
+    const d = getDaysUntil(getField(u,'DataUrmatorContact'));
+    return d !== null && d < 30;
+  });
   else if (['TL','CT','CL','GR','PH'].includes(currentFilter)) res = res.filter(u => getField(u,'CodJudet') === currentFilter);
   res = [...res].sort((a, b) => {
     const da = parseRoDate(getField(a,'DataIncetareContract'));
@@ -424,14 +427,9 @@ function renderList() {
     const expDisplay = dataExpirare ? String(dataExpirare).substring(0,10) : null;
     const expLabel = daysExp===null?'':daysExp<0?' · expirat':daysExp===0?' · AZI':` · ${daysExp}z`;
     const urgCls = contact&&days!==null?(days<0?'urgenta':days<=14?'aproape':'ok-contact'):'';
-
-    // Firme din contracte
     const contracte = u._contracte || [];
     const firme = [...new Set(contracte.map(c => c.firma_id === 'f1' ? 'Daily Business' : 'DB Technology'))];
-
-    // Aplicatii mentenanta
     const aplicatii = u._aplicatii || [];
-
     let inds = '';
     if (note) inds += `<span class="indicator ind-note">📝 Notiță</span>`;
     if (contact&&days!==null) {
@@ -439,10 +437,8 @@ function renderList() {
       const lbl = days<0?`${-days}z trecut`:days===0?'Azi!!!':`${days}z`;
       inds += `<span class="indicator ${col}">📅 ${lbl}</span>`;
     }
-
     const badgeClass = isActiv ? 'status-ACTIV' : 'status-INACTIV';
     const badgeText = isActiv ? '✓ ACTIV' : '✕ INACTIV';
-
     return `<div class="uat-card ${urgCls}" onclick="openUat('${id}')">
       <div class="uat-card-inner">
         <div class="card-top">
@@ -466,31 +462,15 @@ function renderList() {
     </div>`;
   }).join('');
 }
-    const badgeClass = isActiv ? 'status-ACTIV' : 'status-INACTIV';
-    const badgeText = isActiv ? '✓ ACTIV' : '✕ INACTIV';
-    return `<div class="uat-card ${urgCls}" onclick="openUat('${id}')">
-      <div class="uat-card-inner">
-        <div class="card-top">
-          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-            ${poza?`<img src="${poza}" style="width:60px;height:60px;border-radius:12px;object-fit:cover;flex-shrink:0;border:2px solid var(--surface3)" loading="lazy" onerror="this.style.display='none'">`:`<div style="width:60px;height:60px;border-radius:12px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🏛️</div>`}
-            <div style="min-width:0"><div class="card-name">${localitate}</div><div class="card-judet"><span class="judet-badge">${cod}</span> ${judet}</div></div>
-          </div>
-          <div class="status-badge ${badgeClass}" style="flex-shrink:0">${badgeText}</div>
-        </div>
-        ${inds?`<div class="card-indicators">${inds}</div>`:''}
-        <div class="card-footer">
-          <div class="card-responsabil">👤 ${responsabil}</div>
-          ${expDisplay?`<span style="font-size:10px;color:${expColor};font-family:'JetBrains Mono',monospace">📋 ${expDisplay}${expLabel}</span>`:''}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
 function renderContacts() {
   const withContact = uats
     .filter(u => getField(u,'DataUrmatorContact'))
     .map(u => ({...u, _days:getDaysUntil(getField(u,'DataUrmatorContact')), _ct:getField(u,'DataUrmatorContact')}))
-    .sort((a,b) => { const da=parseRoDate(a._ct),db=parseRoDate(b._ct); if(!da&&!db)return 0; if(!da)return 1; if(!db)return -1; return da-db; });
+    .sort((a,b) => {
+      const da=parseRoDate(a._ct), db=parseRoDate(b._ct);
+      if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1;
+      return da-db;
+    });
   const overdue=withContact.filter(u=>u._days!==null&&u._days<0);
   const soon=withContact.filter(u=>u._days!==null&&u._days>=0&&u._days<=30);
   const later=withContact.filter(u=>u._days===null||u._days>30);
@@ -576,14 +556,14 @@ function setFilter(f,el){
   document.querySelectorAll('#filter-bar .filter-chip').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
   renderList();
-  if(currentView!=='lista')showView('lista');
+  if(currentView!=='lista') showView('lista');
 }
 function toggleFilterBar(){
   filterBarOpen=!filterBarOpen;
   document.getElementById('filter-bar').style.display=filterBarOpen?'flex':'none';
   document.getElementById('filter-btn').classList.toggle('active',filterBarOpen);
 }
-function renderCurrent(){showView(currentView);}
+function renderCurrent(){ showView(currentView); }
 let activeTips = new Set(['contract','factura','pv','util']);
 function toggleTip(tip, el) {
   if(activeTips.has(tip)){activeTips.delete(tip);el.classList.remove('active');}
@@ -616,7 +596,8 @@ async function openUat(id) {
   const contact=String(getField(u,'DataUrmatorContact')||'');
   const days=getDaysUntil(contact);
   const dayLabel=days===null?'':(days<0?` (${-days}z trecut!)`:(days===0?' (AZI!)':` (peste ${days}z)`));
-  const lat=getField(u,'Lat'); const lng=getField(u,'Lng');
+  const lat=getField(u,'Lat');
+  const lng=getField(u,'Lng');
   const nc=getField(u,'NoteCalendar');
   const poza=u._poza||null;
   const contracte=u._contracte||[];
@@ -629,8 +610,10 @@ async function openUat(id) {
   let img=drawerHeader.querySelector('.primar-poza');
   if(poza){
     if(!img){img=document.createElement('img');img.className='primar-poza';drawerHeader.appendChild(img);}
-    img.src=poza; img.style.cssText='width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3);flex-shrink:0';
-    img.loading='lazy'; img.onerror=()=>img.style.display='none';
+    img.src=poza;
+    img.style.cssText='width:52px;height:52px;border-radius:12px;object-fit:cover;border:2px solid var(--surface3);flex-shrink:0';
+    img.loading='lazy';
+    img.onerror=()=>img.style.display='none';
   } else { if(img) img.remove(); }
 
   let facturiHtml='';
@@ -643,7 +626,11 @@ async function openUat(id) {
   });
 
   let aplicatiiHtml=''; let total=0;
-  aplicatii.forEach(a=>{ const pret=parseFloat(a.pret)||0; total+=pret; aplicatiiHtml+=`<div class="app-row"><div class="app-name">${a.nume}</div><div class="app-pret">${pret} Lei</div></div>`; });
+  aplicatii.forEach(a=>{
+    const pret=parseFloat(a.pret)||0;
+    total+=pret;
+    aplicatiiHtml+=`<div class="app-row"><div class="app-name">${a.nume}</div><div class="app-pret">${pret} Lei</div></div>`;
+  });
   if(aplicatii.length) aplicatiiHtml+=`<div class="total-row"><div class="total-label">Total / lună</div><div class="total-val">${total.toFixed(2)} Lei</div></div>`;
   else aplicatiiHtml=`<div style="color:var(--text3);font-size:13px;padding:12px 0">Nicio aplicație înregistrată</div>`;
 
@@ -888,7 +875,6 @@ async function openCubeACRPicker(uatId) {
   try {
     const resp=await fetch(`${API_URL}?action=list_cube_acr&max=50&ts=${Date.now()}`,{cache:'no-store'});
     const text=await resp.text();
-    console.log('Cube ACR raw:',text.substring(0,200));
     const data=JSON.parse(text);
     if(data.eroare) throw new Error(data.eroare);
     if(!data.fisiere||!data.fisiere.length){
@@ -907,22 +893,18 @@ async function openCubeACRPicker(uatId) {
       </div>`;
     }).join('');
   } catch(err){
-    console.error('Cube ACR error:',err);
     listEl.innerHTML=`<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
   }
 }
 
 async function doAttach(uatId,idx,btn) {
   const f=cubeAcrFiles[idx];
-  console.log('doAttach:',uatId,idx,f);
   if(!f){showToast('Eroare: fișier negăsit');return;}
   btn.textContent='Se copiază…'; btn.disabled=true; btn.style.opacity='0.6';
   try {
     const url=`${API_URL}?action=copy_to_audio&uat_id=${uatId}&file_id=${f.id}&file_name=${encodeURIComponent(f.name)}`;
     const resp=await fetch(url,{cache:'no-store'});
-    const text=await resp.text();
-    console.log('Raspuns:',text);
-    const data=JSON.parse(text);
+    const data=await resp.json();
     if(!data.ok) throw new Error(data.eroare||'Eroare necunoscută');
     btn.textContent='✓ Atașat!'; btn.style.background='var(--activ)';
     showToast(`✓ ${data.newName} copiat în audio_uat/`);
@@ -932,7 +914,6 @@ async function doAttach(uatId,idx,btn) {
       if(audioEl){audioEl.dataset.loaded='';loadAudioUat(uatId);}
     },1200);
   } catch(err){
-    console.error('Eroare atasare:',err);
     btn.textContent='⚠ Eroare'; btn.style.background='var(--eroare)';
     btn.disabled=false; btn.style.opacity='1';
     showToast('Eroare: '+err.message);
