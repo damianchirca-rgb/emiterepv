@@ -395,8 +395,19 @@ function filteredUats() {
   });
   else if (['TL','CT','CL','GR','PH'].includes(currentFilter)) res = res.filter(u => getField(u,'CodJudet') === currentFilter);
   res = [...res].sort((a, b) => {
-    const da = parseRoDate(getField(a,'DataIncetareContract'));
-    const db = parseRoDate(getField(b,'DataIncetareContract'));
+    const getExpirare = u => {
+      const fromExcel = getField(u,'DataIncetareContract');
+      if (fromExcel) return parseRoDate(fromExcel);
+      if (u._contracte && u._contracte.length) {
+        const dates = u._contracte
+          .map(c => parseRoDate(c.data_incetare))
+          .filter(d => d !== null);
+        if (dates.length) return new Date(Math.max(...dates));
+      }
+      return null;
+    };
+    const da = getExpirare(a);
+    const db = getExpirare(b);
     if (!da && !db) return 0;
     if (!da) return 1;
     if (!db) return -1;
