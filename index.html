@@ -421,7 +421,14 @@ function renderList() {
     const contact = getField(u,'DataUrmatorContact') || '';
     const days = getDaysUntil(contact);
     const poza = u._poza || null;
-    const dataExpirare = getField(u,'DataIncetareContract');
+    const dataExpirare = getField(u,'DataIncetareContract') ||
+   (u._contracte && u._contracte.length
+    ? u._contracte.reduce((latest, c) => {
+        if (!c.data_incetare) return latest;
+        if (!latest) return c.data_incetare;
+        return parseRoDate(c.data_incetare) > parseRoDate(latest) ? c.data_incetare : latest;
+      }, null)
+    : null);
     const daysExp = getDaysUntil(dataExpirare);
     const expColor = daysExp!==null&&daysExp<60?'var(--eroare)':daysExp!==null&&daysExp<180?'var(--inactiv)':'var(--text3)';
     const expDisplay = dataExpirare ? String(dataExpirare).substring(0,10) : null;
