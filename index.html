@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="/emiterepv/manifest.json">
-<title>EmiterePV</title>
+<title>Mentenanță</title>
 <style>
   html { font-size: 16px !important; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 </style>
@@ -17,7 +17,7 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
-const CACHE_NAME = 'emiterepv-v6';
+const CACHE_NAME = 'mentenanta-v1';
 const URLS_TO_CACHE = ['/emiterepv/'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(URLS_TO_CACHE))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(names => Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))))); self.clients.claim(); });
@@ -201,7 +201,7 @@ self.addEventListener('fetch', e => {
     <div id="header-top">
       <div id="logo">
         <div id="logo-icon">🏛️</div>
-        <div id="logo-text"><h1>EmiterePV</h1><p id="last-sync">Se încarcă…</p></div>
+        <div id="logo-text"><h1>Mentenanță</h1><p id="last-sync">Se încarcă…</p></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button id="theme-btn" onclick="toggleTheme()" style="width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px">🌙</button>
@@ -430,6 +430,7 @@ function renderList() {
     const contracte = u._contracte || [];
     const firme = [...new Set(contracte.map(c => c.firma_id === 'f1' ? 'Daily Business' : 'DB Technology'))];
     const aplicatii = u._aplicatii || [];
+    const totalMentenanta = aplicatii.reduce((sum, a) => sum + (parseFloat(a.pret)||0), 0);
     let inds = '';
     if (note) inds += `<span class="indicator ind-note">📝 Notiță</span>`;
     if (contact&&days!==null) {
@@ -448,7 +449,8 @@ function renderList() {
               <div class="card-name">${localitate}</div>
               <div class="card-judet"><span class="judet-badge">${cod}</span> ${judet}</div>
               ${firme.length?`<div style="font-size:11px;color:var(--accent2);margin-top:3px">🏢 ${firme.join(' · ')}</div>`:''}
-              ${aplicatii.length?`<div style="font-size:10px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">⚙️ ${aplicatii.map(a=>a.nume).join(', ')}</div>`:''}
+              ${aplicatii.length?`<div style="font-size:10px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">⚙️ ${aplicatii.map(a=>a.nume).join(', ')}</div>
+<div style="font-size:11px;color:var(--activ);font-family:'JetBrains Mono',monospace;margin-top:2px;font-weight:600">💰 ${totalMentenanta.toFixed(0)} Lei/lună</div>`:''}
             </div>
           </div>
           <div class="status-badge ${badgeClass}" style="flex-shrink:0">${badgeText}</div>
