@@ -711,7 +711,10 @@ function openUat(id) {
         </div>
         ${f.sb_status?`<div style="font-size:10px;color:var(--text3)">SmartBill: ${f.sb_status}${sbData}</div>`:''}
         ${f.suma_incasata?`<div style="font-size:10px;color:var(--activ)">✓ Încasat: ${f.suma_incasata} Lei${f.data_incasare?' · '+f.data_incasare:''}</div>`:''}
-        ${f.fisier_factura?`<div style="font-size:10px;color:var(--accent2)">📄 ${f.fisier_factura}</div>`:''}
+        ${(f.fisier_factura||f.fisier_extras)?`<div style="display:flex;gap:6px;margin-top:6px">
+          ${f.fisier_factura?`<button onclick="deschideFisier('${f.fisier_factura}')" style="flex:1;padding:6px;background:var(--accent);border:none;border-radius:8px;color:white;font-size:11px;font-weight:600;cursor:pointer">📄 Factură</button>`:''}
+          ${f.fisier_extras?`<button onclick="deschideFisier('${f.fisier_extras}')" style="flex:1;padding:6px;background:var(--surface3);border:none;border-radius:8px;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer">🏦 Extras</button>`:''}
+        </div>`:''}
       </div>`;
     });
   });
@@ -854,6 +857,30 @@ async function doSaveContact(id) {
     showToast('Eroare: '+e.message);
   }
   setTimeout(()=>{btn.textContent='💾 Salvează data și nota';btn.className='save-btn';},2500);
+}
+
+// Cache local pentru drive_index
+let driveIndexCache = null;
+
+async function deschideFisier(filename) {
+  if (!filename) return;
+  showToast('Se caută fișierul…');
+  try {
+    // Incarca drive_index daca nu e in cache
+    if (!driveIndexCache) {
+      const resp = await fetch(`${API_URL}?action=drive_index`, {cache:'no-store'});
+      const data = await resp.json();
+      driveIndexCache = data.index || {};
+    }
+    const fileId = driveIndexCache[filename];
+    if (fileId) {
+      window.open('https://drive.google.com/file/d/' + fileId + '/view', '_blank');
+    } else {
+      showToast('Fișierul nu a fost găsit în index');
+    }
+  } catch(e) {
+    showToast('Eroare: ' + e.message);
+  }
 }
 
 function buildCalendarUrl(localitate, contact, nota) {
