@@ -6,30 +6,14 @@
 <meta name="theme-color" content="#0a0f1e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/emiterepv/manifest.json">
-<title>Mentenanță</title>
+<title>EmiterePV</title>
 <style>
   html { font-size: 16px !important; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 </style>
 <script>
-  if (window.self !== window.top) { window.top.location.href = window.location.href; }
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
-const CACHE_NAME = 'mentenanta-v1';
-const URLS_TO_CACHE = ['/emiterepv/'];
-self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(URLS_TO_CACHE))); self.skipWaiting(); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(names => Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))))); self.clients.claim(); });
-self.addEventListener('fetch', e => {
-  if (e.request.url.includes('googleapis.com') || e.request.url.includes('google')) {
-    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-  } else {
-    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)).catch(() => caches.match('/')));
-  }
-});
-      `)).catch(() => {});
-    });
+  // Daca suntem in iframe (Apps Script), deschide in tab nou
+  if (window.self !== window.top) {
+    window.top.location.href = window.location.href;
   }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,11 +39,13 @@ self.addEventListener('fetch', e => {
     --accent: #4f46e5; --accent2: #6366f1;
     --semnat: #0891b2; --semnat-bg: rgba(8,145,178,0.10);
   }
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; overflow:hidden; }
   #app { display:flex; flex-direction:column; height:100dvh; }
-  #offline-banner { position:fixed;top:0;left:0;right:0;z-index:999;background:var(--eroare);color:white;padding:8px 12px;font-size:12px;font-weight:600;text-align:center;display:none; }
-  #offline-banner.show { display:block; }
+
+  /* HEADER */
   #header { background:var(--surface); border-bottom:1px solid var(--border); padding:14px 16px 10px; flex-shrink:0; }
   #header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
   #logo { display:flex; align-items:center; gap:10px; }
@@ -72,6 +58,7 @@ self.addEventListener('fetch', e => {
   #sync-btn.ok { color:var(--activ);border-color:var(--activ-bg); }
   #sync-btn.err { color:var(--eroare);border-color:var(--eroare-bg); }
   @keyframes spin { to { transform:rotate(360deg); } }
+
   #search-row { display:flex;gap:8px;align-items:center; }
   #search-wrap { flex:1;position:relative; }
   #search-wrap svg { position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);width:16px;height:16px; }
@@ -80,10 +67,13 @@ self.addEventListener('fetch', e => {
   #search:focus { border-color:var(--accent); }
   #filter-btn { width:38px;height:38px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);flex-shrink:0;transition:all .2s; }
   #filter-btn.active { background:var(--accent);border-color:var(--accent);color:white; }
+
   #filter-bar { display:flex;gap:6px;padding:10px 16px 0;overflow-x:auto;flex-shrink:0;scrollbar-width:none; }
   #filter-bar::-webkit-scrollbar { display:none; }
   .filter-chip { padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;background:var(--surface2);border:1px solid var(--border);color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0; }
   .filter-chip.active { background:var(--accent);border-color:var(--accent);color:white; }
+
+  /* LOADING */
   #loading { display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px; }
   .spinner { width:40px;height:40px;border:3px solid var(--surface3);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite; }
   #loading p { color:var(--text3);font-size:14px; }
@@ -91,10 +81,13 @@ self.addEventListener('fetch', e => {
   #error-screen h2 { color:var(--eroare);font-size:18px; }
   #error-screen p { color:var(--text2);font-size:13px;text-align:center;line-height:1.6; }
   .retry-btn { padding:12px 24px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:white;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer; }
+
+  /* LIST */
   #list-wrap { flex:1;overflow-y:auto;padding:10px 12px;scrollbar-width:thin;scrollbar-color:var(--surface3) transparent; }
   #list-wrap::-webkit-scrollbar { width:4px; }
   #list-wrap::-webkit-scrollbar-thumb { background:var(--surface3);border-radius:4px; }
   #no-results { text-align:center;padding:60px 20px;color:var(--text3);font-size:14px; }
+
   .uat-card { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;cursor:pointer;transition:all .15s;overflow:hidden; }
   .uat-card:active { transform:scale(0.99); }
   .uat-card.urgenta { border-left:3px solid var(--eroare); }
@@ -110,16 +103,23 @@ self.addEventListener('fetch', e => {
   .status-INACTIV { background:var(--inactiv-bg);color:var(--inactiv); }
   .card-indicators { display:flex;gap:6px;margin-top:10px;flex-wrap:wrap; }
   .indicator { font-size:10px;padding:3px 8px;border-radius:6px;font-weight:500;display:flex;align-items:center;gap:3px; }
+  .ind-generat { background:var(--activ-bg);color:var(--activ); }
+  .ind-semnat { background:var(--semnat-bg);color:var(--semnat); }
+  .ind-email { background:rgba(99,102,241,0.12);color:var(--accent2); }
   .ind-eroare { background:var(--eroare-bg);color:var(--eroare); }
   .ind-contact { background:rgba(251,191,36,0.12);color:#fbbf24; }
   .ind-note { background:rgba(167,139,250,0.12);color:#a78bfa; }
   .card-footer { margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center; }
   .card-responsabil { font-size:11px;color:var(--text3); }
+
+  /* BOTTOM NAV */
   #bottom-nav { background:var(--surface);border-top:1px solid var(--border);display:flex;padding:8px 0 calc(8px + var(--safe-bottom));flex-shrink:0; }
   .nav-btn { flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;cursor:pointer;color:var(--text3);transition:color .15s;border:none;background:none;font-family:inherit; }
   .nav-btn svg { width:22px;height:22px; }
   .nav-btn span { font-size:10px; }
   .nav-btn.active { color:var(--accent2); }
+
+  /* VIEWS */
   .view { display:none;flex-direction:column;flex:1;overflow:hidden; }
   .view.active { display:flex; }
   #contacts-view { overflow-y:auto;padding:10px 12px; }
@@ -145,22 +145,26 @@ self.addEventListener('fetch', e => {
   .judet-bar { height:100%;background:var(--accent);border-radius:4px; }
   .judet-count { font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text2);min-width:20px;text-align:right; }
   .contact-section-title { font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:10px 4px 6px; }
+
+  /* DRAWER */
   #drawer-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(4px); }
   #drawer-overlay.open { opacity:1;pointer-events:all; }
   #drawer { position:fixed;bottom:0;left:0;right:0;z-index:101;background:var(--surface);border-radius:24px 24px 0 0;max-height:92dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1); }
   #drawer.open { transform:translateY(0); }
   #drawer-handle { width:40px;height:4px;background:var(--surface3);border-radius:4px;margin:14px auto 0;flex-shrink:0; }
-  #drawer-header { padding:16px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px; }
-  #drawer-header-text { flex:1; }
+  #drawer-header { padding:16px 20px 12px;flex-shrink:0;border-bottom:1px solid var(--border); }
   #drawer-title { font-size:18px;font-weight:700; }
   #drawer-subtitle { font-size:12px;color:var(--text3);margin-top:2px; }
   #drawer-body { overflow-y:auto;padding:0;padding-bottom:calc(20px + var(--safe-bottom));flex:1; }
+  
+  /* TABS */
   .tab-bar { display:flex;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--surface);scrollbar-width:none;flex-shrink:0; }
   .tab-bar::-webkit-scrollbar { display:none; }
   .tab-btn { padding:12px 16px;font-size:12px;font-weight:600;color:var(--text3);border:none;background:none;font-family:inherit;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;flex-shrink:0; }
   .tab-btn.active { color:var(--accent2);border-bottom-color:var(--accent2); }
   .tab-content { display:none;padding:16px 20px; }
   .tab-content.active { display:block; }
+
   .note-area { width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:14px;padding:12px;resize:none;outline:none;min-height:90px;line-height:1.5; }
   .note-area:focus { border-color:var(--accent); }
   .contact-input { width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;padding:10px 12px;outline:none; }
@@ -169,6 +173,8 @@ self.addEventListener('fetch', e => {
   .save-btn:active { opacity:.8; }
   .save-btn.saved { background:var(--activ); }
   .save-btn.saving { opacity:.6; }
+  
+  /* APP CHIPS */
   .app-row { display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border); }
   .app-row:last-child { border-bottom:none; }
   .app-name { font-size:13px; }
@@ -176,32 +182,32 @@ self.addEventListener('fetch', e => {
   .total-row { display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;margin-top:4px; }
   .total-label { font-size:12px;color:var(--text3); }
   .total-val { font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--activ); }
+  
+  /* FACTURI */
   .factura-row { display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border); }
   .factura-row:last-child { border-bottom:none; }
   .factura-nr { font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent2); }
   .factura-data { font-size:11px;color:var(--text3); }
   .factura-status { font-size:10px;padding:2px 8px;border-radius:10px;background:var(--activ-bg);color:var(--activ); }
+  
+  /* HARTA */
   .map-btn { display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;margin-bottom:12px; }
   .coord-box { background:var(--surface2);border-radius:var(--radius-sm);padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2); }
-  .audio-player { background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:10px; }
-  .audio-player audio { width:100%;height:32px;margin-bottom:8px; }
-  .audio-info { font-size:11px;color:var(--text3); }
-  .audio-meta { font-size:12px;color:var(--text2);font-weight:500;margin-bottom:8px; }
   #toast { position:fixed;bottom:calc(80px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface3);color:var(--text);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:all .25s;white-space:nowrap;pointer-events:none; }
   #toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
   #last-sync { font-size:10px;color:var(--text3);text-align:center;padding:4px 0 0; }
-  .cube-acr-modal-wrap { position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.8);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px); }
-  .cube-acr-sheet { background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-height:80dvh;display:flex;flex-direction:column; }
 </style>
 </head>
 <body>
-<div id="offline-banner">⚠️ Mod offline – datele nu se sincronizează în timp real</div>
 <div id="app">
   <div id="header">
     <div id="header-top">
       <div id="logo">
         <div id="logo-icon">🏛️</div>
-        <div id="logo-text"><h1>Mentenanță</h1><p id="last-sync">Se încarcă…</p></div>
+        <div id="logo-text">
+          <h1>EmiterePV</h1>
+          <p id="last-sync">Se încarcă…</p>
+        </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button id="theme-btn" onclick="toggleTheme()" style="width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px">🌙</button>
@@ -221,9 +227,10 @@ self.addEventListener('fetch', e => {
       </div>
     </div>
   </div>
+
   <div id="filter-bar" style="display:none">
-    <div class="filter-chip" onclick="setFilter('all',this)">Toate</div>
-    <div class="filter-chip active" onclick="setFilter('ACTIV',this)">✓ Activ</div>
+    <div class="filter-chip active" onclick="setFilter('all',this)">Toate</div>
+    <div class="filter-chip" onclick="setFilter('ACTIV',this)">✓ Activ</div>
     <div class="filter-chip" onclick="setFilter('INACTIV',this)">◑ Inactiv</div>
     <div class="filter-chip" onclick="setFilter('contact',this)">📅 Cu contact</div>
     <div class="filter-chip" onclick="setFilter('note',this)">📝 Cu notițe</div>
@@ -234,6 +241,7 @@ self.addEventListener('fetch', e => {
     <div class="filter-chip" onclick="setFilter('GR',this)">GR</div>
     <div class="filter-chip" onclick="setFilter('PH',this)">PH</div>
   </div>
+
   <div id="loading"><div class="spinner"></div><p>Se citesc datele din Drive…</p></div>
   <div id="error-screen">
     <h2>⚠️ Eroare conexiune</h2>
@@ -241,12 +249,24 @@ self.addEventListener('fetch', e => {
     <button class="retry-btn" onclick="syncData()">Încearcă din nou</button>
     <p style="font-size:11px;color:var(--text3);margin-top:8px">Datele salvate local sunt disponibile offline</p>
   </div>
-  <div id="list-view" class="view"><div id="list-wrap"><div id="uat-list"></div><div id="no-results" style="display:none">Niciun UAT găsit</div></div></div>
-  <div id="contacts-view" class="view"><div id="contacts-list"></div></div>
+
+  <div id="list-view" class="view">
+    <div id="list-wrap">
+      <div id="uat-list"></div>
+      <div id="no-results" style="display:none">Niciun UAT găsit</div>
+    </div>
+  </div>
+
+  <div id="contacts-view" class="view">
+    <div id="contacts-list"></div>
+  </div>
+
   <div id="cautare-view" class="view" style="flex-direction:column">
     <div style="padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
       <div style="display:flex;gap:8px">
-        <input id="cautare-input" type="text" placeholder="Caută în toate documentele…" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;outline:none" onkeydown="if(event.key==='Enter')doCautare()">
+        <input id="cautare-input" type="text" placeholder="Caută în toate documentele…" 
+          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;outline:none"
+          onkeydown="if(event.key==='Enter')doCautare()">
         <button onclick="doCautare()" style="padding:10px 16px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Caută</button>
       </div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="cautare-tip-filters">
@@ -256,11 +276,20 @@ self.addEventListener('fetch', e => {
         <span class="filter-chip active" onclick="toggleTip('util',this)">📁 Utile</span>
       </div>
     </div>
-    <div id="cautare-rezultate" style="flex:1;overflow-y:auto;padding:10px 12px"><div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px">Introduceți un termen de căutare</div></div>
+    <div id="cautare-rezultate" style="flex:1;overflow-y:auto;padding:10px 12px">
+      <div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px">Introduceți un termen de căutare</div>
+    </div>
   </div>
+
   <div id="mentenanta-view" class="view" style="overflow-y:auto;padding:16px;flex-direction:column;gap:12px">
-    <div id="mentenanta-content"><div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px"><div class="spinner" style="margin:0 auto 16px"></div>Se calculează…</div></div>
+    <div id="mentenanta-content">
+      <div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px">
+        <div class="spinner" style="margin:0 auto 16px"></div>
+        Se calculează…
+      </div>
+    </div>
   </div>
+
   <div id="stats-view" class="view">
     <div class="stats-grid">
       <div class="stat-card a"><div class="num" id="s-activ">—</div><div class="lbl">UAT-uri active</div></div>
@@ -268,35 +297,60 @@ self.addEventListener('fetch', e => {
       <div class="stat-card s"><div class="num" id="s-generat">—</div><div class="lbl">PV generate</div></div>
       <div class="stat-card e"><div class="num" id="s-urgente">—</div><div class="lbl">Contacte urgente</div></div>
     </div>
-    <div class="detail-section" style="margin-top:4px"><h3>Distribuție județe</h3><div class="judet-list" id="judet-chart"></div></div>
+    <div class="detail-section" style="margin-top:4px">
+      <h3>Distribuție județe</h3>
+      <div class="judet-list" id="judet-chart"></div>
+    </div>
   </div>
+
   <div id="bottom-nav">
-    <button class="nav-btn active" id="nav-lista" onclick="showView('lista')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Listă</span></button>
-    <button class="nav-btn" id="nav-contacte" onclick="showView('contacte')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Contacte</span></button>
-    <button class="nav-btn" id="nav-cautare" onclick="showView('cautare')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><span>Căutare</span></button>
-    <button class="nav-btn" id="nav-mentenanta" onclick="showView('mentenanta')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Mentenanță</span></button>
-    <button class="nav-btn" id="nav-stats" onclick="showView('stats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Statistici</span></button>
+    <button class="nav-btn active" id="nav-lista" onclick="showView('lista')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      <span>Listă</span>
+    </button>
+    <button class="nav-btn" id="nav-contacte" onclick="showView('contacte')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Contacte</span>
+    </button>
+    <button class="nav-btn" id="nav-cautare" onclick="showView('cautare')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <span>Căutare</span>
+    </button>
+    <button class="nav-btn" id="nav-mentenanta" onclick="showView('mentenanta')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Mentenanță</span>
+    </button>
+    <button class="nav-btn" id="nav-stats" onclick="showView('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Statistici</span>
+    </button>
   </div>
 </div>
+
 <div id="drawer-overlay" onclick="closeDrawer()"></div>
 <div id="drawer">
   <div id="drawer-handle"></div>
-  <div id="drawer-header"><div id="drawer-header-text"><div id="drawer-title"></div><div id="drawer-subtitle"></div></div></div>
+  <div id="drawer-header">
+    <div id="drawer-title"></div>
+    <div id="drawer-subtitle"></div>
+  </div>
   <div id="drawer-body"></div>
 </div>
 <div id="toast"></div>
+
 <script>
+// ─── CONFIG ────────────────────────────────────────────────
+// ÎNLOCUIEȘTE cu URL-ul tău după deploy în Apps Script!
 const API_URL = 'https://script.google.com/macros/s/AKfycbyrIKVxXAULXoHszaN60nQQqNAK6N_j_PqNmhAsRZ_D7fdvzf38euhpPH95Z0PHcw/exec';
-let uats = [], currentFilter = 'ACTIV', currentSearch = '', currentView = 'lista', filterBarOpen = false, isOnline = navigator.onLine;
-let cubeAcrFiles = [];
 
-window.addEventListener('online', () => { isOnline = true; updateOfflineBanner(); syncData(); });
-window.addEventListener('offline', () => { isOnline = false; updateOfflineBanner(); });
+// ─── STATE ─────────────────────────────────────────────────
+let uats = [];
+let currentFilter = 'all';
+let currentSearch = '';
+let currentView = 'lista';
+let filterBarOpen = false;
 
-function updateOfflineBanner() {
-  const banner = document.getElementById('offline-banner');
-  if (isOnline) banner.classList.remove('show'); else banner.classList.add('show');
-}
+// ─── HELPERS ───────────────────────────────────────────────
 function parseRoDate(s) {
   if (!s) return null;
   if (s instanceof Date) return s;
@@ -318,40 +372,63 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2200);
 }
+
 function toggleTheme() {
   const isLight = document.documentElement.classList.toggle('light');
   document.getElementById('theme-btn').textContent = isLight ? '☀️' : '🌙';
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
 }
+
+// Aplica tema salvata
 if (localStorage.getItem('theme') === 'light') {
   document.documentElement.classList.add('light');
-  document.getElementById('theme-btn').textContent = '☀️';
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = '☀️';
+  });
 }
+
+// ─── SYNC ──────────────────────────────────────────────────
 async function syncData() {
   const btn = document.getElementById('sync-btn');
-  btn.className = 'syncing';
+  btn.className = 'syncing'; btn.querySelector('span') && (btn.querySelector('span').textContent = 'Se încarcă…');
+
+  // Verifică dacă URL-ul e setat
+  if (API_URL === 'PUNE_URL_APPS_SCRIPT_AICI') {
+    showError('URL-ul Apps Script nu este configurat. Urmează instrucțiunile de setup.');
+    return;
+  }
+
   try {
     const resp = await fetch(`${API_URL}?action=uats`, { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
+
     uats = data.uats;
+    // Salvează offline
     localStorage.setItem('uats_cache', JSON.stringify(uats));
     localStorage.setItem('uats_ts', new Date().toISOString());
-    showMainUI(); renderCurrent();
+
+    showMainUI();
+    renderCurrent();
     const ts = new Date().toLocaleTimeString('ro-RO', {hour:'2-digit',minute:'2-digit'});
     document.getElementById('last-sync').textContent = `Actualizat la ${ts} · ${uats.length} UAT-uri`;
-    btn.className = 'ok'; isOnline = true; updateOfflineBanner();
+    btn.className = 'ok';
     setTimeout(() => { btn.className = ''; }, 3000);
+
   } catch(err) {
+    console.error(err);
+    // Încearcă din cache
     const cached = localStorage.getItem('uats_cache');
     if (cached) {
       uats = JSON.parse(cached);
       const ts = localStorage.getItem('uats_ts');
       const d = ts ? new Date(ts).toLocaleString('ro-RO') : 'necunoscut';
-      showMainUI(); renderCurrent();
+      showMainUI();
+      renderCurrent();
       document.getElementById('last-sync').textContent = `⚠️ Offline · cache din ${d}`;
-      btn.className = 'err'; isOnline = false; updateOfflineBanner();
+      btn.className = 'err';
       showToast('Offline — date din cache');
     } else {
       showError('Nu s-a putut conecta: ' + err.message);
@@ -359,22 +436,29 @@ async function syncData() {
     }
   }
 }
+
 function showMainUI() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('error-screen').style.display = 'none';
   document.getElementById('list-view').style.display = '';
   showView(currentView);
 }
+
 function showError(msg) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('error-screen').style.display = 'flex';
   document.getElementById('error-msg').textContent = msg;
 }
+
+// ─── API CALLS ─────────────────────────────────────────────
 async function apiPost(action, payload) {
+  // Folosim GET cu parametri pentru a evita probleme CORS cu Apps Script
   const params = new URLSearchParams({ action, ...payload });
   const resp = await fetch(`${API_URL}?${params.toString()}`, { cache: 'no-store' });
   return resp.json();
 }
+
+// ─── FILTERING ─────────────────────────────────────────────
 function filteredUats() {
   let res = uats;
   const q = currentSearch.toLowerCase().trim();
@@ -389,32 +473,12 @@ function filteredUats() {
   else if (currentFilter === 'INACTIV') res = res.filter(u => getField(u,'BeneficiarActiv') === 'NU');
   else if (currentFilter === 'contact') res = res.filter(u => getField(u,'DataUrmatorContact'));
   else if (currentFilter === 'note') res = res.filter(u => getField(u,'Note'));
-  else if (currentFilter === 'urgenta') res = res.filter(u => {
-    const d = getDaysUntil(getField(u,'DataUrmatorContact'));
-    return d !== null && d < 30;
-  });
+  else if (currentFilter === 'urgenta') res = res.filter(u => { const d=getDaysUntil(getField(u,'DataUrmatorContact')); return d!==null && d<30; });
   else if (['TL','CT','CL','GR','PH'].includes(currentFilter)) res = res.filter(u => getField(u,'CodJudet') === currentFilter);
-  res = [...res].sort((a, b) => {
-    const getExpirare = u => {
-      const fromExcel = getField(u,'DataIncetareContract');
-      if (fromExcel) return parseRoDate(fromExcel);
-      if (u._contracte && u._contracte.length) {
-        const dates = u._contracte
-          .map(c => parseRoDate(c.data_incetare))
-          .filter(d => d !== null);
-        if (dates.length) return new Date(Math.max(...dates));
-      }
-      return null;
-    };
-    const da = getExpirare(a);
-    const db = getExpirare(b);
-    if (!da && !db) return 0;
-    if (!da) return 1;
-    if (!db) return -1;
-    return da - db;
-  });
   return res;
 }
+
+// ─── RENDER LIST ───────────────────────────────────────────
 function renderList() {
   const list = document.getElementById('uat-list');
   const noRes = document.getElementById('no-results');
@@ -426,85 +490,85 @@ function renderList() {
     const localitate = getField(u,'Localitate') || '?';
     const judet = getField(u,'Judet') || '';
     const cod = getField(u,'CodJudet') || '';
-    const isActiv = getField(u,'BeneficiarActiv') !== 'NU';
+    const beneficiar = getField(u,'BeneficiarActiv');
+    const isActiv = beneficiar !== 'NU';
     const responsabil = getField(u,'Responsabil') || '—';
     const note = getField(u,'Note') || '';
     const contact = getField(u,'DataUrmatorContact') || '';
     const days = getDaysUntil(contact);
+
     const poza = u._poza || null;
-    const dataExpirare = getField(u,'DataIncetareContract') ||
-   (u._contracte && u._contracte.length
-    ? u._contracte.reduce((latest, c) => {
-        if (!c.data_incetare) return latest;
-        if (!latest) return c.data_incetare;
-        return parseRoDate(c.data_incetare) > parseRoDate(latest) ? c.data_incetare : latest;
-      }, null)
-    : null);
+    const dataExpirare = getField(u,'DataIncetareContract');
     const daysExp = getDaysUntil(dataExpirare);
-    const expColor = daysExp!==null&&daysExp<60?'var(--eroare)':daysExp!==null&&daysExp<180?'var(--inactiv)':'var(--text3)';
+    const expColor = daysExp !== null && daysExp < 60 ? 'var(--eroare)' : daysExp !== null && daysExp < 180 ? 'var(--inactiv)' : 'var(--text3)';
     const expDisplay = dataExpirare ? String(dataExpirare).substring(0,10) : null;
-    const expLabel = daysExp===null?'':daysExp<0?' · expirat':daysExp===0?' · AZI':` · ${daysExp}z`;
-    const urgCls = contact&&days!==null?(days<0?'urgenta':days<=14?'aproape':'ok-contact'):'';
-    const contracte = u._contracte || [];
-    const firme = [...new Set(contracte.map(c => c.firma_id === 'f1' ? 'Daily Business' : 'DB Technology'))];
-    const aplicatii = u._aplicatii || [];
-    const totalMentenanta = aplicatii.reduce((sum, a) => sum + (parseFloat(a.pret)||0), 0);
+    const expLabel = daysExp === null ? '' : daysExp < 0 ? ` · expirat` : daysExp === 0 ? ' · AZI' : ` · ${daysExp}z`;
+    const urgCls = contact && days!==null ? (days<0?'urgenta':days<=14?'aproape':'ok-contact') : '';
+
     let inds = '';
     if (note) inds += `<span class="indicator ind-note">📝 Notiță</span>`;
-    if (contact&&days!==null) {
+    if (contact && days!==null) {
       const col = days<0?'ind-eroare':days<=14?'ind-contact':'ind-note';
-      const lbl = days<0?`${-days}z trecut`:days===0?'Azi!!!':`${days}z`;
+      const lbl = days<0?`${-days}z trecut`:days===0?'Azi!!':`${days}z`;
       inds += `<span class="indicator ${col}">📅 ${lbl}</span>`;
     }
+
+    const ctDisp = contact ? `<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${days!==null&&days<0?'var(--eroare)':'var(--text3)'}">${String(contact).substring(0,10)}</span>` : '';
+
     const badgeClass = isActiv ? 'status-ACTIV' : 'status-INACTIV';
     const badgeText = isActiv ? '✓ ACTIV' : '✕ INACTIV';
+
     return `<div class="uat-card ${urgCls}" onclick="openUat('${id}')">
       <div class="uat-card-inner">
         <div class="card-top">
           <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-            ${poza?`<img src="${poza}" style="width:60px;height:60px;border-radius:12px;object-fit:cover;flex-shrink:0;border:2px solid var(--surface3)" loading="lazy" onerror="this.style.display='none'">`:`<div style="width:60px;height:60px;border-radius:12px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🏛️</div>`}
-            <div style="min-width:0;flex:1">
+            ${poza ? `<img src="${poza}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--surface3)" onerror="this.style.display='none'">` : `<div style="width:42px;height:42px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏛️</div>`}
+            <div style="min-width:0">
               <div class="card-name">${localitate}</div>
               <div class="card-judet"><span class="judet-badge">${cod}</span> ${judet}</div>
-              ${aplicatii.length?`<div style="font-size:10px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">⚙️ ${aplicatii.map(a=>a.nume).join(', ')}</div>`:''}
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-            <div class="status-badge ${badgeClass}">${badgeText}</div>
-            ${firme.length?`<div style="font-size:11px;color:var(--accent2);text-align:right">🏢 ${firme.join(' · ')}</div>`:''}
-            ${totalMentenanta>0?`<div style="font-size:11px;color:var(--activ);font-family:'JetBrains Mono',monospace;font-weight:600">💰 ${totalMentenanta.toFixed(0)} Lei</div>`:''}
-          </div>
+          <div class="status-badge ${badgeClass}" style="flex-shrink:0">${badgeText}</div>
         </div>
         ${inds?`<div class="card-indicators">${inds}</div>`:''}
         <div class="card-footer">
           <div class="card-responsabil">👤 ${responsabil}</div>
-          ${expDisplay?`<span style="font-size:10px;color:${expColor};font-family:'JetBrains Mono',monospace">📋 ${expDisplay}${expLabel}</span>`:''}
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+            ${expDisplay?`<span style="font-size:10px;color:${expColor};font-family:'JetBrains Mono',monospace">📋 ${expDisplay}${expLabel}</span>`:''}
+          </div>
         </div>
       </div>
     </div>`;
   }).join('');
 }
+
+// ─── CONTACTS VIEW ─────────────────────────────────────────
 function renderContacts() {
   const withContact = uats
     .filter(u => getField(u,'DataUrmatorContact'))
-    .map(u => ({...u, _days:getDaysUntil(getField(u,'DataUrmatorContact')), _ct:getField(u,'DataUrmatorContact')}))
+    .map(u => ({...u, _days: getDaysUntil(getField(u,'DataUrmatorContact')), _ct: getField(u,'DataUrmatorContact')}))
     .sort((a,b) => {
       const da=parseRoDate(a._ct), db=parseRoDate(b._ct);
       if(!da&&!db) return 0; if(!da) return 1; if(!db) return -1;
       return da-db;
     });
-  const overdue=withContact.filter(u=>u._days!==null&&u._days<0);
-  const soon=withContact.filter(u=>u._days!==null&&u._days>=0&&u._days<=30);
-  const later=withContact.filter(u=>u._days===null||u._days>30);
+
+  const overdue = withContact.filter(u=>u._days!==null&&u._days<0);
+  const soon    = withContact.filter(u=>u._days!==null&&u._days>=0&&u._days<=30);
+  const later   = withContact.filter(u=>u._days===null||u._days>30);
+
   function cardHtml(u) {
     const days=u._days;
     const col=days===null?'':days<0?'#ef4444':days<=14?'#f59e0b':'#10b981';
     const lbl=days===null?u._ct:days<0?`${-days} zile întârziat`:days===0?'AZI':`peste ${days} zile`;
-    const isActiv=getField(u,'BeneficiarActiv')!=='NU';
+    const isActiv=getField(u,'BeneficiarActiv') !== 'NU';
     return `<div class="uat-card" onclick="openUat('${u['ID']}')">
       <div class="uat-card-inner">
         <div class="card-top">
-          <div><div class="card-name">${getField(u,'Localitate')}</div><div class="card-judet"><span class="judet-badge">${getField(u,'CodJudet')}</span> ${getField(u,'Judet')}</div></div>
+          <div>
+            <div class="card-name">${getField(u,'Localitate')}</div>
+            <div class="card-judet"><span class="judet-badge">${getField(u,'CodJudet')}</span> ${getField(u,'Judet')}</div>
+          </div>
           <div style="text-align:right">
             <div style="font-size:13px;font-family:'JetBrains Mono',monospace;color:${col}">${String(u._ct).substring(0,10)}</div>
             <div style="font-size:11px;color:${col};margin-top:2px">${lbl}</div>
@@ -517,16 +581,19 @@ function renderContacts() {
       </div>
     </div>`;
   }
+
   let html='';
-  if(overdue.length){html+=`<div class="contact-section-title">🔴 Depășite (${overdue.length})</div>`;html+=overdue.map(cardHtml).join('');}
-  if(soon.length){html+=`<div class="contact-section-title">🟡 În 30 zile (${soon.length})</div>`;html+=soon.map(cardHtml).join('');}
-  if(later.length){html+=`<div class="contact-section-title">✅ Mai târziu (${later.length})</div>`;html+=later.map(cardHtml).join('');}
+  if(overdue.length) { html+=`<div class="contact-section-title">🔴 Depășite (${overdue.length})</div>`; html+=overdue.map(cardHtml).join(''); }
+  if(soon.length)    { html+=`<div class="contact-section-title">🟡 În 30 zile (${soon.length})</div>`; html+=soon.map(cardHtml).join(''); }
+  if(later.length)   { html+=`<div class="contact-section-title">✅ Mai târziu (${later.length})</div>`; html+=later.map(cardHtml).join(''); }
   if(!withContact.length) html='<div id="no-results">Niciun UAT cu dată de contact</div>';
   document.getElementById('contacts-list').innerHTML=html;
 }
+
+// ─── STATS ─────────────────────────────────────────────────
 function renderStats() {
-  const activ=uats.filter(u=>getField(u,'BeneficiarActiv')!=='NU').length;
-  const inactiv=uats.filter(u=>getField(u,'BeneficiarActiv')==='NU').length;
+  const activ=uats.filter(u=>getField(u,'BeneficiarActiv') !== 'NU').length;
+  const inactiv=uats.filter(u=>getField(u,'BeneficiarActiv') === 'NU').length;
   const generat=uats.filter(u=>{const sg=getField(u,'StatusGenerare')||'';return sg.includes('generat')&&!sg.includes('eroare');}).length;
   const urgente=uats.filter(u=>{const d=getDaysUntil(getField(u,'DataUrmatorContact'));return d!==null&&d<0;}).length;
   document.getElementById('s-activ').textContent=activ;
@@ -540,72 +607,22 @@ function renderStats() {
     `<div class="judet-row"><div class="judet-name">${j}</div><div class="judet-bar-wrap"><div class="judet-bar" style="width:${(c/max*100).toFixed(0)}%"></div></div><div class="judet-count">${c}</div></div>`
   ).join('');
 }
+
+// ─── DRAWER ────────────────────────────────────────────────
 function switchTab(tabId) {
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
   document.getElementById('tab-btn-'+tabId).classList.add('active');
   document.getElementById('tab-'+tabId).classList.add('active');
 }
-function buildCalendarUrl(localitate, contact, nota) {
-  const d = parseRoDate(contact);
-  if (!d) return '#';
-  const pad = n => String(n).padStart(2,'0');
-  const dateStr = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
-  const title = encodeURIComponent(`Contact ${localitate}`);
-  const details = encodeURIComponent(nota || `Următor contact cu ${localitate}`);
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&details=${details}`;
-}
-function closeDrawer() {
-  document.getElementById('drawer-overlay').classList.remove('open');
-  document.getElementById('drawer').classList.remove('open');
-}
-function showView(v) {
-  currentView=v;
-  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
-  const isLista = v === 'lista';
-  document.getElementById('search-row').style.display = isLista ? 'flex' : 'none';
-  document.getElementById('filter-bar').style.display = isLista && filterBarOpen ? 'flex' : 'none';
-  document.getElementById('filter-btn').style.display = isLista ? 'flex' : 'none';
-  if(v==='lista'){document.getElementById('list-view').classList.add('active');document.getElementById('nav-lista').classList.add('active');renderList();}
-  else if(v==='contacte'){document.getElementById('contacts-view').classList.add('active');document.getElementById('nav-contacte').classList.add('active');renderContacts();}
-  else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
-  else if(v==='mentenanta'){document.getElementById('mentenanta-view').classList.add('active');document.getElementById('nav-mentenanta').classList.add('active');loadMentenanta();}
-  else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
-}
-function setFilter(f,el){
-  currentFilter=f;
-  document.querySelectorAll('#filter-bar .filter-chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  renderList();
-  if(currentView!=='lista') showView('lista');
-}
-function toggleFilterBar(){
-  filterBarOpen=!filterBarOpen;
-  document.getElementById('filter-bar').style.display=filterBarOpen?'flex':'none';
-  document.getElementById('filter-btn').classList.toggle('active',filterBarOpen);
-}
-function renderCurrent(){ showView(currentView); }
-let activeTips = new Set(['contract','factura','pv','util']);
-function toggleTip(tip, el) {
-  if(activeTips.has(tip)){activeTips.delete(tip);el.classList.remove('active');}
-  else{activeTips.add(tip);el.classList.add('active');}
-}
-let searchTimer;
-document.getElementById('search').addEventListener('input',e=>{
-  clearTimeout(searchTimer);
-  searchTimer=setTimeout(()=>{currentSearch=e.target.value;renderList();if(currentView!=='lista')showView('lista');},150);
-});
-let touchY=0;
-document.getElementById('drawer').addEventListener('touchstart',e=>{touchY=e.touches[0].clientY;},{passive:true});
-document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[0].clientY-touchY>80)closeDrawer();},{passive:true});
-async function openUat(id) {
+
+function openUat(id) {
   const u = uats.find(x => String(x['ID']) === String(id));
   if(!u) return;
   const localitate=getField(u,'Localitate');
   const judet=getField(u,'Judet');
   const cod=getField(u,'CodJudet');
-  const isActiv=getField(u,'BeneficiarActiv')!=='NU';
+  const isActiv=getField(u,'BeneficiarActiv') !== 'NU';
   const responsabil=getField(u,'Responsabil');
   const email=getField(u,'EmailUAT');
   const contractNr=getField(u,'ContractNr');
@@ -618,8 +635,7 @@ async function openUat(id) {
   const contact=String(getField(u,'DataUrmatorContact')||'');
   const days=getDaysUntil(contact);
   const dayLabel=days===null?'':(days<0?` (${-days}z trecut!)`:(days===0?' (AZI!)':` (peste ${days}z)`));
-  const lat=getField(u,'Lat');
-  const lng=getField(u,'Lng');
+  const lat=getField(u,'Lat'); const lng=getField(u,'Lng');
   const nc=getField(u,'NoteCalendar');
   const poza=u._poza||null;
   const contracte=u._contracte||[];
@@ -628,57 +644,105 @@ async function openUat(id) {
   document.getElementById('drawer-title').textContent=localitate;
   document.getElementById('drawer-subtitle').textContent=`${judet} · ${cod}`;
 
-  const drawerHeader=document.getElementById('drawer-header');
-  let img=drawerHeader.querySelector('.primar-poza');
-  if(poza){
-    if(!img){img=document.createElement('img');img.className='primar-poza';drawerHeader.appendChild(img);}
-    img.src=poza;
-    img.style.cssText='width:52px;height:52px;border-radius:12px;object-fit:cover;border:2px solid var(--surface3);flex-shrink:0';
-    img.loading='lazy';
-    img.onerror=()=>img.style.display='none';
-  } else { if(img) img.remove(); }
+  // Adauga poza in header drawer
+  const drawerHeader = document.getElementById('drawer-header');
+  drawerHeader.style.display = 'flex';
+  drawerHeader.style.alignItems = 'center';
+  drawerHeader.style.gap = '12px';
+  if (poza) {
+    let img = drawerHeader.querySelector('.primar-poza');
+    if (!img) { img = document.createElement('img'); img.className='primar-poza'; drawerHeader.insertBefore(img, drawerHeader.firstChild); }
+    img.src = poza;
+    img.style.cssText='width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3);flex-shrink:0';
+    img.onerror = () => img.style.display='none';
+  } else {
+    const existing = drawerHeader.querySelector('.primar-poza');
+    if (existing) existing.remove();
+  }
 
+  // Facturi - include luna curenta din campurile principale + istorice
   let facturiHtml='';
   contracte.forEach(c=>{
+    const firma = c.firma_id==='f1'?'Daily Business S.R.L.':'Daily Business Technology SRL';
+    const toateFacturile = {};
+    
+    // Adauga din istorice
     if(c.istorice){
-      Object.entries(c.istorice).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([luna,f])=>{
-        facturiHtml+=`<div class="factura-row"><div><div class="factura-nr">${f.nr_factura||'—'}</div><div class="factura-data">${luna} · ${f.data_factura||''}</div></div><span class="factura-status">${f.status_factura||'—'}</span></div>`;
-      });
+      Object.entries(c.istorice).forEach(([luna,f])=>{ toateFacturile[luna]=f; });
     }
+    
+    // Adauga luna curenta din campurile principale (daca nu e deja in istorice)
+    if(c.nr_factura || c.data_factura || c.status_factura){
+      const lunaC = c.data_factura ? c.data_factura.substring(3,10).split('.').reverse().join('-') : null;
+      if(lunaC && !toateFacturile[lunaC]){
+        toateFacturile[lunaC] = {
+          nr_factura: c.nr_factura,
+          data_factura: c.data_factura,
+          status_factura: c.status_factura,
+          fisier_factura: c.fisier_factura
+        };
+      }
+    }
+
+    if(Object.keys(toateFacturile).length===0) return;
+
+    // Determina culoare status
+    const statusColor = (s) => {
+      if(!s) return 'var(--text3)';
+      if(s==='achitata') return 'var(--activ)';
+      if(s==='emisa') return 'var(--accent2)';
+      if(s==='anulata') return 'var(--eroare)';
+      return 'var(--inactiv)';
+    };
+
+    facturiHtml += `<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:8px 0 4px">${firma}</div>`;
+    
+    Object.entries(toateFacturile).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([luna,f])=>{
+      const lunaNume = new Date(luna+'-01').toLocaleDateString('ro-RO',{month:'long',year:'numeric'});
+      const sbStatus = f.sb_status ? ` · SmartBill: ${f.sb_status}` : '';
+      const sbData = f.sb_data_verificare ? ` (${f.sb_data_verificare})` : '';
+      facturiHtml+=`<div class="factura-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0">
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+          <div>
+            <div class="factura-nr">${f.nr_factura||'—'}</div>
+            <div class="factura-data">${lunaNume}${f.data_factura?' · '+f.data_factura:''}</div>
+          </div>
+          <span class="factura-status" style="background:${statusColor(f.status_factura)}1a;color:${statusColor(f.status_factura)}">${f.status_factura||'neemisă'}</span>
+        </div>
+        ${f.sb_status?`<div style="font-size:10px;color:var(--text3)">SmartBill: ${f.sb_status}${sbData}</div>`:''}
+        ${f.suma_incasata?`<div style="font-size:10px;color:var(--activ)">✓ Încasat: ${f.suma_incasata} Lei${f.data_incasare?' · '+f.data_incasare:''}</div>`:''}
+        ${f.fisier_factura?`<div style="font-size:10px;color:var(--accent2)">📄 ${f.fisier_factura}</div>`:''}
+      </div>`;
+    });
   });
 
+  // Aplicatii
   let aplicatiiHtml=''; let total=0;
   aplicatii.forEach(a=>{
-    const pret=parseFloat(a.pret)||0;
-    total+=pret;
+    const pret=parseFloat(a.pret)||0; total+=pret;
     aplicatiiHtml+=`<div class="app-row"><div class="app-name">${a.nume}</div><div class="app-pret">${pret} Lei</div></div>`;
   });
   if(aplicatii.length) aplicatiiHtml+=`<div class="total-row"><div class="total-label">Total / lună</div><div class="total-val">${total.toFixed(2)} Lei</div></div>`;
   else aplicatiiHtml=`<div style="color:var(--text3);font-size:13px;padding:12px 0">Nicio aplicație înregistrată</div>`;
 
+  // Contracte
   let contracteHtml='';
   if(contracte.length){
     contracte.forEach(c=>{
       const firma=c.firma_id==='f1'?'Daily Business S.R.L.':'Daily Business Technology SRL';
-      const dExp=getDaysUntil(c.data_incetare);
-      const expCol=dExp===null?'var(--text)':dExp<0?'var(--eroare)':dExp<60?'var(--eroare)':dExp<180?'var(--inactiv)':'var(--text)';
-      const expLbl=dExp===null?'':dExp<0?' · expirat':dExp===0?' · AZI':` · ${dExp}z`;
       contracteHtml+=`<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;margin-bottom:10px">
         <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent2)">${firma}</div>
         <div class="detail-row"><div class="detail-label">Nr. contract</div><div class="detail-value" style="font-size:11px">${c.contract_nr||'—'}</div></div>
-        <div class="detail-row"><div class="detail-label">Data</div><div class="detail-value">${c.data_contract||'—'}</div></div>
-        <div class="detail-row"><div class="detail-label">Expiră</div><div class="detail-value" style="color:${expCol}">${(c.data_incetare||'—').substring?.(0,10)||'—'}${expLbl}</div></div>
+        <div class="detail-row"><div class="detail-label">Data</div><div class="detail-value mono">${c.data_contract||'—'}</div></div>
+        <div class="detail-row"><div class="detail-label">Expiră</div><div class="detail-value mono" style="color:${(()=>{const d=getDaysUntil(c.data_incetare);return d===null?'var(--text)':d<0?'var(--eroare)':d<60?'var(--eroare)':d<180?'var(--inactiv)':'var(--text)'})()}">${(c.data_incetare||'—').substring?.(0,10)||'—'}${(()=>{const d=getDaysUntil(c.data_incetare);return d===null?'':d<0?' · expirat':d===0?' · AZI':` · ${d}z`;})()}</div></div>
         ${c.valoare_lunara?`<div class="detail-row"><div class="detail-label">Valoare</div><div class="detail-value" style="color:var(--activ);font-weight:600">${c.valoare_lunara} Lei/lună</div></div>`:''}
       </div>`;
     });
   } else {
-    const dExp=getDaysUntil(dataIncetare);
-    const expCol=dExp===null?'var(--text)':dExp<0||dExp<60?'var(--eroare)':dExp<180?'var(--inactiv)':'var(--text)';
-    const expLbl=dExp===null?'':dExp<0?' · expirat':dExp===0?' · AZI':` · ${dExp}z`;
     contracteHtml=`<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px">
       <div class="detail-row"><div class="detail-label">Nr. contract</div><div class="detail-value" style="font-size:11px">${contractNr||'—'}</div></div>
-      <div class="detail-row"><div class="detail-label">Data</div><div class="detail-value">${dataContract||'—'}</div></div>
-      <div class="detail-row"><div class="detail-label">Expiră</div><div class="detail-value" style="color:${expCol}">${(dataIncetare||'—').toString().substring(0,10)}${expLbl}</div></div>
+      <div class="detail-row"><div class="detail-label">Data</div><div class="detail-value mono">${dataContract||'—'}</div></div>
+      <div class="detail-row"><div class="detail-label">Expiră</div><div class="detail-value mono" style="color:${(()=>{const d=getDaysUntil(dataIncetare);return d===null?'var(--text)':d<0||d<60?'var(--eroare)':d<180?'var(--inactiv)':'var(--text)'})()}">${(dataIncetare||'—').toString().substring(0,10)}${(()=>{const d=getDaysUntil(dataIncetare);return d===null?'':d<0?' · expirat':d===0?' · AZI':` · ${d}z`;})()}</div></div>
     </div>`;
   }
 
@@ -697,13 +761,17 @@ async function openUat(id) {
       </div>
       <div class="detail-row"><div class="detail-label">Județ</div><div class="detail-value">${judet} <span class="judet-badge">${cod}</span></div></div>
       <div class="detail-row"><div class="detail-label">Responsabil</div><div class="detail-value">${responsabil||'—'}</div></div>
-      <div class="detail-row"><div class="detail-label">CIF client</div><div class="detail-value">${cif||'—'}</div></div>
+      <div class="detail-row"><div class="detail-label">CIF client</div><div class="detail-value mono">${cif||'—'}</div></div>
       <div class="detail-row"><div class="detail-label">Email UAT</div><div class="detail-value" style="font-size:11px;word-break:break-all">${email||'—'}</div></div>
       <div class="detail-row"><div class="detail-label">Adresă</div><div class="detail-value" style="font-size:11px">${adresa||'—'}</div></div>
+      <div class="detail-row"><div class="detail-label">Adresă primărie</div><div class="detail-value" style="font-size:11px">${adresaPrimarie||'—'}</div></div>
     </div>
     <div id="tab-contracte" class="tab-content">
       ${contracteHtml}
-      <div class="detail-section" style="margin-top:8px"><h3>📄 Fișiere contracte</h3><div id="fisiere-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div></div>
+      <div class="detail-section" style="margin-top:8px">
+        <h3>📄 Fișiere contracte</h3>
+        <div id="fisiere-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
+      </div>
     </div>
     <div id="tab-facturi" class="tab-content">${facturiHtml||'<div style="color:var(--text3);font-size:13px;padding:12px 0">Nicio factură înregistrată</div>'}</div>
     <div id="tab-aplicatii" class="tab-content">${aplicatiiHtml}</div>
@@ -717,7 +785,7 @@ async function openUat(id) {
           <textarea class="note-area" id="nci-${id}" placeholder="Apare în descrierea evenimentului Google Calendar…" style="min-height:60px">${nc||''}</textarea>
         </div>
         <button class="save-btn" id="sc-${id}" onclick="doSaveContact('${id}')">💾 Salvează data și nota</button>
-        ${contact?`<a id="cal-btn-${id}" href="${buildCalendarUrl(localitate,contact,nc)}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px;padding:12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:14px;font-weight:600;text-decoration:none">📅 Adaugă în Google Calendar</a>`:''}
+        ${contact?`<a id="cal-btn-${id}" href="${buildCalendarUrl(localitate, contact, nc)}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:8px;padding:12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:14px;font-weight:600;text-decoration:none">📅 Adaugă în Google Calendar</a>`:''}
       </div>
       ${nc?`<div style="font-size:12px;color:var(--inactiv);padding:8px 10px;background:var(--inactiv-bg);border-radius:6px;margin-bottom:14px">📌 ${nc}</div>`:''}
       <div class="detail-section">
@@ -730,13 +798,14 @@ async function openUat(id) {
         <div id="fisiere-utile-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
       </div>
       <div class="detail-section">
-        <h3>🎙️ Înregistrări audio</h3>
-        <button onclick="openCubeACRPicker('${id}')" style="width:100%;margin-bottom:10px;padding:11px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">📂 Atașează din Cube ACR</button>
+        <h3>🎤 Înregistrări audio</h3>
         <div id="audio-uat-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
       </div>
     </div>
     <div id="tab-harta" class="tab-content">
-      ${lat?`<a class="map-btn" href="https://maps.google.com/?q=${lat},${lng}" target="_blank">🗺 Deschide în Google Maps</a><div class="coord-box">📍 ${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)}</div>`:`<div style="color:var(--text3);font-size:13px;padding:12px 0">Coordonate GPS nedisponibile</div>`}
+      ${lat?`<a class="map-btn" href="https://maps.google.com/?q=${lat},${lng}" target="_blank">🗺 Deschide în Google Maps</a>
+      <div class="coord-box">📍 ${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)}</div>`
+      :`<div style="color:var(--text3);font-size:13px;padding:12px 0">Coordonate GPS nedisponibile</div>`}
     </div>
   `;
   document.getElementById('drawer-overlay').classList.add('open');
@@ -749,13 +818,17 @@ async function doSaveNote(id) {
   btn.textContent='Se salvează…'; btn.className='save-btn saving';
   try {
     await apiPost('save_note',{id,note:val});
+    // Update local
     const u=uats.find(x=>String(x['ID'])===String(id));
     if(u) u['Note']=val;
     localStorage.setItem('uats_cache',JSON.stringify(uats));
     btn.textContent='✓ Salvat!'; btn.className='save-btn saved';
     showToast('Notiță salvată în Drive!');
     if(currentView==='lista') renderList();
-  } catch(e) { btn.textContent='⚠ Eroare'; btn.className='save-btn'; showToast('Eroare: '+e.message); }
+  } catch(e) {
+    btn.textContent='⚠ Eroare'; btn.className='save-btn';
+    showToast('Eroare salvare: '+e.message);
+  }
   setTimeout(()=>{btn.textContent='💾 Salvează notița';btn.className='save-btn';},2500);
 }
 
@@ -769,198 +842,167 @@ async function doSaveContact(id) {
     const u=uats.find(x=>String(x['ID'])===String(id));
     if(u){ u['DataUrmatorContact']=val; u['NoteCalendar']=ncVal; }
     localStorage.setItem('uats_cache',JSON.stringify(uats));
+    // Actualizeaza butonul calendar cu nota noua
     const calBtn=document.getElementById(`cal-btn-${id}`);
-    if(calBtn&&val) calBtn.href=buildCalendarUrl(u?getField(u,'Localitate'):'',val,ncVal);
+    if(calBtn && val) calBtn.href=buildCalendarUrl(u?getField(u,'Localitate'):'', val, ncVal);
     btn.textContent='✓ Salvat!'; btn.className='save-btn saved';
     showToast('Salvat în Drive!');
     if(currentView==='lista') renderList();
     else if(currentView==='contacte') renderContacts();
-  } catch(e) { btn.textContent='⚠ Eroare'; btn.className='save-btn'; showToast('Eroare: '+e.message); }
+  } catch(e) {
+    btn.textContent='⚠ Eroare'; btn.className='save-btn';
+    showToast('Eroare: '+e.message);
+  }
   setTimeout(()=>{btn.textContent='💾 Salvează data și nota';btn.className='save-btn';},2500);
 }
 
+function buildCalendarUrl(localitate, contact, nota) {
+  const d = parseRoDate(contact);
+  if (!d) return '#';
+  const pad = n => String(n).padStart(2,'0');
+  const dateStr = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+  const title = encodeURIComponent(`Contact ${localitate}`);
+  const details = encodeURIComponent(nota || `Următor contact cu ${localitate}`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&details=${details}`;
+}
+
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+
 async function loadUtile(uatId) {
-  const fe=document.getElementById('fisiere-utile-'+uatId);
-  const ae=document.getElementById('audio-uat-'+uatId);
-  if(fe){fe.dataset.loaded='';fe.textContent='Se încarcă…';}
-  if(ae){ae.dataset.loaded='';ae.textContent='Se încarcă…';}
+  // Reseteaza flag-urile ca sa reîncarce
+  const fe = document.getElementById('fisiere-utile-' + uatId);
+  const ae = document.getElementById('audio-uat-' + uatId);
+  if (fe) { fe.dataset.loaded = ''; fe.textContent = 'Se încarcă…'; }
+  if (ae) { ae.dataset.loaded = ''; ae.textContent = 'Se încarcă…'; }
   loadFisiereUtile(uatId);
   loadAudioUat(uatId);
 }
 
 async function loadFisiereUtile(uatId) {
-  const el=document.getElementById('fisiere-utile-'+uatId);
-  if(!el||el.dataset.loaded==='1') return;
-  el.dataset.loaded='1';
+  const el = document.getElementById('fisiere-utile-' + uatId);
+  if (!el || el.dataset.loaded === '1') return;
+  el.dataset.loaded = '1';
+  el.textContent = 'Se încarcă…';
   try {
-    const resp=await fetch(`${API_URL}?action=fisiere_utile&uat_id=${uatId}`,{cache:'no-store'});
-    const data=await resp.json();
-    if(!data.fisiere||!data.fisiere.length){el.textContent='Niciun fișier atașat.';return;}
-    const tipIcon={pdf:'📄',imagine:'🖼',excel:'📊',word:'📝',text:'📋',fisier:'📎'};
-    el.innerHTML=data.fisiere.map(f=>{
-      const size=f.size>1048576?(f.size/1048576).toFixed(1)+'MB':(f.size/1024).toFixed(0)+'KB';
+    const resp = await fetch(`${API_URL}?action=fisiere_utile&uat_id=${uatId}`, {cache:'no-store'});
+    const data = await resp.json();
+    if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Niciun fișier atașat.'; return; }
+    const tipIcon = {pdf:'📄', imagine:'🖼', excel:'📊', word:'📝', text:'📋', fisier:'📎'};
+    el.innerHTML = data.fisiere.map(f => {
+      const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">${tipIcon[f.tip]||'📎'} ${f.name}</div><div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500">${tipIcon[f.tip]||'📎'} ${f.name}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div>
+        </div>
         <a href="${f.view}" target="_blank" style="flex-shrink:0;margin-left:10px;padding:6px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">Deschide</a>
       </div>`;
     }).join('');
-  } catch(err){el.textContent='Eroare: '+err.message;}
+  } catch(err) { el.textContent = 'Eroare: ' + err.message; }
 }
 
 async function loadAudioUat(uatId) {
-  const el=document.getElementById('audio-uat-'+uatId);
-  if(!el||el.dataset.loaded==='1') return;
-  el.dataset.loaded='1';
+  const el = document.getElementById('audio-uat-' + uatId);
+  if (!el || el.dataset.loaded === '1') return;
+  el.dataset.loaded = '1';
+  el.textContent = 'Se încarcă…';
   try {
-    const resp=await fetch(`${API_URL}?action=audio_uat&uat_id=${uatId}`,{cache:'no-store'});
-    const data=await resp.json();
-    if(!data.fisiere||!data.fisiere.length){el.textContent='Nicio înregistrare audio.';return;}
-    el.innerHTML=data.fisiere.map(f=>{
-      const size=f.size>1048576?(f.size/1048576).toFixed(1)+'MB':(f.size/1024).toFixed(0)+'KB';
-      const dateMatch=f.name.match(/(\d{4}-\d{2}-\d{2})/);
-      const dateStr=dateMatch?dateMatch[1]:f.modified;
-      return `<div class="audio-player" id="audio-item-${f.id}">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div class="audio-meta" style="margin:0">🎤 ${dateStr}</div>
-          <button onclick="deleteAudio('${uatId}','${f.id}',this)" style="padding:4px 10px;background:var(--eroare-bg);border:1px solid var(--eroare);border-radius:8px;color:var(--eroare);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer">🗑 Șterge</button>
+    const resp = await fetch(`${API_URL}?action=audio_uat&uat_id=${uatId}`, {cache:'no-store'});
+    const data = await resp.json();
+    if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Nicio înregistrare audio.'; return; }
+    el.innerHTML = data.fisiere.map(f => {
+      const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
+      // Extrage data din nume fisier
+      const dateMatch = f.name.match(/(\d{4}-\d{2}-\d{2})/);
+      const dateStr = dateMatch ? dateMatch[1] : f.modified;
+      return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:500">🎤 ${dateStr}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div>
+            ${f.transcriere?`<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;font-style:italic">"${f.transcriere}…"</div>`:''}
+          </div>
+          <a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">▶ Ascultă</a>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <audio controls style="flex:1;height:32px"><source src="${f.downloadUrl}" type="audio/mpeg">Browser nu suportă audio HTML5</audio>
-          <a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;display:flex;align-items:center;justify-content:center;min-width:45px">▶</a>
-        </div>
-        <div class="audio-info">${size} · ${f.modified}</div>
-        ${f.transcriere?`<div style="font-size:11px;color:var(--text2);margin-top:8px;line-height:1.5;padding:10px;background:var(--surface3);border-radius:8px;border-left:3px solid var(--accent);max-height:150px;overflow-y:auto"><strong>Transcriere:</strong><br>${f.transcriere}</div>`:''}
       </div>`;
     }).join('');
-  } catch(err){el.textContent='Eroare: '+err.message;}
-}
-
-async function deleteAudio(uatId, fileId, btn) {
-  if(!confirm('Ștergi această înregistrare? Acțiunea nu poate fi anulată.')) return;
-  btn.textContent='Se șterge…'; btn.disabled=true;
-  try {
-    const resp=await fetch(`${API_URL}?action=delete_audio&file_id=${fileId}`,{cache:'no-store'});
-    const data=await resp.json();
-    if(!data.ok) throw new Error(data.eroare||'Eroare necunoscută');
-    document.getElementById('audio-item-'+fileId)?.remove();
-    showToast('✓ Înregistrare ștearsă');
-    const el=document.getElementById('audio-uat-'+uatId);
-    if(el&&!el.querySelector('.audio-player')) el.textContent='Nicio înregistrare audio.';
-  } catch(err){
-    btn.textContent='🗑 Șterge'; btn.disabled=false;
-    showToast('Eroare: '+err.message);
-  }
+  } catch(err) { el.textContent = 'Eroare: ' + err.message; }
 }
 
 async function loadFisiere(uatId) {
-  const el=document.getElementById('fisiere-'+uatId);
-  if(!el||el.dataset.loaded) return;
-  el.dataset.loaded='1';
-  el.textContent='Se încarcă fișierele…';
+  const el = document.getElementById('fisiere-' + uatId);
+  if (!el || el.dataset.loaded) return;
+  el.dataset.loaded = '1';
+  el.textContent = 'Se încarcă fișierele…';
   try {
-    const resp=await fetch(`${API_URL}?action=contracte_fisiere&uat_id=${uatId}`,{cache:'no-store'});
-    const data=await resp.json();
-    if(data.error) throw new Error(data.error);
-    if(!data.fisiere||!data.fisiere.length){el.textContent='Niciun fișier găsit.';return;}
-    el.innerHTML=data.fisiere.map(f=>{
-      const icon=f.type==='pdf'?'📄':'🖼';
-      const shortName=f.name.replace(/^\d+_[^_]+_/,'').replace(/\.(pdf|PDF|jpg|jpeg|png|JPG|JPEG|PNG)$/,'');
+    const resp = await fetch(`${API_URL}?action=contracte_fisiere&uat_id=${uatId}`, { cache: 'no-store' });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    if (!data.fisiere || !data.fisiere.length) {
+      el.textContent = 'Niciun fișier găsit.';
+      return;
+    }
+    el.innerHTML = data.fisiere.map(f => {
+      const icon = f.type === 'pdf' ? '📄' : '🖼';
+      // Nume mai scurt - sterge prefixul ID_firma_
+      const shortName = f.name.replace(/^\d+_[^_]+_/, '').replace(/\.(pdf|PDF|jpg|jpeg|png|JPG|JPEG|PNG)$/, '');
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon} ${shortName}</div><div style="font-size:10px;color:var(--text3);margin-top:2px">${f.name}</div></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon} ${shortName}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${f.name}</div>
+        </div>
         <a href="${f.view}" target="_blank" style="flex-shrink:0;margin-left:10px;padding:6px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">Deschide</a>
       </div>`;
     }).join('');
-  } catch(err){el.textContent='Eroare: '+err.message;}
-}
-
-async function openCubeACRPicker(uatId) {
-  let modal=document.getElementById('cube-acr-modal');
-  if(modal) modal.remove();
-  modal=document.createElement('div');
-  modal.id='cube-acr-modal';
-  modal.className='cube-acr-modal-wrap';
-  modal.innerHTML=`
-    <div class="cube-acr-sheet">
-      <div style="width:40px;height:4px;background:var(--surface3);border-radius:4px;margin:14px auto 0"></div>
-      <div style="padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-        <div><div style="font-size:16px;font-weight:700">📂 Cube ACR</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Selectează înregistrarea de atașat</div></div>
-        <button onclick="document.getElementById('cube-acr-modal').remove()" style="width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:16px;cursor:pointer">✕</button>
-      </div>
-      <div id="cube-acr-list" style="overflow-y:auto;padding:10px 16px;flex:1;min-height:200px">
-        <div style="text-align:center;padding:30px;color:var(--text3)"><div class="spinner" style="margin:0 auto 12px"></div>Se încarcă…</div>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
-  const listEl=document.getElementById('cube-acr-list');
-  try {
-    const resp=await fetch(`${API_URL}?action=list_cube_acr&max=50&ts=${Date.now()}`,{cache:'no-store'});
-    const text=await resp.text();
-    const data=JSON.parse(text);
-    if(data.eroare) throw new Error(data.eroare);
-    if(!data.fisiere||!data.fisiere.length){
-      listEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Niciun fișier audio găsit</div>';
-      return;
-    }
-    cubeAcrFiles=data.fisiere;
-    listEl.innerHTML=data.fisiere.map((f,idx)=>{
-      const size=f.size>1048576?(f.size/1048576).toFixed(1)+'MB':(f.size/1024).toFixed(0)+'KB';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:10px">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🎤 ${f.name}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:3px">${size} · ${f.modified}</div>
-        </div>
-        <button onclick="doAttach('${uatId}',${idx},this)" style="flex-shrink:0;padding:8px 14px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">📎 Atașează</button>
-      </div>`;
-    }).join('');
-  } catch(err){
-    listEl.innerHTML=`<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
+  } catch(err) {
+    el.textContent = 'Eroare: ' + err.message;
   }
 }
 
-async function doAttach(uatId,idx,btn) {
-  const f=cubeAcrFiles[idx];
-  if(!f){showToast('Eroare: fișier negăsit');return;}
-  btn.textContent='Se copiază…'; btn.disabled=true; btn.style.opacity='0.6';
-  try {
-    const url=`${API_URL}?action=copy_to_audio&uat_id=${uatId}&file_id=${f.id}&file_name=${encodeURIComponent(f.name)}`;
-    const resp=await fetch(url,{cache:'no-store'});
-    const data=await resp.json();
-    if(!data.ok) throw new Error(data.eroare||'Eroare necunoscută');
-    btn.textContent='✓ Atașat!'; btn.style.background='var(--activ)';
-    showToast(`✓ ${data.newName} copiat în audio_uat/`);
-    setTimeout(()=>{
-      document.getElementById('cube-acr-modal')?.remove();
-      const audioEl=document.getElementById('audio-uat-'+uatId);
-      if(audioEl){audioEl.dataset.loaded='';loadAudioUat(uatId);}
-    },1200);
-  } catch(err){
-    btn.textContent='⚠ Eroare'; btn.style.background='var(--eroare)';
-    btn.disabled=false; btn.style.opacity='1';
-    showToast('Eroare: '+err.message);
-    setTimeout(()=>{btn.textContent='📎 Atașează';btn.style.background='var(--accent)';},2500);
-  }
+// ─── NAV & FILTER ──────────────────────────────────────────
+function showView(v) {
+  currentView=v;
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  if(v==='lista'){document.getElementById('list-view').classList.add('active');document.getElementById('nav-lista').classList.add('active');renderList();}
+  else if(v==='contacte'){document.getElementById('contacts-view').classList.add('active');document.getElementById('nav-contacte').classList.add('active');renderContacts();}
+  else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
+  else if(v==='mentenanta'){document.getElementById('mentenanta-view').classList.add('active');document.getElementById('nav-mentenanta').classList.add('active');loadMentenanta();}
+  else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
+}
+
+// ─── CAUTARE ───────────────────────────────────────────────
+let activeTips = new Set(['contract','factura','pv','util']);
+function toggleTip(tip, el) {
+  if(activeTips.has(tip)) { activeTips.delete(tip); el.classList.remove('active'); }
+  else { activeTips.add(tip); el.classList.add('active'); }
 }
 
 async function doCautare() {
-  const q=document.getElementById('cautare-input').value.trim();
-  if(q.length<2){showToast('Minim 2 caractere');return;}
-  const el=document.getElementById('cautare-rezultate');
-  el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)"><div class="spinner" style="margin:0 auto 12px"></div>Se caută…</div>';
+  const q = document.getElementById('cautare-input').value.trim();
+  if(q.length < 2) { showToast('Minim 2 caractere'); return; }
+  const el = document.getElementById('cautare-rezultate');
+  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3)"><div class="spinner" style="margin:0 auto 12px"></div>Se caută…</div>';
   try {
-    const resp=await fetch(`${API_URL}?action=cautare&q=${encodeURIComponent(q)}`,{cache:'no-store'});
-    const data=await resp.json();
+    const resp = await fetch(`${API_URL}?action=cautare&q=${encodeURIComponent(q)}`, {cache:'no-store'});
+    const data = await resp.json();
     if(data.error) throw new Error(data.error);
-    const filtered=data.rezultate.filter(r=>activeTips.has(r.tip));
-    if(!filtered.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Niciun rezultat găsit</div>';return;}
-    const tipIcon={contract:'📄',factura:'💰',pv:'📋',util:'📁'};
-    const tipLabel={contract:'Contract',factura:'Factură',pv:'Proces verbal',util:'Fișier util'};
-    el.innerHTML=`<div style="font-size:11px;color:var(--text3);padding:4px 0 10px">${filtered.length} rezultate pentru „${q}"</div>`+
-      filtered.map(r=>{
-        const uat=r.uatId?uats.find(u=>String(u['ID'])===r.uatId):null;
-        const uatName=uat?getField(uat,'Localitate'):'';
-        const shortName=r.filename.replace(/^\d+_+(?:f1|f2|general)_+/i,'').replace(/\.(pdf|jpg|jpeg|png)$/i,'').replace(/_/g,' ');
-        const highlighted=r.snippet.replace(new RegExp(q,'gi'),m=>`<mark style="background:rgba(99,102,241,0.3);color:var(--text);border-radius:3px">${m}</mark>`);
+    const filtered = data.rezultate.filter(r => activeTips.has(r.tip));
+    if(!filtered.length) { el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Niciun rezultat găsit</div>'; return; }
+    const tipIcon = {contract:'📄',factura:'💰',pv:'📋',util:'📁'};
+    const tipLabel = {contract:'Contract',factura:'Factură',pv:'Proces verbal',util:'Fișier util'};
+    el.innerHTML = `<div style="font-size:11px;color:var(--text3);padding:4px 0 10px">${filtered.length} rezultate pentru „${q}"</div>` +
+      filtered.map(r => {
+        const uat = r.uatId ? uats.find(u=>String(u['ID'])===r.uatId) : null;
+        const uatName = uat ? getField(uat,'Localitate') : '';
+        const shortName = r.filename
+          .replace(/^\d+_+(?:f1|f2|general)_+/i, '')
+          .replace(/\.(pdf|jpg|jpeg|png)$/i, '')
+          .replace(/_/g, ' ');
+        const highlighted = r.snippet.replace(new RegExp(q,'gi'), m=>`<mark style="background:rgba(99,102,241,0.3);color:var(--text);border-radius:3px">${m}</mark>`);
         return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
             <div>
@@ -973,19 +1015,22 @@ async function doCautare() {
           <div style="font-size:11px;color:var(--text2);line-height:1.5">${highlighted}</div>
         </div>`;
       }).join('');
-  } catch(err){el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;}
+  } catch(err) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
+  }
 }
 
-let mentenantaLoaded=false;
+// ─── MENTENANTA ─────────────────────────────────────────────
+let mentenantaLoaded = false;
 async function loadMentenanta() {
   if(mentenantaLoaded) return;
-  const el=document.getElementById('mentenanta-content');
+  const el = document.getElementById('mentenanta-content');
   try {
-    const resp=await fetch(`${API_URL}?action=mentenanta`,{cache:'no-store'});
-    const data=await resp.json();
+    const resp = await fetch(`${API_URL}?action=mentenanta`, {cache:'no-store'});
+    const data = await resp.json();
     if(data.error) throw new Error(data.error);
-    mentenantaLoaded=true;
-    el.innerHTML=`
+    mentenantaLoaded = true;
+    el.innerHTML = `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px">
         <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Total mentenanță / lună</div>
         <div style="font-size:36px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--activ)">${data.totalGeneral.toLocaleString('ro-RO')} Lei</div>
@@ -1002,25 +1047,51 @@ async function loadMentenanta() {
       </div>
       <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 8px">Detaliu per UAT (${data.uatList.length})</div>
       ${data.uatList.map(u=>`
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer" onclick="openUat('${u.id}')">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px" onclick="openUat('${u.id}')">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <div><div style="font-size:14px;font-weight:600">${u.localitate}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${u.judet}</div></div>
-            <div style="text-align:right"><div style="font-size:15px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--activ)">${u.total.toLocaleString('ro-RO')} Lei</div><div style="font-size:10px;color:var(--text3)">/lună</div></div>
+            <div>
+              <div style="font-size:14px;font-weight:600">${u.localitate}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">${u.judet}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:15px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--activ)">${u.total.toLocaleString('ro-RO')} Lei</div>
+              <div style="font-size:10px;color:var(--text3)">/lună</div>
+            </div>
           </div>
           ${u.aplicatii.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${u.aplicatii.map(a=>`<span style="font-size:10px;padding:2px 8px;background:var(--surface2);border-radius:6px;color:var(--text2)">${a.nume} · ${a.pret} Lei</span>`).join('')}</div>`:''}
-        </div>`).join('')}`;
-  } catch(err){el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;}
+        </div>
+      `).join('')}
+    `;
+  } catch(err) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
+  }
 }
+function renderCurrent(){showView(currentView);}
+function setFilter(f,el){currentFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderList();if(currentView!=='lista')showView('lista');}
+function toggleFilterBar(){filterBarOpen=!filterBarOpen;document.getElementById('filter-bar').style.display=filterBarOpen?'flex':'none';document.getElementById('filter-btn').classList.toggle('active',filterBarOpen);}
 
+let searchTimer;
+document.getElementById('search').addEventListener('input',e=>{
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>{currentSearch=e.target.value;renderList();if(currentView!=='lista')showView('lista');},150);
+});
+
+// Swipe to close drawer
+let touchY=0;
+document.getElementById('drawer').addEventListener('touchstart',e=>{touchY=e.touches[0].clientY;},{passive:true});
+document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[0].clientY-touchY>80)closeDrawer();},{passive:true});
+
+// ─── INIT ──────────────────────────────────────────────────
+// Încearcă cache offline primul, apoi sync
 const cached=localStorage.getItem('uats_cache');
 if(cached){
   uats=JSON.parse(cached);
   const ts=localStorage.getItem('uats_ts');
-  showMainUI(); renderCurrent();
+  showMainUI();
+  renderCurrent();
   const d=ts?new Date(ts).toLocaleString('ro-RO'):'?';
   document.getElementById('last-sync').textContent=`Cache din ${d}`;
 }
-updateOfflineBanner();
 syncData();
 </script>
 </body>
