@@ -864,22 +864,23 @@ let driveIndexCache = null;
 
 async function deschideFisier(filename) {
   if (!filename) return;
-  showToast('Se deschide ' + filename + '...');
+  showToast('Se caută fișierul…');
   try {
-    const resp = await fetch(`${API_URL}?action=get_file_url&filename=${encodeURIComponent(filename)}`);
-    const data = await resp.json();
-    
-    if (!data.ok || data.error) {
-      showToast('❌ ' + (data.error || 'Fișierul nu a fost găsit'));
-      return;
+    // Incarca drive_index daca nu e in cache
+    if (!driveIndexCache) {
+      const resp = await fetch(`${API_URL}?action=drive_index`, {cache:'no-store'});
+      const data = await resp.json();
+      driveIndexCache = data.index || {};
     }
-    
-    // Deschide în tab nou
-    window.open(data.viewUrl, '_blank');
-  } catch(err) {
-    showToast('Eroare: ' + err.message);
+    const fileId = driveIndexCache[filename];
+    if (fileId) {
+      window.open('https://drive.google.com/file/d/' + fileId + '/view', '_blank');
+    } else {
+      showToast('Fișierul nu a fost găsit în index');
+    }
+  } catch(e) {
+    showToast('Eroare: ' + e.message);
   }
-}
 }
 
 function buildCalendarUrl(localitate, contact, nota) {
