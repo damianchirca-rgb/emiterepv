@@ -342,6 +342,7 @@
 // ─── CONFIG ────────────────────────────────────────────────
 // ÎNLOCUIEȘTE cu URL-ul tău după deploy în Apps Script!
 const API_URL = 'https://script.google.com/macros/s/AKfycbyrIKVxXAULXoHszaN60nQQqNAK6N_j_PqNmhAsRZ_D7fdvzf38euhpPH95Z0PHcw/exec';
+const LOCAL_CACHE_VERSION = 'v2'; // incrementeaza pentru a invalida cache-ul local
 
 // ─── STATE ─────────────────────────────────────────────────
 let uats = [];
@@ -406,9 +407,9 @@ async function syncData() {
     if (data.error) throw new Error(data.error);
 
     uats = data.uats;
-    // Salvează offline
-    localStorage.setItem('uats_cache', JSON.stringify(uats));
-    localStorage.setItem('uats_ts', new Date().toISOString());
+    // Salvează offline cu versiune
+    localStorage.setItem('uats_cache_' + LOCAL_CACHE_VERSION, JSON.stringify(uats));
+    localStorage.setItem('uats_ts_' + LOCAL_CACHE_VERSION, new Date().toISOString());
 
     showMainUI();
     renderCurrent();
@@ -420,10 +421,10 @@ async function syncData() {
   } catch(err) {
     console.error(err);
     // Încearcă din cache
-    const cached = localStorage.getItem('uats_cache');
+    const cached = localStorage.getItem('uats_cache_' + LOCAL_CACHE_VERSION);
     if (cached) {
       uats = JSON.parse(cached);
-      const ts = localStorage.getItem('uats_ts');
+      const ts = localStorage.getItem('uats_ts_' + LOCAL_CACHE_VERSION);
       const d = ts ? new Date(ts).toLocaleString('ro-RO') : 'necunoscut';
       showMainUI();
       renderCurrent();
@@ -828,7 +829,7 @@ async function doSaveNote(id) {
     // Update local
     const u=uats.find(x=>String(x['ID'])===String(id));
     if(u) u['Note']=val;
-    localStorage.setItem('uats_cache',JSON.stringify(uats));
+    localStorage.setItem('uats_cache_' + LOCAL_CACHE_VERSION, JSON.stringify(uats));
     btn.textContent='✓ Salvat!'; btn.className='save-btn saved';
     showToast('Notiță salvată în Drive!');
     if(currentView==='lista') renderList();
@@ -848,7 +849,7 @@ async function doSaveContact(id) {
     await apiPost('save_contact',{id,contact:val,nota_calendar:ncVal});
     const u=uats.find(x=>String(x['ID'])===String(id));
     if(u){ u['DataUrmatorContact']=val; u['NoteCalendar']=ncVal; }
-    localStorage.setItem('uats_cache',JSON.stringify(uats));
+    localStorage.setItem('uats_cache_' + LOCAL_CACHE_VERSION, JSON.stringify(uats));
     // Actualizeaza butonul calendar cu nota noua
     const calBtn=document.getElementById(`cal-btn-${id}`);
     if(calBtn && val) calBtn.href=buildCalendarUrl(u?getField(u,'Localitate'):'', val, ncVal);
@@ -1114,10 +1115,10 @@ document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[
 
 // ─── INIT ──────────────────────────────────────────────────
 // Încearcă cache offline primul, apoi sync
-const cached=localStorage.getItem('uats_cache');
+const cached=localStorage.getItem('uats_cache_' + LOCAL_CACHE_VERSION);
 if(cached){
   uats=JSON.parse(cached);
-  const ts=localStorage.getItem('uats_ts');
+  const ts=localStorage.getItem('uats_ts_' + LOCAL_CACHE_VERSION);
   showMainUI();
   renderCurrent();
   const d=ts?new Date(ts).toLocaleString('ro-RO'):'?';
