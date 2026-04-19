@@ -897,11 +897,34 @@ async function deschideFisier(filename) {
       const data = await resp.json();
       driveIndexCache = data.index || {};
     }
-    const fileId = driveIndexCache[filename];
+
+    // 1. Cautare exacta
+    let fileId = driveIndexCache[filename];
+
+    // 2. Cautare case-insensitive
+    if (!fileId) {
+      const fLow = filename.toLowerCase();
+      const match = Object.keys(driveIndexCache).find(k => k.toLowerCase() === fLow);
+      if (match) fileId = driveIndexCache[match];
+    }
+
+    // 3. Cautare dupa nr factura/extras (ex: DLY1395 sau Extras_20260417)
+    if (!fileId) {
+      // Extrage token cheie: numarul dupa DLY sau primul segment lung
+      const tokenMatch = filename.match(/DLY\d+|Extras_\d+/i);
+      if (tokenMatch) {
+        const token = tokenMatch[0].toLowerCase();
+        const match = Object.keys(driveIndexCache).find(k => k.toLowerCase().includes(token));
+        if (match) fileId = driveIndexCache[match];
+      }
+    }
+
     if (fileId) {
       window.open('https://drive.google.com/file/d/' + fileId + '/view', '_blank');
     } else {
-      showToast('Fișierul nu a fost găsit în index');
+      // Arata numele exact cautat ca sa stii ce lipseste din index
+      showToast('Negăsit în index: ' + filename);
+      console.warn('Drive index miss:', filename, '\nIndex keys sample:', Object.keys(driveIndexCache).slice(0,10));
     }
   } catch(e) {
     showToast('Eroare: ' + e.message);
