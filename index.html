@@ -487,6 +487,25 @@ function filteredUats() {
   else if (currentFilter === 'note') res = res.filter(u => getField(u,'Note'));
   else if (currentFilter === 'urgenta') res = res.filter(u => { const d=getDaysUntil(getField(u,'DataUrmatorContact')); return d!==null && d<30; });
   else if (['TL','CT','CL','GR','PH'].includes(currentFilter)) res = res.filter(u => getField(u,'CodJudet') === currentFilter);
+  
+  // SORTARE: După data expirare contract DESCRESCĂTOR (mai urgent sus)
+  res.sort((a, b) => {
+    const dataA = getField(a, 'DataIncetareContract');
+    const dataB = getField(b, 'DataIncetareContract');
+    const daysA = getDaysUntil(dataA);
+    const daysB = getDaysUntil(dataB);
+    
+    // Dacă ambele au data de expirare, sortează după zile
+    if (daysA !== null && daysB !== null) {
+      return daysA - daysB; // Ascending: cele mai urgente (zile negative / mici) sus
+    }
+    // Dacă doar una are data, pune-o mai sus
+    if (daysA !== null) return -1;
+    if (daysB !== null) return 1;
+    // Dacă nici una nu are data, pastrează ordinea originala
+    return 0;
+  });
+  
   return res;
 }
 
