@@ -342,7 +342,26 @@
 // ─── CONFIG ────────────────────────────────────────────────
 // ÎNLOCUIEȘTE cu URL-ul tău după deploy în Apps Script!
 const API_URL = 'https://script.google.com/macros/s/AKfycbyrIKVxXAULXoHszaN60nQQqNAK6N_j_PqNmhAsRZ_D7fdvzf38euhpPH95Z0PHcw/exec';
-const LOCAL_CACHE_VERSION = 'v2'; // incrementeaza pentru a invalida cache-ul local
+const CACHE_TTL_MS = 30 * 60 * 1000; // cache local valabil 30 minute, apoi sync automat
+
+function cacheLoad() {
+  try {
+    const ts = parseInt(localStorage.getItem('uats_ts') || '0');
+    if (Date.now() - ts > CACHE_TTL_MS) return null; // expirat
+    const raw = localStorage.getItem('uats_cache');
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+function cacheSave(data) {
+  try {
+    localStorage.setItem('uats_cache', JSON.stringify(data));
+    localStorage.setItem('uats_ts', String(Date.now()));
+  } catch(e) {}
+}
+function cacheClear() {
+  localStorage.removeItem('uats_cache');
+  localStorage.removeItem('uats_ts');
+}
 
 // ─── STATE ─────────────────────────────────────────────────
 let uats = [];
@@ -394,7 +413,6 @@ async function syncData() {
   const btn = document.getElementById('sync-btn');
   btn.className = 'syncing'; btn.querySelector('span') && (btn.querySelector('span').textContent = 'Se încarcă…');
 
-  // Verifică dacă URL-ul e setat
   if (API_URL === 'PUNE_URL_APPS_SCRIPT_AICI') {
     showError('URL-ul Apps Script nu este configurat. Urmează instrucțiunile de setup.');
     return;
@@ -407,9 +425,7 @@ async function syncData() {
     if (data.error) throw new Error(data.error);
 
     uats = data.uats;
-    // Salvează offline cu versiune
-    localStorage.setItem('uats_cache_' + LOCAL_CACHE_VERSION, JSON.stringify(uats));
-    localStorage.setItem('uats_ts_' + LOCAL_CACHE_VERSION, new Date().toISOString());
+    cacheSave(uats);
 
     showMainUI();
     renderCurrent();
@@ -420,14 +436,12 @@ async function syncData() {
 
   } catch(err) {
     console.error(err);
-    // Încearcă din cache
-    const cached = localStorage.getItem('uats_cache_' + LOCAL_CACHE_VERSION);
-    if (cached) {
-      uats = JSON.parse(cached);
-      const ts = localStorage.getItem('uats_ts_' + LOCAL_CACHE_VERSION);
-      const d = ts ? new Date(ts).toLocaleString('ro-RO') : 'necunoscut';
+    const fromCache = cacheLoad();
+    if (fromCache) {
+      uats = fromCache;
       showMainUI();
       renderCurrent();
+      const d = new Date(parseInt(localStorage.getItem('uats_ts')||'0')).toLocaleString('ro-RO');
       document.getElementById('last-sync').textContent = `⚠️ Offline · cache din ${d}`;
       btn.className = 'err';
       showToast('Offline — date din cache');
@@ -829,7 +843,7 @@ async function doSaveNote(id) {
     // Update local
     const u=uats.find(x=>String(x['ID'])===String(id));
     if(u) u['Note']=val;
-    localStorage.setItem('uats_cache_' + LOCAL_CACHE_VERSION, JSON.stringify(uats));
+    cacheSave(uats);
     btn.textContent='✓ Salvat!'; btn.className='save-btn saved';
     showToast('Notiță salvată în Drive!');
     if(currentView==='lista') renderList();
@@ -849,7 +863,7 @@ async function doSaveContact(id) {
     await apiPost('save_contact',{id,contact:val,nota_calendar:ncVal});
     const u=uats.find(x=>String(x['ID'])===String(id));
     if(u){ u['DataUrmatorContact']=val; u['NoteCalendar']=ncVal; }
-    localStorage.setItem('uats_cache_' + LOCAL_CACHE_VERSION, JSON.stringify(uats));
+    cacheSave(uats);
     // Actualizeaza butonul calendar cu nota noua
     const calBtn=document.getElementById(`cal-btn-${id}`);
     if(calBtn && val) calBtn.href=buildCalendarUrl(u?getField(u,'Localitate'):'', val, ncVal);
@@ -1114,14 +1128,14 @@ document.getElementById('drawer').addEventListener('touchstart',e=>{touchY=e.tou
 document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[0].clientY-touchY>80)closeDrawer();},{passive:true});
 
 // ─── INIT ──────────────────────────────────────────────────
-// Încearcă cache offline primul, apoi sync
-const cached=localStorage.getItem('uats_cache_' + LOCAL_CACHE_VERSION);
-if(cached){
-  uats=JSON.parse(cached);
-  const ts=localStorage.getItem('uats_ts_' + LOCAL_CACHE_VERSION);
+// Afiseaza cache-ul imediat daca e proaspat (< 30 min), altfel asteapta sync
+const cachedInit = cacheLoad();
+if(cachedInit){
+  uats = cachedInit;
+  const ts=localStorage.getItem('uats_ts');
   showMainUI();
   renderCurrent();
-  const d=ts?new Date(ts).toLocaleString('ro-RO'):'?';
+  const d=ts?new Date(parseInt(ts)).toLocaleString('ro-RO'):'?';
   document.getElementById('last-sync').textContent=`Cache din ${d}`;
 }
 syncData();
