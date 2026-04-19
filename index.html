@@ -498,12 +498,15 @@ function renderList() {
     const days = getDaysUntil(contact);
 
     const poza = u._poza || null;
+    const aplicatii = u._aplicatii || [];
     const dataExpirare = getField(u,'DataIncetareContract');
     const daysExp = getDaysUntil(dataExpirare);
     const expColor = daysExp !== null && daysExp < 60 ? 'var(--eroare)' : daysExp !== null && daysExp < 180 ? 'var(--inactiv)' : 'var(--text3)';
     const expDisplay = dataExpirare ? String(dataExpirare).substring(0,10) : null;
     const expLabel = daysExp === null ? '' : daysExp < 0 ? ` · expirat` : daysExp === 0 ? ' · AZI' : ` · ${daysExp}z`;
     const urgCls = contact && days!==null ? (days<0?'urgenta':days<=14?'aproape':'ok-contact') : '';
+    const totalApps = aplicatii.reduce((s,a)=>s+(parseFloat(a.pret)||0),0);
+    const appsHtml = aplicatii.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${aplicatii.map(a=>`<span style="font-size:10px;padding:2px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2)">${a.nume}</span>`).join('')}<span style="font-size:10px;padding:2px 8px;background:var(--accent);border-radius:6px;color:white;font-weight:600;font-family:'JetBrains Mono',monospace">${totalApps.toFixed(0)} Lei/lună</span></div>` : '';
 
     let inds = '';
     if (note) inds += `<span class="indicator ind-note">📝 Notiță</span>`;
@@ -531,6 +534,7 @@ function renderList() {
           <div class="status-badge ${badgeClass}" style="flex-shrink:0">${badgeText}</div>
         </div>
         ${inds?`<div class="card-indicators">${inds}</div>`:''}
+        ${appsHtml}
         <div class="card-footer">
           <div class="card-responsabil">👤 ${responsabil}</div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
