@@ -196,18 +196,6 @@
   #toast { position:fixed;bottom:calc(80px + var(--safe-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface3);color:var(--text);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;z-index:200;opacity:0;transition:all .25s;white-space:nowrap;pointer-events:none; }
   #toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
   #last-sync { font-size:10px;color:var(--text3);text-align:center;padding:4px 0 0; }
-  
-  /* TAB-URI DRAWER - FIX FACTURI */
-  .tab-btn { 
-    padding:8px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);
-    color:var(--text2);cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;
-    transition:all .2s;flex-shrink:0;white-space:nowrap;
-  }
-  .tab-btn.active { background:var(--accent);border-color:var(--accent);color:white; }
-  .tab-btn:hover { background:var(--surface3);color:var(--text); }
-  .drawer-tab-content { animation:fadeIn .2s; display:none; }
-  .drawer-tab-content.active { display:block; }
-  @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
 </style>
 </head>
 <body>
@@ -487,25 +475,6 @@ function filteredUats() {
   else if (currentFilter === 'note') res = res.filter(u => getField(u,'Note'));
   else if (currentFilter === 'urgenta') res = res.filter(u => { const d=getDaysUntil(getField(u,'DataUrmatorContact')); return d!==null && d<30; });
   else if (['TL','CT','CL','GR','PH'].includes(currentFilter)) res = res.filter(u => getField(u,'CodJudet') === currentFilter);
-  
-  // SORTARE: După data expirare contract DESCRESCĂTOR (mai urgent sus)
-  res.sort((a, b) => {
-    const dataA = getField(a, 'DataIncetareContract');
-    const dataB = getField(b, 'DataIncetareContract');
-    const daysA = getDaysUntil(dataA);
-    const daysB = getDaysUntil(dataB);
-    
-    // Dacă ambele au data de expirare, sortează după zile
-    if (daysA !== null && daysB !== null) {
-      return daysA - daysB; // Ascending: cele mai urgente (zile negative / mici) sus
-    }
-    // Dacă doar una are data, pune-o mai sus
-    if (daysA !== null) return -1;
-    if (daysB !== null) return 1;
-    // Dacă nici una nu are data, pastrează ordinea originala
-    return 0;
-  });
-  
   return res;
 }
 
@@ -910,6 +879,7 @@ async function deschideFisier(filename) {
   } catch(err) {
     showToast('Eroare: ' + err.message);
   }
+}
 }
 
 function buildCalendarUrl(localitate, contact, nota) {
