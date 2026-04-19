@@ -222,13 +222,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input id="search" type="text" placeholder="Caută UAT, județ, responsabil…" autocomplete="off" spellcheck="false">
       </div>
-      <div id="filter-btn" onclick="toggleFilterBar()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-      </div>
     </div>
   </div>
 
-  <div id="filter-bar" style="display:none">
+  <div id="filter-bar">
     <div class="filter-chip active" onclick="setFilter('all',this)">Toate</div>
     <div class="filter-chip" onclick="setFilter('ACTIV',this)">✓ Activ</div>
     <div class="filter-chip" onclick="setFilter('INACTIV',this)">◑ Inactiv</div>
@@ -490,6 +487,15 @@ function filteredUats() {
   else if (currentFilter === 'note') res = res.filter(u => getField(u,'Note'));
   else if (currentFilter === 'urgenta') res = res.filter(u => { const d=getDaysUntil(getField(u,'DataUrmatorContact')); return d!==null && d<30; });
   else if (['TL','CT','CL','GR','PH'].includes(currentFilter)) res = res.filter(u => getField(u,'CodJudet') === currentFilter);
+  // Sortare dupa data expirare contract crescator (fara data = la final)
+  res = res.slice().sort((a, b) => {
+    const da = parseRoDate(getField(a,'DataIncetareContract'));
+    const db = parseRoDate(getField(b,'DataIncetareContract'));
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return da - db;
+  });
   return res;
 }
 
