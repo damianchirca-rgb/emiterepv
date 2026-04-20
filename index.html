@@ -211,7 +211,7 @@
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button id="theme-btn" onclick="toggleTheme()" style="width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px">🌙</button>
-        <button id="sync-btn" onclick="syncData()">
+        <button id="sync-btn" onclick="forceSync()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           Actualizează
         </button>
@@ -406,7 +406,17 @@ if (localStorage.getItem('theme') === 'light') {
 }
 
 // ─── SYNC ──────────────────────────────────────────────────
+// Folosit la startup - preia date din cache Apps Script (rapid)
 async function syncData() {
+  await fetchUats('uats');
+}
+
+// Folosit la apasarea butonului Actualizează - sterge cache server si preia date proaspete
+async function forceSync() {
+  await fetchUats('force_sync');
+}
+
+async function fetchUats(action) {
   const btn = document.getElementById('sync-btn');
   btn.className = 'syncing'; btn.querySelector('span') && (btn.querySelector('span').textContent = 'Se încarcă…');
 
@@ -416,13 +426,15 @@ async function syncData() {
   }
 
   try {
-    const resp = await fetch(`${API_URL}?action=uats`, { cache: 'no-store' });
+    const resp = await fetch(`${API_URL}?action=${action}`, { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
 
     uats = data.uats;
     cacheSave(uats);
+    // Invalideaza si drive_index cache local ca sa preia versiunea noua
+    if (action === 'force_sync') { driveIndexCache = null; driveIndexTs = 0; }
 
     showMainUI();
     renderCurrent();
