@@ -528,7 +528,6 @@ function renderList() {
     const urgCls = contact && days!==null ? (days<0?'urgenta':days<=14?'aproape':'ok-contact') : '';
     const email = getField(u,'EmailUAT') || '';
     const totalApps = aplicatii.reduce((s,a)=>s+(parseFloat(a.pret)||0),0);
-    const appsHtml = aplicatii.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;align-items:center">${aplicatii.map(a=>`<span style="font-size:10px;padding:2px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2)">${a.nume}</span>`).join('')}<div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:2px">${email?`<span style="font-size:10px;color:var(--text3)">${email}</span>`:''}<span style="font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace">${totalApps.toFixed(0)} Lei/lună</span></div></div>` : '';
 
     let inds = '';
     if (note) inds += `<span class="indicator ind-note">📝 Notiță</span>`;
@@ -543,6 +542,8 @@ function renderList() {
     const badgeClass = isActiv ? 'status-ACTIV' : 'status-INACTIV';
     const badgeText = isActiv ? '✓ ACTIV' : '✕ INACTIV';
 
+    const appsRightHtml = aplicatii.length ? aplicatii.map(a=>`<span style="font-size:10px;color:var(--text2);text-align:right;display:block;white-space:nowrap">${a.nume}</span>`).join('') + `<span style="font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace;text-align:right;display:block;margin-top:2px">${totalApps.toFixed(0)} Lei/lună</span>` + (email ? `<span style="font-size:10px;color:var(--text3);text-align:right;display:block;margin-top:1px">${email}</span>` : '') : (email ? `<span style="font-size:10px;color:var(--text3);text-align:right;display:block;margin-top:4px">${email}</span>` : '');
+
     return `<div class="uat-card ${urgCls}" onclick="openUat('${id}')">
       <div class="uat-card-inner">
         <div class="card-top">
@@ -553,10 +554,12 @@ function renderList() {
               <div class="card-judet"><span class="judet-badge">${cod}</span> ${judet}</div>
             </div>
           </div>
-          <div class="status-badge ${badgeClass}" style="flex-shrink:0">${badgeText}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:4px">
+            <div class="status-badge ${badgeClass}">${badgeText}</div>
+            ${appsRightHtml}
+          </div>
         </div>
         ${inds?`<div class="card-indicators">${inds}</div>`:''}
-        ${appsHtml}
         <div class="card-footer">
           <div class="card-responsabil">👤 ${responsabil}</div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
