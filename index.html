@@ -528,7 +528,9 @@ function renderList() {
     const urgCls = contact && days!==null ? (days<0?'urgenta':days<=14?'aproape':'ok-contact') : '';
     const email = getField(u,'EmailUAT') || '';
     const totalApps = aplicatii.reduce((s,a)=>s+(parseFloat(a.pret)||0),0);
-
+    const emailLines = email ? email.split(/[,;]+/).map(e=>e.trim()).filter(Boolean) : [];
+    const emailHtml = emailLines.map(e=>`<span style="font-size:10px;color:var(--text3);text-align:right;display:block;margin-top:1px">${e}</span>`).join('');
+    const appsRightHtml = aplicatii.length ? aplicatii.map(a=>`<span style="font-size:10px;color:var(--text2);text-align:right;display:block;white-space:nowrap">${a.nume}</span>`).join('') + `<span style="font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace;text-align:right;display:block;margin-top:2px">${totalApps.toFixed(0)} Lei/lună</span>` + emailHtml : emailHtml;
     let inds = '';
     if (note) inds += `<span class="indicator ind-note">📝 Notiță</span>`;
     if (contact && days!==null) {
@@ -541,8 +543,6 @@ function renderList() {
 
     const badgeClass = isActiv ? 'status-ACTIV' : 'status-INACTIV';
     const badgeText = isActiv ? '✓ ACTIV' : '✕ INACTIV';
-
-    const appsRightHtml = aplicatii.length ? aplicatii.map(a=>`<span style="font-size:10px;color:var(--text2);text-align:right;display:block;white-space:nowrap">${a.nume}</span>`).join('') + `<span style="font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace;text-align:right;display:block;margin-top:2px">${totalApps.toFixed(0)} Lei/lună</span>` + (email ? `<span style="font-size:10px;color:var(--text3);text-align:right;display:block;margin-top:1px">${email}</span>` : '') : (email ? `<span style="font-size:10px;color:var(--text3);text-align:right;display:block;margin-top:4px">${email}</span>` : '');
 
     return `<div class="uat-card ${urgCls}" onclick="openUat('${id}')">
       <div class="uat-card-inner">
