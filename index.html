@@ -551,12 +551,11 @@ function renderList() {
           <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
             <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
               ${poza ? `<img src="${poza}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3)" onerror="this.style.display='none'">` : `<div style="width:56px;height:56px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:22px">🏛️</div>`}
-              <div style="font-size:9px;color:var(--text3);text-align:center;max-width:60px;line-height:1.2;word-break:break-word">${responsabil}</div>
+              <div style="font-size:11px;color:var(--text2);text-align:center;max-width:64px;line-height:1.3;word-break:break-word;font-weight:500">${responsabil}</div>
             </div>
             <div style="min-width:0">
               <div class="card-name">${localitate}</div>
               <div class="card-judet"><span class="judet-badge">${cod}</span> ${judet}</div>
-              ${contact ? `<div style="font-size:11px;margin-top:4px;color:${days!==null&&days<0?'var(--eroare)':days!==null&&days<=14?'var(--inactiv)':'var(--text3)'}">📅 ${String(contact).substring(0,10)}${dayLabel}</div>` : ''}
             </div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:4px">
@@ -566,7 +565,9 @@ function renderList() {
         </div>
         ${inds?`<div class="card-indicators">${inds}</div>`:''}
         <div class="card-footer">
-          <div style="flex:1"></div>
+          <div style="flex:1">
+            ${contact ? `<span style="font-size:11px;color:${days!==null&&days<0?'var(--eroare)':days!==null&&days<=14?'var(--inactiv)':'var(--text3)'}">📅 ${String(contact).substring(0,10)}${dayLabel}</span>` : ''}
+          </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
             ${expDisplay?`<span style="font-size:10px;color:${expColor};font-family:'JetBrains Mono',monospace">📋 ${expDisplay}${expLabel}</span>`:''}
           </div>
