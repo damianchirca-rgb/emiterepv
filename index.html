@@ -517,6 +517,7 @@ function renderList() {
     const note = getField(u,'Note') || '';
     const contact = getField(u,'DataUrmatorContact') || '';
     const days = getDaysUntil(contact);
+    const dayLabel = days===null ? '' : (days<0 ? ` (${-days}z trecut!)` : (days===0 ? ' (AZI!)' : ` (peste ${days}z)`));
 
     const poza = u._poza || null;
     const aplicatii = u._aplicatii || [];
