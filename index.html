@@ -1058,6 +1058,8 @@ async function addAudioFromDrive(uatId) {
     showToast('Eroare: ' + e.message);
   }
 }
+
+async function loadFisiere(uatId) {
   const el = document.getElementById('fisiere-' + uatId);
   if (!el || el.dataset.loaded) return;
   el.dataset.loaded = '1';
