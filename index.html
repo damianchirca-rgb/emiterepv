@@ -845,10 +845,15 @@ function openUat(id) {
       <div class="detail-section">
         <h3>🎤 Înregistrări audio</h3>
         <div id="audio-uat-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
-        <div style="margin-top:10px">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Adaugă înregistrare din Google Drive:</div>
-          <input id="audio-link-${id}" type="text" placeholder="Link sau ID fișier Drive (mp3, m4a, wav…)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;outline:none;margin-bottom:6px">
-          <button onclick="addAudioFromDrive('${id}')" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">➕ Adaugă în lista audio</button>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer">
+            📱 Încarcă de pe telefon
+            <input type="file" accept="audio/*" style="display:none" onchange="uploadAudioFile(this,'${id}')">
+          </label>
+          <div id="audio-upload-progress-${id}" style="display:none;font-size:12px;color:var(--text3);text-align:center"></div>
+          <div style="font-size:10px;color:var(--text3);text-align:center">sau</div>
+          <input id="audio-link-${id}" type="text" placeholder="Link Drive (mp3, m4a, wav…)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;outline:none">
+          <button onclick="addAudioFromDrive('${id}')" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">➕ Adaugă din Drive</button>
         </div>
       </div>
     </div>
@@ -1059,6 +1064,37 @@ async function addAudioFromDrive(uatId) {
   }
 }
 
+
+async function uploadAudioFile(input, uatId) {
+  const file = input.files[0];
+  if (!file) return;
+  const progress = document.getElementById('audio-upload-progress-' + uatId);
+  if (progress) { progress.style.display = 'block'; progress.textContent = 'Se pregateste fisierul...'; }
+  try {
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    if (progress) progress.textContent = 'Se incarca... (poate dura cateva secunde)';
+    const resp = await fetch(
+      `${API_URL}?action=upload_audio&uat_id=${uatId}&filename=${encodeURIComponent(file.name)}&mimetype=${encodeURIComponent(file.type)}`,
+      { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: base64 }
+    );
+    const data = await resp.json();
+    if (data.error) { showToast('Eroare: ' + data.error); if (progress) progress.style.display='none'; return; }
+    showToast('Incarcat: ' + file.name);
+    input.value = '';
+    if (progress) progress.style.display = 'none';
+    const el = document.getElementById('audio-uat-' + uatId);
+    if (el) { el.dataset.loaded = ''; el.textContent = 'Se incarca...'; }
+    loadAudioUat(uatId);
+  } catch(e) {
+    showToast('Eroare upload: ' + e.message);
+    if (progress) progress.style.display = 'none';
+  }
+}
 async function loadFisiere(uatId) {
   const el = document.getElementById('fisiere-' + uatId);
   if (!el || el.dataset.loaded) return;
