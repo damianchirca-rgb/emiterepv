@@ -845,6 +845,11 @@ function openUat(id) {
       <div class="detail-section">
         <h3>🎤 Înregistrări audio</h3>
         <div id="audio-uat-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
+        <div style="margin-top:10px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Adaugă înregistrare din Google Drive:</div>
+          <input id="audio-link-${id}" type="text" placeholder="Link sau ID fișier Drive (mp3, m4a, wav…)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;outline:none;margin-bottom:6px">
+          <button onclick="addAudioFromDrive('${id}')" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">➕ Adaugă în lista audio</button>
+        </div>
       </div>
     </div>
     <div id="tab-harta" class="tab-content">
@@ -1025,7 +1030,34 @@ async function loadAudioUat(uatId) {
   } catch(err) { el.textContent = 'Eroare: ' + err.message; }
 }
 
-async function loadFisiere(uatId) {
+async function addAudioFromDrive(uatId) {
+  const input = document.getElementById('audio-link-' + uatId);
+  const raw = (input.value || '').trim();
+  if (!raw) { showToast('Introdu un link sau ID Drive'); return; }
+
+  // Extrage file ID din link sau foloseste direct daca e ID
+  let fileId = raw;
+  const m = raw.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
+  if (m) fileId = m[1];
+  // Format: id= din URL export
+  const m2 = raw.match(/[?&]id=([a-zA-Z0-9_-]{25,})/);
+  if (m2) fileId = m2[1];
+
+  showToast('Se adaugă fișierul…');
+  try {
+    const resp = await fetch(`${API_URL}?action=add_audio&uat_id=${uatId}&file_id=${fileId}`, {cache:'no-store'});
+    const data = await resp.json();
+    if (data.error) { showToast('Eroare: ' + data.error); return; }
+    showToast('✓ Adăugat! ' + (data.nume || ''));
+    input.value = '';
+    // Reîncarcă lista audio
+    const el = document.getElementById('audio-uat-' + uatId);
+    if (el) { el.dataset.loaded = ''; el.textContent = 'Se încarcă…'; }
+    loadAudioUat(uatId);
+  } catch(e) {
+    showToast('Eroare: ' + e.message);
+  }
+}
   const el = document.getElementById('fisiere-' + uatId);
   if (!el || el.dataset.loaded) return;
   el.dataset.loaded = '1';
