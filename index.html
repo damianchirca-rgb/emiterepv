@@ -1018,15 +1018,24 @@ async function loadAudioUat(uatId) {
     if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Nicio înregistrare audio.'; return; }
     el.innerHTML = data.fisiere.map(f => {
       const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
-      // Extrage data din nume fisier
       const dateMatch = f.name.match(/(\d{4}-\d{2}-\d{2})/);
       const dateStr = dateMatch ? dateMatch[1] : f.modified;
+      const tid = 'tr-' + Math.random().toString(36).slice(2);
+      const transcriereHtml = f.transcriere ? `
+        <div style="margin-top:8px">
+          <div id="${tid}-prev" style="font-size:11px;color:var(--text2);line-height:1.5;font-style:italic;cursor:pointer" onclick="document.getElementById('${tid}-full').style.display='block';this.style.display='none'">
+            "${f.transcriere.substring(0,200)}${f.transcriere.length>200?'… <span style=\'color:var(--accent)\'>▼ citește tot</span>':''}"
+          </div>
+          <div id="${tid}-full" style="display:none;font-size:11px;color:var(--text2);line-height:1.5;font-style:italic;cursor:pointer;white-space:pre-wrap" onclick="document.getElementById('${tid}-prev').style.display='block';this.style.display='none'">
+            "${f.transcriere} <span style='color:var(--accent)'>▲ restrânge</span>"
+          </div>
+        </div>` : '';
       return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:500">🎤 ${dateStr}</div>
             <div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div>
-            ${f.transcriere?`<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;font-style:italic">"${f.transcriere}…"</div>`:''}
+            ${transcriereHtml}
           </div>
           <a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">▶ Ascultă</a>
         </div>
