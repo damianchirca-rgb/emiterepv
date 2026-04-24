@@ -1029,7 +1029,7 @@ async function loadAudioUat(uatId) {
           <div id="${tid}-full" style="display:none;font-size:11px;color:var(--text2);line-height:1.5;font-style:italic;cursor:pointer;white-space:pre-wrap" onclick="document.getElementById('${tid}-prev').style.display='block';this.style.display='none'">
             "${f.transcriere} <span style='color:var(--accent)'>▲ restrânge</span>"
           </div>
-        </div>` : '';
+        </div>` : `<div id="${tid}-tr" style="margin-top:6px"></div>`;
       return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
           <div style="flex:1;min-width:0">
@@ -1037,7 +1037,10 @@ async function loadAudioUat(uatId) {
             <div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div>
             ${transcriereHtml}
           </div>
-          <a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">▶ Ascultă</a>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+            <a href="${f.view}" target="_blank" style="padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;text-align:center">▶ Ascultă</a>
+            ${!f.transcriere ? `<button onclick="transcribeAudio('${f.id}','${uatId}','${tid}-tr',this)" style="padding:8px 12px;background:var(--surface3);border:1px solid var(--border);color:var(--text2);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🤖 Transcriere</button>` : ''}
+          </div>
         </div>
       </div>`;
     }).join('');
@@ -1073,6 +1076,33 @@ async function addAudioFromDrive(uatId) {
   }
 }
 
+
+
+async function transcribeAudio(fileId, uatId, targetId, btn) {
+  btn.disabled = true;
+  btn.textContent = '⏳ Se transcrie…';
+  const target = document.getElementById(targetId);
+  if (target) target.textContent = 'Se transcrie… (poate dura 30-60 sec)';
+  try {
+    const resp = await fetch(`${API_URL}?action=transcribe_audio&file_id=${fileId}&uat_id=${uatId}`, {cache:'no-store'});
+    const data = await resp.json();
+    if (data.error) {
+      showToast('Eroare transcriere: ' + data.error);
+      btn.disabled = false; btn.textContent = '🤖 Transcriere';
+      if (target) target.textContent = '';
+      return;
+    }
+    showToast('✓ Transcriere salvata!');
+    btn.style.display = 'none';
+    if (target) {
+      target.style.cssText = 'margin-top:8px;font-size:11px;color:var(--text2);line-height:1.5;font-style:italic;white-space:pre-wrap';
+      target.textContent = '"' + data.text + '"';
+    }
+  } catch(e) {
+    showToast('Eroare: ' + e.message);
+    btn.disabled = false; btn.textContent = '🤖 Transcriere';
+  }
+}
 
 async function uploadAudioFile(input, uatId) {
   const file = input.files[0];
