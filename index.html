@@ -415,6 +415,20 @@ function cacheClear() {
   localStorage.removeItem('uats_ts');
 }
 
+// ─── NORMALIZE (ignora diacritice romanesti) ────────────────
+function norm(s) {
+  return (s || '').toLowerCase()
+    .replace(/[ăâ]/g, 'a')
+    .replace(/[î]/g, 'i')
+    .replace(/[ș]/g, 's')
+    .replace(/[ț]/g, 't')
+    .replace(/[Ă Â]/gi, 'a')
+    .replace(/[Î]/gi, 'i')
+    .replace(/[Ș]/gi, 's')
+    .replace(/[Ț]/gi, 't')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 // ─── STATE ─────────────────────────────────────────────────
 let uats = [];
 let currentFilter = 'all';
@@ -547,13 +561,13 @@ async function apiPost(action, payload) {
 // ─── FILTERING ─────────────────────────────────────────────
 function filteredUats() {
   let res = uats;
-  const q = currentSearch.toLowerCase().trim();
+  const q = norm(currentSearch);
   if (q) res = res.filter(u =>
-    (getField(u,'Localitate')||'').toLowerCase().includes(q) ||
-    (getField(u,'Judet')||'').toLowerCase().includes(q) ||
-    (getField(u,'CodJudet')||'').toLowerCase().includes(q) ||
-    (getField(u,'Responsabil')||'').toLowerCase().includes(q) ||
-    (getField(u,'Note')||'').toLowerCase().includes(q)
+    norm(getField(u,'Localitate')).includes(q) ||
+    norm(getField(u,'Judet')).includes(q) ||
+    norm(getField(u,'CodJudet')).includes(q) ||
+    norm(getField(u,'Responsabil')).includes(q) ||
+    norm(getField(u,'Note')).includes(q)
   );
   if (currentFilter === 'ACTIV') res = res.filter(u => getField(u,'BeneficiarActiv') !== 'NU');
   else if (currentFilter === 'INACTIV') res = res.filter(u => getField(u,'BeneficiarActiv') === 'NU');
