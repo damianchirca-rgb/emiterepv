@@ -311,7 +311,7 @@
           </div>
           <input type="color" id="cp-dark-card" value="#111827"
             style="width:44px;height:44px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:none;padding:2px"
-            oninput="applyCardColor('dark',this.value)" onchange="saveCardColor('dark',this.value)">
+            oninput="applyCardColor('dark',this.value)">
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
@@ -320,7 +320,7 @@
           </div>
           <input type="color" id="cp-light-card" value="#ffffff"
             style="width:44px;height:44px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:none;padding:2px"
-            oninput="applyCardColor('light',this.value)" onchange="saveCardColor('light',this.value)">
+            oninput="applyCardColor('light',this.value)">
         </div>
         <button onclick="resetCardColors()" style="padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:inherit;font-size:13px;cursor:pointer">
           ↺ Resetează la valorile implicite
@@ -1248,10 +1248,12 @@ function initSetari() {
 }
 
 function applyCardColor(theme, color) {
+  // Salveaza imediat in localStorage la fiecare miscare
+  localStorage.setItem('card-color-' + theme, color);
+
   const isLight = document.documentElement.classList.contains('light');
   if ((theme === 'dark' && !isLight) || (theme === 'light' && isLight)) {
     document.documentElement.style.setProperty('--surface', color);
-    // Ajusteaza automat surface2 si surface3 (mai deschis/inchis)
     const r = parseInt(color.slice(1,3),16);
     const g = parseInt(color.slice(3,5),16);
     const b = parseInt(color.slice(5,7),16);
@@ -1266,9 +1268,8 @@ function applyCardColor(theme, color) {
 }
 
 function saveCardColor(theme, color) {
-  localStorage.setItem('card-color-' + theme, color);
+  // applyCardColor deja salveaza — aceasta functie ramane pentru compatibilitate
   applyCardColor(theme, color);
-  showToast('Culoare salvată');
 }
 
 function resetCardColors() {
