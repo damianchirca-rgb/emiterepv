@@ -1283,6 +1283,10 @@ function showView(v) {
   else if(v==='mentenanta'){document.getElementById('mentenanta-view').classList.add('active');document.getElementById('nav-mentenanta').classList.add('active');loadMentenanta();}
   else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
   else if(v==='setari'){document.getElementById('setari-view').classList.add('active');document.getElementById('nav-setari').classList.add('active');initSetari();}
+  // Ascunde/arata search si filter bar
+  const showSearch = v === 'lista';
+  document.getElementById('search-row').style.display = showSearch ? '' : 'none';
+  document.getElementById('filter-bar').style.display = showSearch ? '' : 'none';
 }
 
 // ─── SETARI ────────────────────────────────────────────────
