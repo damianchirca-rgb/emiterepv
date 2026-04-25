@@ -301,54 +301,85 @@
     </div>
   </div>
 
-  <div id="setari-view" class="view" style="overflow-y:auto;padding:16px;flex-direction:column;gap:16px">
-    <div class="detail-section">
-      <h3>🎨 Culoare carduri UAT</h3>
-      <div style="margin-top:12px;display:flex;flex-direction:column;gap:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-size:13px;font-weight:500">🌙 Temă întunecată</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">Culoarea de fundal a cardurilor</div>
+  <div id="setari-view" class="view" style="overflow-y:auto;flex-direction:column">
+    <!-- Subtaburi Setari -->
+    <div style="display:flex;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10">
+      <button id="stab-setari" onclick="showSetariTab('setari')" style="flex:1;padding:12px 8px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">⚙️ Setări</button>
+      <button id="stab-istoric" onclick="showSetariTab('istoric')" style="flex:1;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text2);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">📋 Istoric</button>
+    </div>
+
+    <!-- Setari content -->
+    <div id="setari-content" style="padding:16px;display:flex;flex-direction:column;gap:16px">
+      <div class="detail-section">
+        <h3>🎨 Culoare carduri UAT</h3>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:500">🌙 Temă întunecată</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Culoarea de fundal a cardurilor</div>
+            </div>
+            <input type="color" id="cp-dark-card" value="#111827"
+              style="width:44px;height:44px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:none;padding:2px"
+              oninput="applyCardColor('dark',this.value)">
           </div>
-          <input type="color" id="cp-dark-card" value="#111827"
-            style="width:44px;height:44px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:none;padding:2px"
-            oninput="applyCardColor('dark',this.value)">
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <div style="font-size:13px;font-weight:500">☀️ Temă luminoasă</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px">Culoarea de fundal a cardurilor</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:500">☀️ Temă luminoasă</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Culoarea de fundal a cardurilor</div>
+            </div>
+            <input type="color" id="cp-light-card" value="#ffffff"
+              style="width:44px;height:44px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:none;padding:2px"
+              oninput="applyCardColor('light',this.value)">
           </div>
-          <input type="color" id="cp-light-card" value="#ffffff"
-            style="width:44px;height:44px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:none;padding:2px"
-            oninput="applyCardColor('light',this.value)">
+          <button onclick="resetCardColors()" style="padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:inherit;font-size:13px;cursor:pointer">
+            ↺ Resetează la valorile implicite
+          </button>
         </div>
-        <button onclick="resetCardColors()" style="padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:inherit;font-size:13px;cursor:pointer">
-          ↺ Resetează la valorile implicite
-        </button>
-      </div>
-      <!-- Preview card -->
-      <div style="margin-top:16px">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Preview</div>
-        <div id="card-preview" class="uat-card" style="pointer-events:none">
-          <div class="uat-card-inner">
-            <div class="card-top">
-              <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
-                <div style="width:56px;height:56px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏛️</div>
-                <div style="min-width:0">
-                  <div class="card-name">Exemplu UAT</div>
-                  <div class="card-judet"><span class="judet-badge">TL</span> Tulcea</div>
+        <div style="margin-top:16px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Preview</div>
+          <div id="card-preview" class="uat-card" style="pointer-events:none">
+            <div class="uat-card-inner">
+              <div class="card-top">
+                <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
+                  <div style="width:56px;height:56px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏛️</div>
+                  <div style="min-width:0">
+                    <div class="card-name">Exemplu UAT</div>
+                    <div class="card-judet"><span class="judet-badge">TL</span> Tulcea</div>
+                  </div>
                 </div>
+                <div class="status-badge status-ACTIV">✓ ACTIV</div>
               </div>
-              <div class="status-badge status-ACTIV">✓ ACTIV</div>
-            </div>
-            <div class="card-footer">
-              <div style="font-size:11px;color:var(--text3)">📅 01.06.2026 (peste 38z)</div>
-              <span style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">📋 31.12.2026 · 250z</span>
+              <div class="card-footer">
+                <div style="font-size:11px;color:var(--text3)">📅 01.06.2026 (peste 38z)</div>
+                <span style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">📋 31.12.2026 · 250z</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Istoric content -->
+    <div id="istoric-content" style="display:none;flex-direction:column;flex:1">
+      <!-- Search + filtre -->
+      <div style="padding:12px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:9">
+        <div style="position:relative;margin-bottom:10px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text3)"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input id="istoric-search" type="text" placeholder="Caută UAT, factură, operațiune…"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:13px;padding:9px 12px 9px 32px;outline:none"
+            oninput="renderIstoric()">
+        </div>
+        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none">
+          <span class="filter-chip active" onclick="toggleIstoricTip('all',this)" id="itip-all">Toate</span>
+          <span class="filter-chip" onclick="toggleIstoricTip('factura_emisa',this)" id="itip-factura_emisa">💰 Facturi emise</span>
+          <span class="filter-chip" onclick="toggleIstoricTip('factura_stearsa',this)" id="itip-factura_stearsa">🗑️ Facturi șterse</span>
+          <span class="filter-chip" onclick="toggleIstoricTip('contract_salvat',this)" id="itip-contract_salvat">📄 Contracte</span>
+          <span class="filter-chip" onclick="toggleIstoricTip('servicii_salvate',this)" id="itip-servicii_salvate">🔧 Servicii</span>
+          <span class="filter-chip" onclick="toggleIstoricTip('factura_email_atasat',this)" id="itip-factura_email_atasat">📧 Email</span>
+          <span class="filter-chip" onclick="toggleIstoricTip('uat_editat',this)" id="itip-uat_editat">✏️ UAT editat</span>
+        </div>
+      </div>
+      <div id="istoric-list" style="padding:12px;flex:1;overflow-y:auto"></div>
     </div>
   </div>
 
@@ -1303,6 +1334,123 @@ function loadSavedColors() {
   const key = isLight ? 'card-color-light' : 'card-color-dark';
   const saved = localStorage.getItem(key);
   if (saved) applyCardColor(isLight ? 'light' : 'dark', saved);
+}
+
+// ─── SETARI SUBTABURI ───────────────────────────────────────
+function showSetariTab(tab) {
+  document.getElementById('setari-content').style.display = tab === 'setari' ? 'flex' : 'none';
+  document.getElementById('istoric-content').style.display = tab === 'istoric' ? 'flex' : 'none';
+  document.getElementById('stab-setari').style.borderBottomColor = tab === 'setari' ? 'var(--accent)' : 'transparent';
+  document.getElementById('stab-setari').style.color = tab === 'setari' ? 'var(--accent)' : 'var(--text2)';
+  document.getElementById('stab-istoric').style.borderBottomColor = tab === 'istoric' ? 'var(--accent)' : 'transparent';
+  document.getElementById('stab-istoric').style.color = tab === 'istoric' ? 'var(--accent)' : 'var(--text2)';
+  if (tab === 'istoric' && !istoricData) loadIstoric();
+}
+
+// ─── ISTORIC ───────────────────────────────────────────────
+let istoricData = null;
+let istoricTipActiv = 'all';
+
+const ISTORIC_ICON = {
+  factura_emisa: '💰', factura_stearsa: '🗑️', factura_email_atasat: '📧',
+  contract_salvat: '📄', servicii_salvate: '🔧', uat_editat: '✏️'
+};
+const ISTORIC_LABEL = {
+  factura_emisa: 'Factură emisă', factura_stearsa: 'Factură ștearsă',
+  factura_email_atasat: 'Email atașat', contract_salvat: 'Contract salvat',
+  servicii_salvate: 'Servicii salvate', uat_editat: 'UAT editat'
+};
+const ISTORIC_COLOR = {
+  factura_emisa: '#10b981', factura_stearsa: '#ef4444', factura_email_atasat: '#6366f1',
+  contract_salvat: '#f59e0b', servicii_salvate: '#8b5cf6', uat_editat: '#64748b'
+};
+
+async function loadIstoric() {
+  const el = document.getElementById('istoric-list');
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Se încarcă istoricul…</div>';
+  try {
+    const resp = await fetch(`${API_URL}?action=istoric`, {cache:'no-store'});
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    istoricData = data.operatiuni;
+    renderIstoric();
+  } catch(e) {
+    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${e.message}</div>`;
+  }
+}
+
+function toggleIstoricTip(tip, el) {
+  istoricTipActiv = tip;
+  document.querySelectorAll('#istoric-content .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderIstoric();
+}
+
+function renderIstoric() {
+  if (!istoricData) return;
+  const el = document.getElementById('istoric-list');
+  const q = norm(document.getElementById('istoric-search').value);
+
+  let ops = istoricData;
+  if (istoricTipActiv !== 'all') ops = ops.filter(o => o.tip === istoricTipActiv);
+  if (q) ops = ops.filter(o => {
+    const uat = uats.find(u => String(u['ID']) === String(o.uat_id));
+    const uatName = uat ? norm(getField(uat,'Localitate')) : '';
+    return uatName.includes(q) ||
+      norm(o.nr_factura||'').includes(q) ||
+      norm(o.firma||'').includes(q) ||
+      norm(ISTORIC_LABEL[o.tip]||o.tip).includes(q) ||
+      norm(o.ts||'').includes(q);
+  });
+
+  if (!ops.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Nicio operațiune găsită</div>';
+    return;
+  }
+
+  // Grupeaza pe zile
+  const byDay = {};
+  ops.forEach(o => {
+    const day = (o.ts||'').substring(0,10);
+    if (!byDay[day]) byDay[day] = [];
+    byDay[day].push(o);
+  });
+
+  el.innerHTML = `<div style="font-size:11px;color:var(--text3);padding-bottom:10px">${ops.length} operațiuni</div>` +
+    Object.keys(byDay).map(day => {
+      const dayOps = byDay[day];
+      return `<div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 8px;border-bottom:1px solid var(--border);margin-bottom:8px">${day}</div>
+        ${dayOps.map(o => {
+          const uat = uats.find(u => String(u['ID']) === String(o.uat_id));
+          const uatName = uat ? getField(uat,'Localitate') : 'UAT #' + o.uat_id;
+          const color = ISTORIC_COLOR[o.tip] || '#64748b';
+          const icon = ISTORIC_ICON[o.tip] || '📌';
+          const label = ISTORIC_LABEL[o.tip] || o.tip;
+          const ora = (o.ts||'').substring(11);
+
+          // Detalii extra specifice tipului
+          let detalii = '';
+          if (o.nr_factura) detalii += `<span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--surface3);padding:1px 6px;border-radius:4px;margin-right:4px">${o.nr_factura}</span>`;
+          if (o.firma) detalii += `<span style="font-size:10px;color:var(--text3)">${o.firma}</span>`;
+          if (o.nr_servicii) detalii += `<span style="font-size:10px;color:var(--text3)">${o.nr_servicii} servicii</span>`;
+          if (o.nr_contracte) detalii += `<span style="font-size:10px;color:var(--text3)">${o.nr_contracte} contracte</span>`;
+          if (o.firma_id && !o.firma) detalii += `<span style="font-size:10px;color:var(--text3)">${o.firma_id === 'f1' ? 'Firma 1' : 'Firma 2'}</span>`;
+
+          return `<div style="display:flex;gap:10px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;border-left:3px solid ${color}" onclick="openUat('${o.uat_id}')">
+            <div style="font-size:20px;flex-shrink:0;line-height:1">${icon}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div style="font-size:12px;font-weight:600;color:var(--text)">${uatName}</div>
+                <div style="font-size:10px;color:var(--text3);flex-shrink:0">${ora}</div>
+              </div>
+              <div style="font-size:11px;color:${color};margin-top:2px">${label}</div>
+              ${detalii ? `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;align-items:center">${detalii}</div>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
 }
 
 // ─── CAUTARE ───────────────────────────────────────────────
