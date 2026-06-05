@@ -343,6 +343,22 @@
 // ÎNLOCUIEȘTE cu URL-ul tău după deploy în Apps Script!
 const API_URL = 'https://script.google.com/macros/s/AKfycbyrIKVxXAULXoHszaN60nQQqNAK6N_j_PqNmhAsRZ_D7fdvzf38euhpPH95Z0PHcw/exec';
 
+// Construieste URL poza primar din ID Drive
+function pozaUrl(idOrUrl) {
+  if (!idOrUrl) return null;
+  // Daca e deja URL complet (versiune veche), returneaza direct
+  if (idOrUrl.startsWith('http')) return idOrUrl;
+  // ID Drive - incercam thumbnail API (nu necesita auth)
+  return `https://drive.google.com/thumbnail?id=${idOrUrl}&sz=w100-h100`;
+}
+
+// Fallback la proxy Apps Script daca thumbnail nu se incarca
+function pozaOnerror(img, id) {
+  if (!id || id.startsWith('http')) { img.style.display='none'; return; }
+  img.onerror = () => { img.style.display='none'; };
+  img.src = `${API_URL}?action=poza&id=${id}`;
+}
+
 // ─── STATE ─────────────────────────────────────────────────
 let uats = [];
 let currentFilter = 'all';
@@ -531,7 +547,7 @@ function renderList() {
         <div class="card-top">
           <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
             <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
-              ${poza ? `<img src="${poza}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3)" onerror="this.style.display='none'">` : `<div style="width:56px;height:56px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:22px">🏛️</div>`}
+              ${poza ? `<img src="${pozaUrl(poza)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3)" onerror="pozaOnerror(this,'${poza}')">` : `<div style="width:56px;height:56px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:22px">🏛️</div>`}
               <div style="font-size:11px;color:var(--text2);text-align:center;max-width:64px;line-height:1.3;word-break:break-word;font-weight:500">${responsabil}</div>
             </div>
             <div style="min-width:0">
@@ -668,9 +684,9 @@ function openUat(id) {
   if (poza) {
     let img = drawerHeader.querySelector('.primar-poza');
     if (!img) { img = document.createElement('img'); img.className='primar-poza'; drawerHeader.insertBefore(img, drawerHeader.firstChild); }
-    img.src = poza;
+    img.src = pozaUrl(poza);
     img.style.cssText='width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3);flex-shrink:0';
-    img.onerror = () => img.style.display='none';
+    img.onerror = () => pozaOnerror(img, poza);
   } else {
     const existing = drawerHeader.querySelector('.primar-poza');
     if (existing) existing.remove();
