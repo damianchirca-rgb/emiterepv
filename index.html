@@ -496,8 +496,10 @@ function renderList() {
     const note = getField(u,'Note') || '';
     const contact = getField(u,'DataUrmatorContact') || '';
     const days = getDaysUntil(contact);
+    const dayLabel = days===null ? '' : (days<0 ? ` (${-days}z trecut!)` : (days===0 ? ' (AZI!)' : ` (peste ${days}z)`));
 
     const poza = u._poza || null;
+    const aplicatii = u._aplicatii || [];
     const dataExpirare = getField(u,'DataIncetareContract');
     const daysExp = getDaysUntil(dataExpirare);
     const expColor = daysExp !== null && daysExp < 60 ? 'var(--eroare)' : daysExp !== null && daysExp < 180 ? 'var(--inactiv)' : 'var(--text3)';
@@ -505,15 +507,21 @@ function renderList() {
     const expLabel = daysExp === null ? '' : daysExp < 0 ? ` · expirat` : daysExp === 0 ? ' · AZI' : ` · ${daysExp}z`;
     const urgCls = contact && days!==null ? (days<0?'urgenta':days<=14?'aproape':'ok-contact') : '';
 
+    // Email - mai multe adrese separate
+    const email = getField(u,'EmailUAT') || '';
+    const emailLines = email ? email.split(/[,;]+/).map(e=>e.trim()).filter(Boolean) : [];
+    const emailHtml = emailLines.map(e=>`<span style="font-size:10px;color:var(--text3);text-align:right;display:block;margin-top:1px">${e}</span>`).join('');
+
+    // Aplicatii + suma
+    const totalApps = aplicatii.reduce((s,a)=>s+(parseFloat(a.pret)||0),0);
+    const appsRightHtml = aplicatii.length
+      ? aplicatii.map(a=>`<span style="font-size:10px;color:var(--text2);text-align:right;display:block;white-space:nowrap">${a.nume}</span>`).join('')
+        + `<span style="font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace;text-align:right;display:block;margin-top:2px">${totalApps.toFixed(0)} Lei/lună</span>`
+        + emailHtml
+      : emailHtml;
+
     let inds = '';
     if (note) inds += `<span class="indicator ind-note">📝 Notiță</span>`;
-    if (contact && days!==null) {
-      const col = days<0?'ind-eroare':days<=14?'ind-contact':'ind-note';
-      const lbl = days<0?`${-days}z trecut`:days===0?'Azi!!':`${days}z`;
-      inds += `<span class="indicator ${col}">📅 ${lbl}</span>`;
-    }
-
-    const ctDisp = contact ? `<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${days!==null&&days<0?'var(--eroare)':'var(--text3)'}">${String(contact).substring(0,10)}</span>` : '';
 
     const badgeClass = isActiv ? 'status-ACTIV' : 'status-INACTIV';
     const badgeText = isActiv ? '✓ ACTIV' : '✕ INACTIV';
@@ -521,18 +529,26 @@ function renderList() {
     return `<div class="uat-card ${urgCls}" onclick="openUat('${id}')">
       <div class="uat-card-inner">
         <div class="card-top">
-          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-            ${poza ? `<img src="${poza}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--surface3)" onerror="this.style.display='none'">` : `<div style="width:42px;height:42px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏛️</div>`}
+          <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
+              ${poza ? `<img src="${poza}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3)" onerror="this.style.display='none'">` : `<div style="width:56px;height:56px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:22px">🏛️</div>`}
+              <div style="font-size:11px;color:var(--text2);text-align:center;max-width:64px;line-height:1.3;word-break:break-word;font-weight:500">${responsabil}</div>
+            </div>
             <div style="min-width:0">
               <div class="card-name">${localitate}</div>
               <div class="card-judet"><span class="judet-badge">${cod}</span> ${judet}</div>
             </div>
           </div>
-          <div class="status-badge ${badgeClass}" style="flex-shrink:0">${badgeText}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:4px">
+            <div class="status-badge ${badgeClass}">${badgeText}</div>
+            ${appsRightHtml}
+          </div>
         </div>
         ${inds?`<div class="card-indicators">${inds}</div>`:''}
         <div class="card-footer">
-          <div class="card-responsabil">👤 ${responsabil}</div>
+          <div style="flex:1">
+            ${contact ? `<span style="font-size:11px;color:${days!==null&&days<0?'var(--eroare)':days!==null&&days<=14?'var(--inactiv)':'var(--text3)'}">📅 ${String(contact).substring(0,10)}${dayLabel}</span>` : ''}
+          </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
             ${expDisplay?`<span style="font-size:10px;color:${expColor};font-family:'JetBrains Mono',monospace">📋 ${expDisplay}${expLabel}</span>`:''}
           </div>
