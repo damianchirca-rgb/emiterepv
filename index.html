@@ -211,7 +211,7 @@
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button id="theme-btn" onclick="toggleTheme()" style="width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px">🌙</button>
-        <button id="sync-btn" onclick="forceSync()">
+        <button id="sync-btn" onclick="syncData()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           Actualizează
         </button>
@@ -222,10 +222,13 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input id="search" type="text" placeholder="Caută UAT, județ, responsabil…" autocomplete="off" spellcheck="false">
       </div>
+      <div id="filter-btn" onclick="toggleFilterBar()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      </div>
     </div>
   </div>
 
-  <div id="filter-bar">
+  <div id="filter-bar" style="display:none">
     <div class="filter-chip active" onclick="setFilter('all',this)">Toate</div>
     <div class="filter-chip" onclick="setFilter('ACTIV',this)">✓ Activ</div>
     <div class="filter-chip" onclick="setFilter('INACTIV',this)">◑ Inactiv</div>
@@ -271,7 +274,6 @@
         <span class="filter-chip active" onclick="toggleTip('factura',this)">💰 Facturi</span>
         <span class="filter-chip active" onclick="toggleTip('pv',this)">📋 PV-uri</span>
         <span class="filter-chip active" onclick="toggleTip('util',this)">📁 Utile</span>
-        <span class="filter-chip active" onclick="toggleTip('audio',this)">🎤 Audio</span>
       </div>
     </div>
     <div id="cautare-rezultate" style="flex:1;overflow-y:auto;padding:10px 12px">
@@ -301,88 +303,6 @@
     </div>
   </div>
 
-  <div id="setari-view" class="view" style="overflow-y:auto;flex-direction:column">
-    <!-- Subtaburi Setari -->
-    <div style="display:flex;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10">
-      <button id="stab-setari" onclick="showSetariTab('setari')" style="flex:1;padding:12px 8px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">⚙️ Setări</button>
-      <button id="stab-istoric" onclick="showSetariTab('istoric')" style="flex:1;padding:12px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text2);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">📋 Istoric</button>
-    </div>
-
-    <!-- Setari content -->
-    <div id="setari-content" style="padding:16px;display:flex;flex-direction:column;gap:16px">
-      <div class="detail-section">
-        <h3>🎨 Culoare carduri UAT</h3>
-        <div style="margin-top:12px;display:flex;flex-direction:column;gap:14px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <div style="font-size:13px;font-weight:500">🌙 Temă întunecată</div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">Culoarea de fundal a cardurilor</div>
-            </div>
-            <input type="color" id="cp-dark-card" value="#111827"
-              style="width:44px;height:44px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:none;padding:2px"
-              oninput="applyCardColor('dark',this.value)">
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <div style="font-size:13px;font-weight:500">☀️ Temă luminoasă</div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">Culoarea de fundal a cardurilor</div>
-            </div>
-            <input type="color" id="cp-light-card" value="#ffffff"
-              style="width:44px;height:44px;border:2px solid var(--border);border-radius:10px;cursor:pointer;background:none;padding:2px"
-              oninput="applyCardColor('light',this.value)">
-          </div>
-          <button onclick="resetCardColors()" style="padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:inherit;font-size:13px;cursor:pointer">
-            ↺ Resetează la valorile implicite
-          </button>
-        </div>
-        <div style="margin-top:16px">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Preview</div>
-          <div id="card-preview" class="uat-card" style="pointer-events:none">
-            <div class="uat-card-inner">
-              <div class="card-top">
-                <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
-                  <div style="width:56px;height:56px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏛️</div>
-                  <div style="min-width:0">
-                    <div class="card-name">Exemplu UAT</div>
-                    <div class="card-judet"><span class="judet-badge">TL</span> Tulcea</div>
-                  </div>
-                </div>
-                <div class="status-badge status-ACTIV">✓ ACTIV</div>
-              </div>
-              <div class="card-footer">
-                <div style="font-size:11px;color:var(--text3)">📅 01.06.2026 (peste 38z)</div>
-                <span style="font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace">📋 31.12.2026 · 250z</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Istoric content -->
-    <div id="istoric-content" style="display:none;flex-direction:column;flex:1">
-      <!-- Search + filtre -->
-      <div style="padding:12px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:9">
-        <div style="position:relative;margin-bottom:10px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text3)"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input id="istoric-search" type="text" placeholder="Caută UAT, factură, operațiune…"
-            style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:13px;padding:9px 12px 9px 32px;outline:none"
-            oninput="renderIstoric()">
-        </div>
-        <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none">
-          <span class="filter-chip active" onclick="toggleIstoricTip('all',this)" id="itip-all">Toate</span>
-          <span class="filter-chip" onclick="toggleIstoricTip('factura_emisa',this)" id="itip-factura_emisa">💰 Facturi emise</span>
-          <span class="filter-chip" onclick="toggleIstoricTip('factura_stearsa',this)" id="itip-factura_stearsa">🗑️ Facturi șterse</span>
-          <span class="filter-chip" onclick="toggleIstoricTip('contract_salvat',this)" id="itip-contract_salvat">📄 Contracte</span>
-          <span class="filter-chip" onclick="toggleIstoricTip('servicii_salvate',this)" id="itip-servicii_salvate">🔧 Servicii</span>
-          <span class="filter-chip" onclick="toggleIstoricTip('factura_email_atasat',this)" id="itip-factura_email_atasat">📧 Email</span>
-          <span class="filter-chip" onclick="toggleIstoricTip('uat_editat',this)" id="itip-uat_editat">✏️ UAT editat</span>
-        </div>
-      </div>
-      <div id="istoric-list" style="padding:12px;flex:1;overflow-y:auto"></div>
-    </div>
-  </div>
-
   <div id="bottom-nav">
     <button class="nav-btn active" id="nav-lista" onclick="showView('lista')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -404,10 +324,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       <span>Statistici</span>
     </button>
-    <button class="nav-btn" id="nav-setari" onclick="showView('setari')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span>Setări</span>
-    </button>
   </div>
 </div>
 
@@ -426,40 +342,6 @@
 // ─── CONFIG ────────────────────────────────────────────────
 // ÎNLOCUIEȘTE cu URL-ul tău după deploy în Apps Script!
 const API_URL = 'https://script.google.com/macros/s/AKfycbyrIKVxXAULXoHszaN60nQQqNAK6N_j_PqNmhAsRZ_D7fdvzf38euhpPH95Z0PHcw/exec';
-const CACHE_TTL_MS = 30 * 60 * 1000; // cache local valabil 30 minute, apoi sync automat
-
-function cacheLoad() {
-  try {
-    const ts = parseInt(localStorage.getItem('uats_ts') || '0');
-    if (Date.now() - ts > CACHE_TTL_MS) return null; // expirat
-    const raw = localStorage.getItem('uats_cache');
-    return raw ? JSON.parse(raw) : null;
-  } catch(e) { return null; }
-}
-function cacheSave(data) {
-  try {
-    localStorage.setItem('uats_cache', JSON.stringify(data));
-    localStorage.setItem('uats_ts', String(Date.now()));
-  } catch(e) {}
-}
-function cacheClear() {
-  localStorage.removeItem('uats_cache');
-  localStorage.removeItem('uats_ts');
-}
-
-// ─── NORMALIZE (ignora diacritice romanesti) ────────────────
-function norm(s) {
-  return (s || '').toLowerCase()
-    .replace(/[ăâ]/g, 'a')
-    .replace(/[î]/g, 'i')
-    .replace(/[ș]/g, 's')
-    .replace(/[ț]/g, 't')
-    .replace(/[Ă Â]/gi, 'a')
-    .replace(/[Î]/gi, 'i')
-    .replace(/[Ș]/gi, 's')
-    .replace(/[Ț]/gi, 't')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
 
 // ─── STATE ─────────────────────────────────────────────────
 let uats = [];
@@ -495,11 +377,6 @@ function toggleTheme() {
   const isLight = document.documentElement.classList.toggle('light');
   document.getElementById('theme-btn').textContent = isLight ? '☀️' : '🌙';
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
-  // Reseteaza culorile custom si aplica pe noua tema
-  document.documentElement.style.removeProperty('--surface');
-  document.documentElement.style.removeProperty('--surface2');
-  document.documentElement.style.removeProperty('--surface3');
-  loadSavedColors();
 }
 
 // Aplica tema salvata
@@ -510,39 +387,28 @@ if (localStorage.getItem('theme') === 'light') {
     if (btn) btn.textContent = '☀️';
   });
 }
-// Aplica culorile salvate
-document.addEventListener('DOMContentLoaded', loadSavedColors);
 
 // ─── SYNC ──────────────────────────────────────────────────
-// Folosit la startup - preia date din cache Apps Script (rapid)
 async function syncData() {
-  await fetchUats('uats');
-}
-
-// Folosit la apasarea butonului Actualizează - sterge cache server si preia date proaspete
-async function forceSync() {
-  await fetchUats('force_sync');
-}
-
-async function fetchUats(action) {
   const btn = document.getElementById('sync-btn');
   btn.className = 'syncing'; btn.querySelector('span') && (btn.querySelector('span').textContent = 'Se încarcă…');
 
+  // Verifică dacă URL-ul e setat
   if (API_URL === 'PUNE_URL_APPS_SCRIPT_AICI') {
     showError('URL-ul Apps Script nu este configurat. Urmează instrucțiunile de setup.');
     return;
   }
 
   try {
-    const resp = await fetch(`${API_URL}?action=${action}`, { cache: 'no-store' });
+    const resp = await fetch(`${API_URL}?action=uats`, { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
 
     uats = data.uats;
-    cacheSave(uats);
-    // Invalideaza si drive_index cache local ca sa preia versiunea noua
-    if (action === 'force_sync') { driveIndexCache = null; driveIndexTs = 0; }
+    // Salvează offline
+    localStorage.setItem('uats_cache', JSON.stringify(uats));
+    localStorage.setItem('uats_ts', new Date().toISOString());
 
     showMainUI();
     renderCurrent();
@@ -553,12 +419,14 @@ async function fetchUats(action) {
 
   } catch(err) {
     console.error(err);
-    const fromCache = cacheLoad();
-    if (fromCache) {
-      uats = fromCache;
+    // Încearcă din cache
+    const cached = localStorage.getItem('uats_cache');
+    if (cached) {
+      uats = JSON.parse(cached);
+      const ts = localStorage.getItem('uats_ts');
+      const d = ts ? new Date(ts).toLocaleString('ro-RO') : 'necunoscut';
       showMainUI();
       renderCurrent();
-      const d = new Date(parseInt(localStorage.getItem('uats_ts')||'0')).toLocaleString('ro-RO');
       document.getElementById('last-sync').textContent = `⚠️ Offline · cache din ${d}`;
       btn.className = 'err';
       showToast('Offline — date din cache');
@@ -593,13 +461,13 @@ async function apiPost(action, payload) {
 // ─── FILTERING ─────────────────────────────────────────────
 function filteredUats() {
   let res = uats;
-  const q = norm(currentSearch);
+  const q = currentSearch.toLowerCase().trim();
   if (q) res = res.filter(u =>
-    norm(getField(u,'Localitate')).includes(q) ||
-    norm(getField(u,'Judet')).includes(q) ||
-    norm(getField(u,'CodJudet')).includes(q) ||
-    norm(getField(u,'Responsabil')).includes(q) ||
-    norm(getField(u,'Note')).includes(q)
+    (getField(u,'Localitate')||'').toLowerCase().includes(q) ||
+    (getField(u,'Judet')||'').toLowerCase().includes(q) ||
+    (getField(u,'CodJudet')||'').toLowerCase().includes(q) ||
+    (getField(u,'Responsabil')||'').toLowerCase().includes(q) ||
+    (getField(u,'Note')||'').toLowerCase().includes(q)
   );
   if (currentFilter === 'ACTIV') res = res.filter(u => getField(u,'BeneficiarActiv') !== 'NU');
   else if (currentFilter === 'INACTIV') res = res.filter(u => getField(u,'BeneficiarActiv') === 'NU');
@@ -607,15 +475,6 @@ function filteredUats() {
   else if (currentFilter === 'note') res = res.filter(u => getField(u,'Note'));
   else if (currentFilter === 'urgenta') res = res.filter(u => { const d=getDaysUntil(getField(u,'DataUrmatorContact')); return d!==null && d<30; });
   else if (['TL','CT','CL','GR','PH'].includes(currentFilter)) res = res.filter(u => getField(u,'CodJudet') === currentFilter);
-  // Sortare dupa data expirare contract crescator (fara data = la final)
-  res = res.slice().sort((a, b) => {
-    const da = parseRoDate(getField(a,'DataIncetareContract'));
-    const db = parseRoDate(getField(b,'DataIncetareContract'));
-    if (!da && !db) return 0;
-    if (!da) return 1;
-    if (!db) return -1;
-    return da - db;
-  });
   return res;
 }
 
@@ -637,23 +496,22 @@ function renderList() {
     const note = getField(u,'Note') || '';
     const contact = getField(u,'DataUrmatorContact') || '';
     const days = getDaysUntil(contact);
-    const dayLabel = days===null ? '' : (days<0 ? ` (${-days}z trecut!)` : (days===0 ? ' (AZI!)' : ` (peste ${days}z)`));
 
     const poza = u._poza || null;
-    const aplicatii = u._aplicatii || [];
     const dataExpirare = getField(u,'DataIncetareContract');
     const daysExp = getDaysUntil(dataExpirare);
     const expColor = daysExp !== null && daysExp < 60 ? 'var(--eroare)' : daysExp !== null && daysExp < 180 ? 'var(--inactiv)' : 'var(--text3)';
     const expDisplay = dataExpirare ? String(dataExpirare).substring(0,10) : null;
     const expLabel = daysExp === null ? '' : daysExp < 0 ? ` · expirat` : daysExp === 0 ? ' · AZI' : ` · ${daysExp}z`;
     const urgCls = contact && days!==null ? (days<0?'urgenta':days<=14?'aproape':'ok-contact') : '';
-    const email = getField(u,'EmailUAT') || '';
-    const totalApps = aplicatii.reduce((s,a)=>s+(parseFloat(a.pret)||0),0);
-    const emailLines = email ? email.split(/[,;]+/).map(e=>e.trim()).filter(Boolean) : [];
-    const emailHtml = emailLines.map(e=>`<span style="font-size:10px;color:var(--text3);text-align:right;display:block;margin-top:1px">${e}</span>`).join('');
-    const appsRightHtml = aplicatii.length ? aplicatii.map(a=>`<span style="font-size:10px;color:var(--text2);text-align:right;display:block;white-space:nowrap">${a.nume}</span>`).join('') + `<span style="font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace;text-align:right;display:block;margin-top:2px">${totalApps.toFixed(0)} Lei/lună</span>` + emailHtml : emailHtml;
+
     let inds = '';
     if (note) inds += `<span class="indicator ind-note">📝 Notiță</span>`;
+    if (contact && days!==null) {
+      const col = days<0?'ind-eroare':days<=14?'ind-contact':'ind-note';
+      const lbl = days<0?`${-days}z trecut`:days===0?'Azi!!':`${days}z`;
+      inds += `<span class="indicator ${col}">📅 ${lbl}</span>`;
+    }
 
     const ctDisp = contact ? `<span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:${days!==null&&days<0?'var(--eroare)':'var(--text3)'}">${String(contact).substring(0,10)}</span>` : '';
 
@@ -663,26 +521,18 @@ function renderList() {
     return `<div class="uat-card ${urgCls}" onclick="openUat('${id}')">
       <div class="uat-card-inner">
         <div class="card-top">
-          <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
-              ${poza ? `<img src="${poza}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3)" onerror="this.style.display='none'">` : `<div style="width:56px;height:56px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:22px">🏛️</div>`}
-              <div style="font-size:11px;color:var(--text2);text-align:center;max-width:64px;line-height:1.3;word-break:break-word;font-weight:500">${responsabil}</div>
-            </div>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+            ${poza ? `<img src="${poza}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--surface3)" onerror="this.style.display='none'">` : `<div style="width:42px;height:42px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏛️</div>`}
             <div style="min-width:0">
               <div class="card-name">${localitate}</div>
               <div class="card-judet"><span class="judet-badge">${cod}</span> ${judet}</div>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:4px">
-            <div class="status-badge ${badgeClass}">${badgeText}</div>
-            ${appsRightHtml}
-          </div>
+          <div class="status-badge ${badgeClass}" style="flex-shrink:0">${badgeText}</div>
         </div>
         ${inds?`<div class="card-indicators">${inds}</div>`:''}
         <div class="card-footer">
-          <div style="flex:1">
-            ${contact ? `<span style="font-size:11px;color:${days!==null&&days<0?'var(--eroare)':days!==null&&days<=14?'var(--inactiv)':'var(--text3)'}">📅 ${String(contact).substring(0,10)}${dayLabel}</span>` : ''}
-          </div>
+          <div class="card-responsabil">👤 ${responsabil}</div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
             ${expDisplay?`<span style="font-size:10px;color:${expColor};font-family:'JetBrains Mono',monospace">📋 ${expDisplay}${expLabel}</span>`:''}
           </div>
@@ -917,7 +767,6 @@ function openUat(id) {
       <div class="detail-row"><div class="detail-label">CIF client</div><div class="detail-value mono">${cif||'—'}</div></div>
       <div class="detail-row"><div class="detail-label">Email UAT</div><div class="detail-value" style="font-size:11px;word-break:break-all">${email||'—'}</div></div>
       <div class="detail-row"><div class="detail-label">Adresă</div><div class="detail-value" style="font-size:11px">${adresa||'—'}</div></div>
-      <div class="detail-row"><div class="detail-label">Adresă primărie</div><div class="detail-value" style="font-size:11px">${adresaPrimarie||'—'}</div></div>
     </div>
     <div id="tab-contracte" class="tab-content">
       ${contracteHtml}
@@ -953,16 +802,6 @@ function openUat(id) {
       <div class="detail-section">
         <h3>🎤 Înregistrări audio</h3>
         <div id="audio-uat-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
-        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
-          <label style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer">
-            📱 Încarcă de pe telefon
-            <input type="file" accept="audio/*" style="display:none" onchange="uploadAudioFile(this,'${id}')">
-          </label>
-          <div id="audio-upload-progress-${id}" style="display:none;font-size:12px;color:var(--text3);text-align:center"></div>
-          <div style="font-size:10px;color:var(--text3);text-align:center">sau</div>
-          <input id="audio-link-${id}" type="text" placeholder="Link Drive (mp3, m4a, wav…)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;padding:8px 10px;outline:none">
-          <button onclick="addAudioFromDrive('${id}')" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">➕ Adaugă din Drive</button>
-        </div>
       </div>
     </div>
     <div id="tab-harta" class="tab-content">
@@ -984,7 +823,7 @@ async function doSaveNote(id) {
     // Update local
     const u=uats.find(x=>String(x['ID'])===String(id));
     if(u) u['Note']=val;
-    cacheSave(uats);
+    localStorage.setItem('uats_cache',JSON.stringify(uats));
     btn.textContent='✓ Salvat!'; btn.className='save-btn saved';
     showToast('Notiță salvată în Drive!');
     if(currentView==='lista') renderList();
@@ -1004,7 +843,7 @@ async function doSaveContact(id) {
     await apiPost('save_contact',{id,contact:val,nota_calendar:ncVal});
     const u=uats.find(x=>String(x['ID'])===String(id));
     if(u){ u['DataUrmatorContact']=val; u['NoteCalendar']=ncVal; }
-    cacheSave(uats);
+    localStorage.setItem('uats_cache',JSON.stringify(uats));
     // Actualizeaza butonul calendar cu nota noua
     const calBtn=document.getElementById(`cal-btn-${id}`);
     if(calBtn && val) calBtn.href=buildCalendarUrl(u?getField(u,'Localitate'):'', val, ncVal);
@@ -1019,48 +858,24 @@ async function doSaveContact(id) {
   setTimeout(()=>{btn.textContent='💾 Salvează data și nota';btn.className='save-btn';},2500);
 }
 
-// Cache local pentru drive_index (expira dupa 10 minute)
+// Cache local pentru drive_index
 let driveIndexCache = null;
-let driveIndexTs = 0;
-const DRIVE_INDEX_TTL = 10 * 60 * 1000; // 10 minute
 
 async function deschideFisier(filename) {
   if (!filename) return;
   showToast('Se caută fișierul…');
   try {
-    // Reincarca indexul daca e mai vechi de 10 minute
-    if (!driveIndexCache || Date.now() - driveIndexTs > DRIVE_INDEX_TTL) {
+    // Incarca drive_index daca nu e in cache
+    if (!driveIndexCache) {
       const resp = await fetch(`${API_URL}?action=drive_index`, {cache:'no-store'});
       const data = await resp.json();
       driveIndexCache = data.index || {};
-      driveIndexTs = Date.now();
     }
-
-    // 1. Cautare exacta
-    let fileId = driveIndexCache[filename];
-
-    // 2. Cautare case-insensitive
-    if (!fileId) {
-      const fLow = filename.toLowerCase();
-      const match = Object.keys(driveIndexCache).find(k => k.toLowerCase() === fLow);
-      if (match) fileId = driveIndexCache[match];
-    }
-
-    // 3. Cautare dupa nr factura/extras (ex: DLY1395 sau Extras_20260417)
-    if (!fileId) {
-      const tokenMatch = filename.match(/DLY\d+|Extras_\d+/i);
-      if (tokenMatch) {
-        const token = tokenMatch[0].toLowerCase();
-        const match = Object.keys(driveIndexCache).find(k => k.toLowerCase().includes(token));
-        if (match) fileId = driveIndexCache[match];
-      }
-    }
-
+    const fileId = driveIndexCache[filename];
     if (fileId) {
       window.open('https://drive.google.com/file/d/' + fileId + '/view', '_blank');
     } else {
-      showToast('Negăsit în index: ' + filename);
-      console.warn('Drive index miss:', filename, '\nIndex keys sample:', Object.keys(driveIndexCache).slice(0,10));
+      showToast('Fișierul nu a fost găsit în index');
     }
   } catch(e) {
     showToast('Eroare: ' + e.message);
@@ -1126,122 +941,23 @@ async function loadAudioUat(uatId) {
     if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Nicio înregistrare audio.'; return; }
     el.innerHTML = data.fisiere.map(f => {
       const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
+      // Extrage data din nume fisier
       const dateMatch = f.name.match(/(\d{4}-\d{2}-\d{2})/);
       const dateStr = dateMatch ? dateMatch[1] : f.modified;
-      const tid = 'tr-' + Math.random().toString(36).slice(2);
-      const transcriereHtml = f.transcriere ? `
-        <div style="margin-top:8px">
-          <div id="${tid}-prev" style="font-size:11px;color:var(--text2);line-height:1.5;font-style:italic;cursor:pointer" onclick="document.getElementById('${tid}-full').style.display='block';this.style.display='none'">
-            "${f.transcriere.substring(0,200)}${f.transcriere.length>200?'… <span style=\'color:var(--accent)\'>▼ citește tot</span>':''}"
-          </div>
-          <div id="${tid}-full" style="display:none;font-size:11px;color:var(--text2);line-height:1.5;font-style:italic;cursor:pointer;white-space:pre-wrap" onclick="document.getElementById('${tid}-prev').style.display='block';this.style.display='none'">
-            "${f.transcriere} <span style='color:var(--accent)'>▲ restrânge</span>"
-          </div>
-        </div>` : `<div id="${tid}-tr" style="margin-top:6px"></div>`;
       return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:500">🎤 ${dateStr}</div>
             <div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div>
-            ${transcriereHtml}
+            ${f.transcriere?`<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;font-style:italic">"${f.transcriere}…"</div>`:''}
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-            <a href="${f.view}" target="_blank" style="padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;text-align:center">▶ Ascultă</a>
-            ${!f.transcriere ? `<button onclick="transcribeAudio('${f.id}','${uatId}','${tid}-tr',this)" style="padding:8px 12px;background:var(--surface3);border:1px solid var(--border);color:var(--text2);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🤖 Transcriere</button>` : ''}
-          </div>
+          <a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">▶ Ascultă</a>
         </div>
       </div>`;
     }).join('');
   } catch(err) { el.textContent = 'Eroare: ' + err.message; }
 }
 
-async function addAudioFromDrive(uatId) {
-  const input = document.getElementById('audio-link-' + uatId);
-  const raw = (input.value || '').trim();
-  if (!raw) { showToast('Introdu un link sau ID Drive'); return; }
-
-  // Extrage file ID din link sau foloseste direct daca e ID
-  let fileId = raw;
-  const m = raw.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
-  if (m) fileId = m[1];
-  // Format: id= din URL export
-  const m2 = raw.match(/[?&]id=([a-zA-Z0-9_-]{25,})/);
-  if (m2) fileId = m2[1];
-
-  showToast('Se adaugă fișierul…');
-  try {
-    const resp = await fetch(`${API_URL}?action=add_audio&uat_id=${uatId}&file_id=${fileId}`, {cache:'no-store'});
-    const data = await resp.json();
-    if (data.error) { showToast('Eroare: ' + data.error); return; }
-    showToast('✓ Adăugat! ' + (data.nume || ''));
-    input.value = '';
-    // Reîncarcă lista audio
-    const el = document.getElementById('audio-uat-' + uatId);
-    if (el) { el.dataset.loaded = ''; el.textContent = 'Se încarcă…'; }
-    loadAudioUat(uatId);
-  } catch(e) {
-    showToast('Eroare: ' + e.message);
-  }
-}
-
-
-
-async function transcribeAudio(fileId, uatId, targetId, btn) {
-  btn.disabled = true;
-  btn.textContent = '⏳ Se transcrie…';
-  const target = document.getElementById(targetId);
-  if (target) target.textContent = 'Se transcrie… (poate dura 30-60 sec)';
-  try {
-    const resp = await fetch(`${API_URL}?action=transcribe_audio&file_id=${fileId}&uat_id=${uatId}`, {cache:'no-store'});
-    const data = await resp.json();
-    if (data.error) {
-      showToast('Eroare transcriere: ' + data.error);
-      btn.disabled = false; btn.textContent = '🤖 Transcriere';
-      if (target) target.textContent = '';
-      return;
-    }
-    showToast('✓ Transcriere salvata!');
-    btn.style.display = 'none';
-    if (target) {
-      target.style.cssText = 'margin-top:8px;font-size:11px;color:var(--text2);line-height:1.5;font-style:italic;white-space:pre-wrap';
-      target.textContent = '"' + data.text + '"';
-    }
-  } catch(e) {
-    showToast('Eroare: ' + e.message);
-    btn.disabled = false; btn.textContent = '🤖 Transcriere';
-  }
-}
-
-async function uploadAudioFile(input, uatId) {
-  const file = input.files[0];
-  if (!file) return;
-  const progress = document.getElementById('audio-upload-progress-' + uatId);
-  if (progress) { progress.style.display = 'block'; progress.textContent = 'Se pregateste fisierul...'; }
-  try {
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    if (progress) progress.textContent = 'Se incarca... (poate dura cateva secunde)';
-    const resp = await fetch(
-      `${API_URL}?action=upload_audio&uat_id=${uatId}&filename=${encodeURIComponent(file.name)}&mimetype=${encodeURIComponent(file.type)}`,
-      { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: base64 }
-    );
-    const data = await resp.json();
-    if (data.error) { showToast('Eroare: ' + data.error); if (progress) progress.style.display='none'; return; }
-    showToast('Incarcat: ' + file.name);
-    input.value = '';
-    if (progress) progress.style.display = 'none';
-    const el = document.getElementById('audio-uat-' + uatId);
-    if (el) { el.dataset.loaded = ''; el.textContent = 'Se incarca...'; }
-    loadAudioUat(uatId);
-  } catch(e) {
-    showToast('Eroare upload: ' + e.message);
-    if (progress) progress.style.display = 'none';
-  }
-}
 async function loadFisiere(uatId) {
   const el = document.getElementById('fisiere-' + uatId);
   if (!el || el.dataset.loaded) return;
@@ -1282,183 +998,10 @@ function showView(v) {
   else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
   else if(v==='mentenanta'){document.getElementById('mentenanta-view').classList.add('active');document.getElementById('nav-mentenanta').classList.add('active');loadMentenanta();}
   else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
-  else if(v==='setari'){document.getElementById('setari-view').classList.add('active');document.getElementById('nav-setari').classList.add('active');initSetari();}
-  // Ascunde/arata search si filter bar
-  const showSearch = v === 'lista';
-  document.getElementById('search-row').style.display = showSearch ? '' : 'none';
-  document.getElementById('filter-bar').style.display = showSearch ? '' : 'none';
-}
-
-// ─── SETARI ────────────────────────────────────────────────
-function initSetari() {
-  const darkColor = localStorage.getItem('card-color-dark') || '#111827';
-  const lightColor = localStorage.getItem('card-color-light') || '#ffffff';
-  document.getElementById('cp-dark-card').value = darkColor;
-  document.getElementById('cp-light-card').value = lightColor;
-}
-
-function applyCardColor(theme, color) {
-  // Salveaza imediat in localStorage la fiecare miscare
-  localStorage.setItem('card-color-' + theme, color);
-
-  const isLight = document.documentElement.classList.contains('light');
-  if ((theme === 'dark' && !isLight) || (theme === 'light' && isLight)) {
-    document.documentElement.style.setProperty('--surface', color);
-    const r = parseInt(color.slice(1,3),16);
-    const g = parseInt(color.slice(3,5),16);
-    const b = parseInt(color.slice(5,7),16);
-    const isDark = (r*0.299 + g*0.587 + b*0.114) < 128;
-    const adj = isDark ? 20 : -15;
-    const clamp = v => Math.min(255, Math.max(0, v));
-    const s2 = '#' + [r+adj, g+adj, b+adj].map(v => clamp(v).toString(16).padStart(2,'0')).join('');
-    const s3 = '#' + [r+adj*2, g+adj*2, b+adj*2].map(v => clamp(v).toString(16).padStart(2,'0')).join('');
-    document.documentElement.style.setProperty('--surface2', s2);
-    document.documentElement.style.setProperty('--surface3', s3);
-  }
-}
-
-function saveCardColor(theme, color) {
-  // applyCardColor deja salveaza — aceasta functie ramane pentru compatibilitate
-  applyCardColor(theme, color);
-}
-
-function resetCardColors() {
-  localStorage.removeItem('card-color-dark');
-  localStorage.removeItem('card-color-light');
-  document.documentElement.style.removeProperty('--surface');
-  document.documentElement.style.removeProperty('--surface2');
-  document.documentElement.style.removeProperty('--surface3');
-  document.getElementById('cp-dark-card').value = '#111827';
-  document.getElementById('cp-light-card').value = '#ffffff';
-  showToast('Culori resetate');
-}
-
-function loadSavedColors() {
-  const isLight = document.documentElement.classList.contains('light');
-  const key = isLight ? 'card-color-light' : 'card-color-dark';
-  const saved = localStorage.getItem(key);
-  if (saved) applyCardColor(isLight ? 'light' : 'dark', saved);
-}
-
-// ─── SETARI SUBTABURI ───────────────────────────────────────
-function showSetariTab(tab) {
-  document.getElementById('setari-content').style.display = tab === 'setari' ? 'flex' : 'none';
-  document.getElementById('istoric-content').style.display = tab === 'istoric' ? 'flex' : 'none';
-  document.getElementById('stab-setari').style.borderBottomColor = tab === 'setari' ? 'var(--accent)' : 'transparent';
-  document.getElementById('stab-setari').style.color = tab === 'setari' ? 'var(--accent)' : 'var(--text2)';
-  document.getElementById('stab-istoric').style.borderBottomColor = tab === 'istoric' ? 'var(--accent)' : 'transparent';
-  document.getElementById('stab-istoric').style.color = tab === 'istoric' ? 'var(--accent)' : 'var(--text2)';
-  if (tab === 'istoric' && !istoricData) loadIstoric();
-}
-
-// ─── ISTORIC ───────────────────────────────────────────────
-let istoricData = null;
-let istoricTipActiv = 'all';
-
-const ISTORIC_ICON = {
-  factura_emisa: '💰', factura_stearsa: '🗑️', factura_email_atasat: '📧',
-  contract_salvat: '📄', servicii_salvate: '🔧', uat_editat: '✏️'
-};
-const ISTORIC_LABEL = {
-  factura_emisa: 'Factură emisă', factura_stearsa: 'Factură ștearsă',
-  factura_email_atasat: 'Email atașat', contract_salvat: 'Contract salvat',
-  servicii_salvate: 'Servicii salvate', uat_editat: 'UAT editat'
-};
-const ISTORIC_COLOR = {
-  factura_emisa: '#10b981', factura_stearsa: '#ef4444', factura_email_atasat: '#6366f1',
-  contract_salvat: '#f59e0b', servicii_salvate: '#8b5cf6', uat_editat: '#64748b'
-};
-
-async function loadIstoric() {
-  const el = document.getElementById('istoric-list');
-  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Se încarcă istoricul…</div>';
-  try {
-    const resp = await fetch(`${API_URL}?action=istoric`, {cache:'no-store'});
-    const data = await resp.json();
-    if (data.error) throw new Error(data.error);
-    istoricData = data.operatiuni;
-    renderIstoric();
-  } catch(e) {
-    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${e.message}</div>`;
-  }
-}
-
-function toggleIstoricTip(tip, el) {
-  istoricTipActiv = tip;
-  document.querySelectorAll('#istoric-content .filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  renderIstoric();
-}
-
-function renderIstoric() {
-  if (!istoricData) return;
-  const el = document.getElementById('istoric-list');
-  const q = norm(document.getElementById('istoric-search').value);
-
-  let ops = istoricData;
-  if (istoricTipActiv !== 'all') ops = ops.filter(o => o.tip === istoricTipActiv);
-  if (q) ops = ops.filter(o => {
-    const uat = uats.find(u => String(u['ID']) === String(o.uat_id));
-    const uatName = uat ? norm(getField(uat,'Localitate')) : '';
-    return uatName.includes(q) ||
-      norm(o.nr_factura||'').includes(q) ||
-      norm(o.firma||'').includes(q) ||
-      norm(ISTORIC_LABEL[o.tip]||o.tip).includes(q) ||
-      norm(o.ts||'').includes(q);
-  });
-
-  if (!ops.length) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">Nicio operațiune găsită</div>';
-    return;
-  }
-
-  // Grupeaza pe zile
-  const byDay = {};
-  ops.forEach(o => {
-    const day = (o.ts||'').substring(0,10);
-    if (!byDay[day]) byDay[day] = [];
-    byDay[day].push(o);
-  });
-
-  el.innerHTML = `<div style="font-size:11px;color:var(--text3);padding-bottom:10px">${ops.length} operațiuni</div>` +
-    Object.keys(byDay).map(day => {
-      const dayOps = byDay[day];
-      return `<div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 8px;border-bottom:1px solid var(--border);margin-bottom:8px">${day}</div>
-        ${dayOps.map(o => {
-          const uat = uats.find(u => String(u['ID']) === String(o.uat_id));
-          const uatName = uat ? getField(uat,'Localitate') : 'UAT #' + o.uat_id;
-          const color = ISTORIC_COLOR[o.tip] || '#64748b';
-          const icon = ISTORIC_ICON[o.tip] || '📌';
-          const label = ISTORIC_LABEL[o.tip] || o.tip;
-          const ora = (o.ts||'').substring(11);
-
-          // Detalii extra specifice tipului
-          let detalii = '';
-          if (o.nr_factura) detalii += `<span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--surface3);padding:1px 6px;border-radius:4px;margin-right:4px">${o.nr_factura}</span>`;
-          if (o.firma) detalii += `<span style="font-size:10px;color:var(--text3)">${o.firma}</span>`;
-          if (o.nr_servicii) detalii += `<span style="font-size:10px;color:var(--text3)">${o.nr_servicii} servicii</span>`;
-          if (o.nr_contracte) detalii += `<span style="font-size:10px;color:var(--text3)">${o.nr_contracte} contracte</span>`;
-          if (o.firma_id && !o.firma) detalii += `<span style="font-size:10px;color:var(--text3)">${o.firma_id === 'f1' ? 'Firma 1' : 'Firma 2'}</span>`;
-
-          return `<div style="display:flex;gap:10px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;border-left:3px solid ${color}" onclick="openUat('${o.uat_id}')">
-            <div style="font-size:20px;flex-shrink:0;line-height:1">${icon}</div>
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-                <div style="font-size:12px;font-weight:600;color:var(--text)">${uatName}</div>
-                <div style="font-size:10px;color:var(--text3);flex-shrink:0">${ora}</div>
-              </div>
-              <div style="font-size:11px;color:${color};margin-top:2px">${label}</div>
-              ${detalii ? `<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;align-items:center">${detalii}</div>` : ''}
-            </div>
-          </div>`;
-        }).join('')}
-      </div>`;
-    }).join('');
 }
 
 // ─── CAUTARE ───────────────────────────────────────────────
-let activeTips = new Set(['contract','factura','pv','util','audio']);
+let activeTips = new Set(['contract','factura','pv','util']);
 function toggleTip(tip, el) {
   if(activeTips.has(tip)) { activeTips.delete(tip); el.classList.remove('active'); }
   else { activeTips.add(tip); el.classList.add('active'); }
@@ -1475,8 +1018,8 @@ async function doCautare() {
     if(data.error) throw new Error(data.error);
     const filtered = data.rezultate.filter(r => activeTips.has(r.tip));
     if(!filtered.length) { el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Niciun rezultat găsit</div>'; return; }
-    const tipIcon = {contract:'📄',factura:'💰',pv:'📋',util:'📁',audio:'🎤'};
-    const tipLabel = {contract:'Contract',factura:'Factură',pv:'Proces verbal',util:'Fișier util',audio:'Transcriere audio'};
+    const tipIcon = {contract:'📄',factura:'💰',pv:'📋',util:'📁'};
+    const tipLabel = {contract:'Contract',factura:'Factură',pv:'Proces verbal',util:'Fișier util'};
     el.innerHTML = `<div style="font-size:11px;color:var(--text3);padding:4px 0 10px">${filtered.length} rezultate pentru „${q}"</div>` +
       filtered.map(r => {
         const uat = r.uatId ? uats.find(u=>String(u['ID'])===r.uatId) : null;
@@ -1492,12 +1035,7 @@ async function doCautare() {
               <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:var(--surface2);color:var(--text2)">${tipIcon[r.tip]} ${tipLabel[r.tip]}</span>
               ${uatName?`<span style="font-size:10px;margin-left:6px;color:var(--accent2)">${uatName}</span>`:''}
             </div>
-            ${r.viewUrl
-              ? `<a href="${r.viewUrl}" target="_blank" style="flex-shrink:0;padding:5px 10px;background:var(--accent);color:white;border-radius:8px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap">Deschide</a>`
-              : r.uatId
-                ? `<button onclick="openUat('${r.uatId}')" style="flex-shrink:0;padding:5px 10px;background:var(--accent);color:white;border-radius:8px;font-size:11px;font-weight:600;border:none;cursor:pointer;white-space:nowrap">Vezi UAT</button>`
-                : ''
-            }
+            ${r.viewUrl?`<a href="${r.viewUrl}" target="_blank" style="flex-shrink:0;padding:5px 10px;background:var(--accent);color:white;border-radius:8px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap">Deschide</a>`:''}
           </div>
           <div style="font-size:12px;font-weight:600;margin-bottom:4px;word-break:break-word">${shortName}</div>
           <div style="font-size:11px;color:var(--text2);line-height:1.5">${highlighted}</div>
@@ -1570,14 +1108,14 @@ document.getElementById('drawer').addEventListener('touchstart',e=>{touchY=e.tou
 document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[0].clientY-touchY>80)closeDrawer();},{passive:true});
 
 // ─── INIT ──────────────────────────────────────────────────
-// Afiseaza cache-ul imediat daca e proaspat (< 30 min), altfel asteapta sync
-const cachedInit = cacheLoad();
-if(cachedInit){
-  uats = cachedInit;
+// Încearcă cache offline primul, apoi sync
+const cached=localStorage.getItem('uats_cache');
+if(cached){
+  uats=JSON.parse(cached);
   const ts=localStorage.getItem('uats_ts');
   showMainUI();
   renderCurrent();
-  const d=ts?new Date(parseInt(ts)).toLocaleString('ro-RO'):'?';
+  const d=ts?new Date(ts).toLocaleString('ro-RO'):'?';
   document.getElementById('last-sync').textContent=`Cache din ${d}`;
 }
 syncData();
