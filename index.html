@@ -867,7 +867,7 @@ function openUat(id) {
             <div class="detail-row"><div class="detail-label">Perioadă</div><div class="detail-value mono" style="font-size:11px">${(c.data_contract||'').substring(0,10)} → ${(c.data_incetare||'').substring(0,10)}</div></div>
             ${c.valoare_lunara?`<div class="detail-row"><div class="detail-label">Valoare</div><div class="detail-value mono">${c.valoare_lunara} Lei/lună</div></div>`:''}
             ${appsSnap.length?`<div style="margin-top:6px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Aplicații la momentul arhivării:</div>${appsSnap.map(a=>`<span style="font-size:10px;padding:2px 7px;background:var(--surface3);border-radius:5px;margin-right:4px;margin-bottom:4px;display:inline-block">${a.nume} · ${a.pret} Lei</span>`).join('')}</div>`:''}
-            ${fisiereSc.length?`<div style="margin-top:8px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Fișiere arhivate:</div>${fisiereSc.map(f=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="font-size:10px;color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f}</span><button onclick="deschideFisier('${f}')" style="flex-shrink:0;margin-left:6px;padding:3px 8px;background:var(--surface3);color:var(--text2);border:1px solid var(--border);border-radius:5px;font-size:10px;cursor:pointer">📄</button></div>`).join('')}</div>`:''}
+            ${fisiereSc.length?`<div style="margin-top:8px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">Fișiere arhivate:</div>${fisiereSc.map(f=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="font-size:10px;color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f}</span><button onclick="deschideFisier('${f}')" style="flex-shrink:0;margin-left:8px;padding:4px 10px;background:var(--surface3);color:var(--text2);border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer">📄</button></div>`).join('')}</div>`:''}
           </div>`;
         }).join('')}
       </div>
@@ -896,11 +896,11 @@ function openUat(id) {
     </div>
     <div id="tab-contracte" class="tab-content">
       ${contracteHtml}
-      ${arhivaHtml}
       <div class="detail-section" style="margin-top:8px">
-        <h3>📄 Fișiere contracte active</h3>
+        <h3>📄 Fișiere contracte</h3>
         <div id="fisiere-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
       </div>
+      ${arhivaHtml}
     </div>
     <div id="tab-facturi" class="tab-content">${facturiHtml||'<div style="color:var(--text3);font-size:13px;padding:12px 0">Nicio factură înregistrată</div>'}</div>
     <div id="tab-corespondenta" class="tab-content">
