@@ -1259,6 +1259,12 @@ function showView(v) {
   currentView=v;
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  // Ascunde/afiseaza bara de cautare si filtre doar pe tab Lista
+  const searchRow = document.getElementById('search-row');
+  const filterBar = document.getElementById('filter-bar');
+  const filterBtn = document.getElementById('filter-btn');
+  if (searchRow) searchRow.style.display = v==='lista' ? '' : 'none';
+  if (filterBar && v!=='lista') { filterBar.style.display='none'; filterBarOpen=false; if(filterBtn) filterBtn.classList.remove('active'); }
   if(v==='lista'){document.getElementById('list-view').classList.add('active');document.getElementById('nav-lista').classList.add('active');renderList();}
   else if(v==='contacte'){document.getElementById('contacts-view').classList.add('active');document.getElementById('nav-contacte').classList.add('active');renderContacts();}
   else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
