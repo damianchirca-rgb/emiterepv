@@ -1156,10 +1156,13 @@ async function loadAudioTab(uatId) {
     const fisiere = data.fisiere || [];
     if (!fisiere.length) { elAudio.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px 0">Nicio înregistrare audio.</div>'; return; }
 
-    // Stocheaza sumarele global pentru acces din onclick
+    // Stocheaza sumarele si transcrierile in variabile globale
     window._audioSumars = window._audioSumars || {};
+    window._audioTranscr = window._audioTranscr || {};
     fisiere.forEach((f, i) => {
-      if (f.sumar) window._audioSumars[uatId + '_' + i] = f.sumar;
+      const k = uatId + '_' + i;
+      if (f.sumar) window._audioSumars[k] = f.sumar;
+      if (f.transcriere) window._audioTranscr[k] = { preview: f.transcriere, full: null, fullName: f.fullName };
     });
 
     elAudio.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:10px">${fisiere.length} înregistrări</div>` +
@@ -1167,38 +1170,50 @@ async function loadAudioTab(uatId) {
         const dateRo = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'long',year:'numeric'}) : '';
         const sumar  = f.sumar || '';
         const transcr = f.transcriere || '';
-        const smKey = uatId + '_' + i;
+        const k = uatId + '_' + i;
         const viewUrl = f.view || '';
-        const hasId = !!f.id;
-
-        // Preview sumar (primele 200 caractere)
-        const sumarPrev = sumar.length > 200 ? sumar.substring(0,200) + '…' : sumar;
-        const needsExpand = sumar.length > 200;
+        const needsExpandSumar = sumar.length > 200;
+        const sumarPrev = sumar.substring(0, 200);
 
         return `<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)">
+          
+          <!-- Header: data + buton ascultare -->
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600">🎤 ${dateRo || f.name.substring(0,30)}</div>
-              <div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.name}">${f.name}</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</div>
             </div>
             ${viewUrl
-              ? `<a href="${viewUrl}" target="_blank"
-                  style="flex-shrink:0;padding:8px 14px;background:var(--accent);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">
-                  ▶ Ascultă
-                </a>`
-              : `<span style="font-size:11px;color:var(--eroare)">⚠️ fără ID</span>`
+              ? `<a href="${viewUrl}" target="_blank" style="flex-shrink:0;padding:8px 14px;background:var(--accent);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">▶ Ascultă</a>`
+              : `<span style="font-size:10px;color:var(--eroare)">⚠️ fără ID</span>`
             }
           </div>
-          ${transcr && !sumar ? `<div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:8px;line-height:1.4">"${transcr.substring(0,150)}…"</div>` : ''}
+
+          <!-- Transcriere (preview + buton citeste tot) -->
+          ${transcr ? `<div style="background:var(--surface3);border-radius:8px;padding:10px;margin-bottom:${sumar?'8px':'0'};border-left:2px solid var(--text3)">
+            <div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:4px">📝 Transcriere</div>
+            <div class="transcr-text" id="tr-${k}" style="font-size:11px;color:var(--text2);line-height:1.6;font-style:italic">"${transcr.substring(0,300)}${transcr.length>=300?'…':'"'}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              ${transcr.length >= 300
+                ? `<button onclick="loadFullTranscr('${k}','${(f.fullName||'').replace(/'/g,"\'")}')" id="tr-btn-${k}"
+                    style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">
+                    📄 Citește tot
+                  </button>`
+                : ''}
+            </div>
+          </div>` : ''}
+
+          <!-- Sumar GPT -->
           ${sumar ? `<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">
-            <div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:6px">🤖 Sumar GPT</div>
-            <div class="sumar-text" style="font-size:11px;color:var(--text2);line-height:1.6;white-space:pre-wrap"
-              data-full="${smKey}" data-expanded="0">${sumarPrev}</div>
-            ${needsExpand ? `<button onclick="toggleSumar(this)" data-key="${smKey}"
+            <div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:4px">🤖 Sumar GPT</div>
+            <div class="sumar-text" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"
+              data-full="${k}" data-expanded="0">${sumarPrev}${needsExpandSumar?'…':''}</div>
+            ${needsExpandSumar ? `<button onclick="toggleSumar(this)" data-key="${k}"
               style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;font-family:inherit">
               ▼ Citește tot
             </button>` : ''}
           </div>` : ''}
+
         </div>`;
       }).join('');
 
@@ -1212,8 +1227,7 @@ function toggleSumar(btn) {
   const textEl = btn.previousElementSibling;
   const isExpanded = textEl.dataset.expanded === '1';
   if (isExpanded) {
-    const full = (window._audioSumars[key] || '');
-    textEl.textContent = full.substring(0,200) + '…';
+    textEl.textContent = (window._audioSumars[key] || '').substring(0,200) + '…';
     textEl.dataset.expanded = '0';
     btn.textContent = '▼ Citește tot';
   } else {
@@ -1222,6 +1236,40 @@ function toggleSumar(btn) {
     btn.textContent = '▲ Restrânge';
   }
 }
+
+async function loadFullTranscr(key, fullName) {
+  const el = document.getElementById('tr-' + key);
+  const btn = document.getElementById('tr-btn-' + key);
+  if (!el || !fullName) return;
+
+  // Daca e deja incarcata
+  if (window._audioTranscr[key]?.full) {
+    el.textContent = '"' + window._audioTranscr[key].full + '"';
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+
+  if (btn) { btn.textContent = 'Se încarcă…'; btn.disabled = true; }
+
+  try {
+    const resp = await fetch(`${API_URL}?action=transcriere&full_name=${encodeURIComponent(fullName)}`, {cache:'no-store'});
+    const data = await resp.json();
+
+    if (data.eroare) {
+      if (btn) { btn.textContent = '⚠️ ' + data.eroare; btn.disabled = false; }
+      return;
+    }
+
+    const text = data.text || '';
+    if (window._audioTranscr[key]) window._audioTranscr[key].full = text;
+    el.textContent = '"' + text + '"';
+    if (btn) btn.style.display = 'none';
+
+  } catch(err) {
+    if (btn) { btn.textContent = '⚠️ Eroare rețea'; btn.disabled = false; }
+  }
+}
+
 
 
 
