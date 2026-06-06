@@ -344,18 +344,31 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbyrIKVxXAULXoHszaN60nQQqNAK6N_j_PqNmhAsRZ_D7fdvzf38euhpPH95Z0PHcw/exec';
 
 // Construieste URL poza primar din ID Drive
-function pozaUrl(idOrUrl) {
+// Extrage ID-ul Drive din orice format (ID raw sau URL complet)
+function extractDriveId(idOrUrl) {
   if (!idOrUrl) return null;
-  // Daca e deja URL complet (versiune veche), returneaza direct
-  if (idOrUrl.startsWith('http')) return idOrUrl;
-  // ID Drive - incercam thumbnail API (nu necesita auth)
-  return `https://drive.google.com/thumbnail?id=${idOrUrl}&sz=w100-h100`;
+  if (!idOrUrl.startsWith('http')) return idOrUrl; // deja ID raw
+  // https://drive.google.com/uc?export=view&id=XXX
+  let m = idOrUrl.match(/[?&]id=([^&]+)/);
+  if (m) return m[1];
+  // https://drive.google.com/file/d/XXX/...
+  m = idOrUrl.match(/\/d\/([^/]+)/);
+  if (m) return m[1];
+  return null;
 }
 
-// Fallback la proxy Apps Script daca thumbnail nu se incarca
-function pozaOnerror(img, id) {
-  if (!id || id.startsWith('http')) { img.style.display='none'; return; }
-  img.onerror = () => { img.style.display='none'; };
+// Construieste URL poza — thumbnail API, fara autentificare
+function pozaUrl(idOrUrl) {
+  const id = extractDriveId(idOrUrl);
+  if (!id) return null;
+  return `https://drive.google.com/thumbnail?id=${id}&sz=w100-h100`;
+}
+
+// Fallback la proxy Apps Script (functioneaza intotdeauna, indiferent de sharing)
+function pozaOnerror(img, idOrUrl) {
+  const id = extractDriveId(idOrUrl);
+  if (!id) { img.style.display = 'none'; return; }
+  img.onerror = () => { img.style.display = 'none'; };
   img.src = `${API_URL}?action=poza&id=${id}`;
 }
 
