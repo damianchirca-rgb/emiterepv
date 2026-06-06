@@ -800,12 +800,31 @@ function openUat(id) {
       const fisiereScanate = (c.fisiere_scanate||[]);
       const fisiereScanateHtml = fisiereScanate.length
         ? `<div style="margin-top:10px">
-            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Fișiere atașate</div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Fișiere atașate active</div>
             ${fisiereScanate.map(f=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
               <span style="font-size:11px;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f}</span>
               <button onclick="deschideFisier('${f}')" style="flex-shrink:0;margin-left:8px;padding:4px 10px;background:var(--accent);color:white;border:none;border-radius:6px;font-size:11px;cursor:pointer">📄</button>
             </div>`).join('')}
           </div>` : '';
+
+      // Fisiere arhivate (din acelasi contract, mutate in arhiva)
+      const fisiereArhivate = (c.fisiere_arhivate||[]);
+      const arhId = 'farh-' + Math.random().toString(36).slice(2);
+      const fisiereArhivateHtml = fisiereArhivate.length ? `
+        <div style="margin-top:8px">
+          <div onclick="const b=document.getElementById('${arhId}');b.style.display=b.style.display==='none'?'block':'none';this.querySelector('.arr').textContent=b.style.display==='none'?'▼':'▲'"
+            style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface3);border-radius:8px;cursor:pointer">
+            <span style="font-size:12px;font-weight:600;color:var(--text2)">📦 Fișiere arhivate <span style="font-size:11px;background:var(--surface2);padding:1px 6px;border-radius:10px;margin-left:4px">${fisiereArhivate.length}</span></span>
+            <span class="arr" style="color:var(--text3);font-size:12px">▼</span>
+          </div>
+          <div id="${arhId}" style="display:none;margin-top:4px">
+            ${fisiereArhivate.map(f=>`
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+                <span style="font-size:11px;color:var(--text3);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🗄 ${f}</span>
+                <button onclick="deschideFisier('${f}')" style="flex-shrink:0;margin-left:8px;padding:4px 10px;background:var(--surface3);color:var(--text2);border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer">📄</button>
+              </div>`).join('')}
+          </div>
+        </div>` : '';
 
       contracteHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;border-left:3px solid var(--activ)">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
@@ -820,6 +839,7 @@ function openUat(id) {
         ${c.data_inceput?`<div class="detail-row"><div class="detail-label">Data început</div><div class="detail-value mono">${c.data_inceput.substring(0,10)}</div></div>`:''}
         <div class="detail-row"><div class="detail-label">Data încetare</div><div class="detail-value mono" style="color:${expCol}">${(c.data_incetare||'—').substring(0,10)}${expLbl}</div></div>
         ${fisiereScanateHtml}
+        ${fisiereArhivateHtml}
       </div>`;
     });
   } else {
@@ -1192,22 +1212,43 @@ async function loadFisiere(uatId) {
     const resp = await fetch(`${API_URL}?action=contracte_fisiere&uat_id=${uatId}`, { cache: 'no-store' });
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
-    if (!data.fisiere || !data.fisiere.length) {
+    const fisiereActive = data.fisiere || [];
+    const fisiereArh = data.fisiereArhivate || [];
+
+    if (!fisiereActive.length && !fisiereArh.length) {
       el.textContent = 'Niciun fișier găsit.';
       return;
     }
-    el.innerHTML = data.fisiere.map(f => {
+
+    function fileRow(f, isArhivat) {
       const icon = f.type === 'pdf' ? '📄' : '🖼';
-      // Nume mai scurt - sterge prefixul ID_firma_
       const shortName = f.name.replace(/^\d+_[^_]+_/, '').replace(/\.(pdf|PDF|jpg|jpeg|png|JPG|JPEG|PNG)$/, '');
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
         <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon} ${shortName}</div>
+          <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${isArhivat?'color:var(--text3)':''}">${icon} ${shortName}</div>
           <div style="font-size:10px;color:var(--text3);margin-top:2px">${f.name}</div>
         </div>
-        <a href="${f.view}" target="_blank" style="flex-shrink:0;margin-left:10px;padding:6px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">Deschide</a>
+        <a href="${f.view}" target="_blank" style="flex-shrink:0;margin-left:10px;padding:6px 12px;background:${isArhivat?'var(--surface3)':'var(--accent)'};color:${isArhivat?'var(--text2)':'white'};border:${isArhivat?'1px solid var(--border)':'none'};border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">Deschide</a>
       </div>`;
-    }).join('');
+    }
+
+    const arhSectId = 'fsarh-' + uatId;
+    let html = fisiereActive.map(f => fileRow(f, false)).join('');
+
+    if (fisiereArh.length) {
+      html += `<div style="margin-top:12px">
+        <div onclick="const b=document.getElementById('${arhSectId}');b.style.display=b.style.display==='none'?'block':'none';this.querySelector('.arr').textContent=b.style.display==='none'?'▼':'▲'"
+          style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface3);border-radius:8px;cursor:pointer;margin-bottom:4px">
+          <span style="font-size:12px;font-weight:600;color:var(--text2)">📦 Fișiere arhivate <span style="font-size:11px;background:var(--surface2);padding:1px 6px;border-radius:10px;margin-left:4px">${fisiereArh.length}</span></span>
+          <span class="arr" style="color:var(--text3);font-size:12px">▼</span>
+        </div>
+        <div id="${arhSectId}" style="display:none">
+          ${fisiereArh.map(f => fileRow(f, true)).join('')}
+        </div>
+      </div>`;
+    }
+
+    el.innerHTML = html;
   } catch(err) {
     el.textContent = 'Eroare: ' + err.message;
   }
