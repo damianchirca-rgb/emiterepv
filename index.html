@@ -1179,29 +1179,42 @@ async function loadAudioUat(uatId) {
   const el = document.getElementById('audio-uat-' + uatId);
   if (!el || el.dataset.loaded === '1') return;
   el.dataset.loaded = '1';
-  el.textContent = 'Se încarcă…';
+  el.innerHTML = '<div style="color:var(--text3);font-size:12px">Se încarcă înregistrările…</div>';
   try {
     const resp = await fetch(`${API_URL}?action=audio_uat&uat_id=${uatId}`, {cache:'no-store'});
     const data = await resp.json();
-    if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Nicio înregistrare audio.'; return; }
-    el.innerHTML = data.fisiere.map(f => {
-      const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
-      // Extrage data din nume fisier
-      const dateMatch = f.name.match(/(\d{4}-\d{2}-\d{2})/);
-      const dateStr = dateMatch ? dateMatch[1] : f.modified;
-      return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:500">🎤 ${dateStr}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div>
-            ${f.transcriere?`<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;font-style:italic">"${f.transcriere}…"</div>`:''}
+
+    if (data.eroare) {
+      el.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ ${data.eroare}</div>`;
+      return;
+    }
+    if (!data.fisiere || !data.fisiere.length) {
+      el.innerHTML = '<div style="color:var(--text3);font-size:12px">Nicio înregistrare audio găsită.</div>';
+      return;
+    }
+
+    el.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:8px">${data.fisiere.length} înregistrări${data.sursa==='index'?' (din index)':''}</div>` +
+      data.fisiere.map(f => {
+        const sizeStr = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : f.size > 0 ? (f.size/1024).toFixed(0)+'KB' : '';
+        const dateMatch = (f.name||'').match(/(\d{4}-\d{2}-\d{2})/);
+        const dateStr = dateMatch ? dateMatch[1] : (f.modified||'').substring(0,10);
+        const hasLink = f.view && f.view !== 'null';
+        return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:600">🎤 ${dateStr}</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:2px">${f.name||''}${sizeStr?' · '+sizeStr:''}</div>
+              ${f.transcriere?`<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;font-style:italic">"${f.transcriere}…"</div>`:''}
+            </div>
+            ${hasLink ? `<a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">▶ Ascultă</a>` : ''}
           </div>
-          <a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">▶ Ascultă</a>
-        </div>
-      </div>`;
-    }).join('');
-  } catch(err) { el.textContent = 'Eroare: ' + err.message; }
+        </div>`;
+      }).join('');
+  } catch(err) {
+    el.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ Eroare: ${err.message}</div>`;
+  }
 }
+
 
 async function loadFisiere(uatId) {
   const el = document.getElementById('fisiere-' + uatId);
