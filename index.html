@@ -879,7 +879,8 @@ function openUat(id) {
       <button class="tab-btn active" id="tab-btn-main" onclick="switchTab('main')">Main</button>
       <button class="tab-btn" id="tab-btn-contracte" onclick="switchTab('contracte');loadFisiere('${id}')">Contracte</button>
       <button class="tab-btn" id="tab-btn-facturi" onclick="switchTab('facturi')">Facturi</button>
-      <button class="tab-btn" id="tab-btn-corespondenta" onclick="switchTab('corespondenta');loadCorespondenta('${id}')">Cores.</button>
+      <button class="tab-btn" id="tab-btn-corespondenta" onclick="switchTab('corespondenta');loadCorespondenta('${id}')">Mail</button>
+      <button class="tab-btn" id="tab-btn-audio" onclick="switchTab('audio');loadAudioTab('${id}')">Audio</button>
       <button class="tab-btn" id="tab-btn-aplicatii" onclick="switchTab('aplicatii')">Aplicații</button>
       <button class="tab-btn" id="tab-btn-utile" onclick="switchTab('utile');loadUtile('${id}')">Utile</button>
       <button class="tab-btn" id="tab-btn-harta" onclick="switchTab('harta')">Hartă</button>
@@ -939,11 +940,10 @@ function openUat(id) {
         <h3>📎 Fișiere atașate</h3>
         <div id="fisiere-utile-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
       </div>
-      <div class="detail-section">
-        <h3>🎤 Înregistrări audio</h3>
-        <div id="audio-uat-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
-        <div id="audio-sumar-${id}" style="margin-top:8px"></div>
-      </div>
+    </div>
+    <div id="tab-audio" class="tab-content">
+      <div id="audio-uat-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
+      <div id="audio-sumar-${id}" style="margin-top:8px"></div>
     </div>
     <div id="tab-harta" class="tab-content">
       ${lat?`<a class="map-btn" href="https://maps.google.com/?q=${lat},${lng}" target="_blank">🗺 Deschide în Google Maps</a>
@@ -1041,12 +1041,8 @@ function closeDrawer() {
 async function loadUtile(uatId) {
   // Reseteaza flag-urile ca sa reîncarce
   const fe = document.getElementById('fisiere-utile-' + uatId);
-  const ae = document.getElementById('audio-uat-' + uatId);
   if (fe) { fe.dataset.loaded = ''; fe.textContent = 'Se încarcă…'; }
-  if (ae) { ae.dataset.loaded = ''; ae.textContent = 'Se încarcă…'; }
   loadFisiereUtile(uatId);
-  loadAudioUat(uatId);
-  loadAudioSumar(uatId);
 }
 
 // ─── SUMARE GPT AUDIO ──────────────────────────────────────
@@ -1173,6 +1169,16 @@ async function loadFisiereUtile(uatId) {
       </div>`;
     }).join('');
   } catch(err) { el.textContent = 'Eroare: ' + err.message; }
+}
+
+async function loadAudioTab(uatId) {
+  // Reseteaza si reincarca
+  const ae = document.getElementById('audio-uat-' + uatId);
+  const as_ = document.getElementById('audio-sumar-' + uatId);
+  if (ae) { ae.dataset.loaded = ''; ae.innerHTML = '<div style="color:var(--text3);font-size:12px">Se încarcă…</div>'; }
+  if (as_) as_.innerHTML = '';
+  loadAudioUat(uatId);
+  loadAudioSumar(uatId);
 }
 
 async function loadAudioUat(uatId) {
