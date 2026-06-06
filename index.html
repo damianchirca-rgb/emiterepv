@@ -383,8 +383,8 @@
               oninput="applyCardColor('bg', this.value)">
           </div>
           <button onclick="resetCardColors()"
-            style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:inherit;font-size:12px;cursor:pointer;width:100%">
-            🔄 Reset culori carduri
+            style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--eroare);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;width:100%">
+            🔄 Reset culori temă activă (nu afectează cealaltă temă)
           </button>
         </div>
       </div>
@@ -1745,11 +1745,34 @@ const ACCENT_PRESETS = [
   { label: 'Albastru', value: '#3b82f6' },
 ];
 
-// Valorile default ale culorilor per tema
 const DEFAULT_COLORS = {
   dark:  { bg: '#0a0f1e', surface: '#111827', surface2: '#1e2a3a', surface3: '#243044' },
   light: { bg: '#f1f5f9', surface: '#ffffff', surface2: '#f8fafc', surface3: '#e2e8f0' },
 };
+
+// Returneaza tema curenta
+function currentTheme() {
+  return document.documentElement.classList.contains('light') ? 'light' : 'dark';
+}
+
+// Salveaza/citeste culorile per tema
+function getThemeColors(theme) {
+  return JSON.parse(localStorage.getItem('cardColors_' + theme) || '{}');
+}
+function saveThemeColors(theme, colors) {
+  localStorage.setItem('cardColors_' + theme, JSON.stringify(colors));
+}
+
+// Aplica culorile unei teme pe document
+function applyThemeColors(theme) {
+  const def = DEFAULT_COLORS[theme];
+  const saved = getThemeColors(theme);
+  const colors = { ...def, ...saved };
+  Object.entries(colors).forEach(([k, v]) => {
+    document.documentElement.style.setProperty('--' + k, v);
+  });
+  return colors;
+}
 
 function initSetari() {
   // Presets accent
@@ -1767,21 +1790,21 @@ function initSetari() {
     if (picker) picker.value = saved;
   }
 
-  // Initializeaza pickere culori carduri
-  const mode = document.documentElement.classList.contains('light') ? 'light' : 'dark';
-  const def = DEFAULT_COLORS[mode];
-  const savedColors = JSON.parse(localStorage.getItem('cardColors') || '{}');
-  const colors = { ...def, ...savedColors };
+  // Pickere culori carduri — citeste valorile curente aplicate
+  const theme = currentTheme();
+  const def = DEFAULT_COLORS[theme];
+  const saved = getThemeColors(theme);
+  const colors = { ...def, ...saved };
   const cardPicker  = document.getElementById('card-bg-picker');
   const card2Picker = document.getElementById('card-bg2-picker');
   const bgPicker    = document.getElementById('bg-picker');
-  if (cardPicker)  cardPicker.value  = colors.surface  || def.surface;
-  if (card2Picker) card2Picker.value = colors.surface2 || def.surface2;
-  if (bgPicker)    bgPicker.value    = colors.bg        || def.bg;
+  if (cardPicker)  cardPicker.value  = colors.surface;
+  if (card2Picker) card2Picker.value = colors.surface2;
+  if (bgPicker)    bgPicker.value    = colors.bg;
 
   updateThemeButtons();
 
-  // Info
+  // Info tab
   const infoUats = document.getElementById('info-uats');
   const infoTs   = document.getElementById('info-ts');
   const infoSize = document.getElementById('info-size');
@@ -1792,8 +1815,7 @@ function initSetari() {
   }
   if (infoSize) {
     const cache = localStorage.getItem('uats_cache') || '';
-    const kb = (cache.length / 1024).toFixed(0);
-    infoSize.textContent = kb + ' KB';
+    infoSize.textContent = (cache.length / 1024).toFixed(0) + ' KB';
   }
 }
 
@@ -1824,31 +1846,33 @@ function resetAccentColor() { applyAccentColor('#6366f1'); }
 
 function applyCardColor(variable, value) {
   document.documentElement.style.setProperty('--' + variable, value);
-  const saved = JSON.parse(localStorage.getItem('cardColors') || '{}');
+  // Salveaza separat pentru tema curenta
+  const theme = currentTheme();
+  const saved = getThemeColors(theme);
   saved[variable] = value;
-  localStorage.setItem('cardColors', JSON.stringify(saved));
+  saveThemeColors(theme, saved);
 }
 
 function resetCardColors() {
-  localStorage.removeItem('cardColors');
-  const mode = document.documentElement.classList.contains('light') ? 'light' : 'dark';
-  const def = DEFAULT_COLORS[mode];
+  // Reseteaza DOAR tema curenta la valorile ei default
+  const theme = currentTheme();
+  localStorage.removeItem('cardColors_' + theme);
+  const def = DEFAULT_COLORS[theme];
   Object.entries(def).forEach(([k, v]) => {
     document.documentElement.style.setProperty('--' + k, v);
   });
-  // Reseteaza pickere
+  // Actualizeaza pickere
   const cardPicker  = document.getElementById('card-bg-picker');
   const card2Picker = document.getElementById('card-bg2-picker');
   const bgPicker    = document.getElementById('bg-picker');
   if (cardPicker)  cardPicker.value  = def.surface;
   if (card2Picker) card2Picker.value = def.surface2;
   if (bgPicker)    bgPicker.value    = def.bg;
-  showToast('Culori resetate la valorile implicite');
+  showToast('Culori ' + (theme === 'dark' ? 'întunecat' : 'luminos') + ' resetate');
 }
 
 function setThemeMode(mode) {
-  // Reseteaza culorile custom inainte de schimbarea temei
-  resetCardColors();
+  // Schimba tema fara sa reseteze culorile custom
   if (mode === 'light') {
     document.documentElement.classList.add('light');
     localStorage.setItem('theme', 'light');
@@ -1856,13 +1880,15 @@ function setThemeMode(mode) {
     document.documentElement.classList.remove('light');
     localStorage.setItem('theme', 'dark');
   }
+  // Aplica culorile salvate pentru noua tema (sau default daca nu exista)
+  applyThemeColors(mode);
   updateThemeButtons();
-  // Reinitializeaza pickere cu noile culori default
-  setTimeout(initSetari, 50);
+  // Actualizeaza pickere cu culorile noii teme
+  setTimeout(initSetari, 30);
 }
 
 function updateThemeButtons() {
-  const isLight = document.documentElement.classList.contains('light');
+  const isLight = currentTheme() === 'light';
   const darkBtn  = document.getElementById('theme-dark-btn');
   const lightBtn = document.getElementById('theme-light-btn');
   if (darkBtn)  darkBtn.style.borderColor  = isLight ? 'var(--border)' : 'var(--accent)';
@@ -1875,26 +1901,26 @@ function runDiagnostic() {
   const cache = localStorage.getItem('uats_cache');
   const ts = localStorage.getItem('uats_ts');
   const age = ts ? Math.round((Date.now() - new Date(ts).getTime()) / 60000) : null;
+  const darkColors  = Object.keys(getThemeColors('dark')).length;
+  const lightColors = Object.keys(getThemeColors('light')).length;
   const lines = [
     cache ? `✅ Cache prezent: ${(cache.length/1024).toFixed(0)} KB` : '❌ Cache absent',
     ts    ? `🕐 Vârstă cache: ${age} minute` : '⚠️ Timestamp lipsă',
     `📦 UAT-uri în memorie: ${uats.length}`,
-    `🎨 Culoare accent: ${localStorage.getItem('accentColor') || 'default'}`,
-    `🌙 Temă: ${localStorage.getItem('theme') || 'dark'}`,
-    cache && age > 360 ? '⚠️ Cache mai vechi de 6 ore — recomandăm sincronizare' : '',
-  ].filter(Boolean);
+    `🌙 Temă activă: ${currentTheme() === 'dark' ? 'Întunecat' : 'Luminos'}`,
+    `🎨 Culori custom întunecat: ${darkColors} câmpuri`,
+    `☀️ Culori custom luminos: ${lightColors} câmpuri`,
+    age > 360 ? '⚠️ Cache mai vechi de 6h — recomandăm sincronizare' : '✅ Cache recent',
+  ];
   el.innerHTML = lines.join('<br>');
   el.style.display = 'block';
 }
 
-// Aplica culori salvate la pornire
+// Aplica culorile salvate la pornire
 (function() {
   const savedAccent = localStorage.getItem('accentColor');
   if (savedAccent) applyAccentColor(savedAccent);
-  const savedColors = JSON.parse(localStorage.getItem('cardColors') || '{}');
-  Object.entries(savedColors).forEach(([k, v]) => {
-    document.documentElement.style.setProperty('--' + k, v);
-  });
+  applyThemeColors(currentTheme());
 })();
 
 // ─── INIT ──────────────────────────────────────────────────
