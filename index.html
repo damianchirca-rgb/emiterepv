@@ -351,39 +351,97 @@
         </div>
       </div>
 
-      <!-- Culoare carduri -->
+      <!-- Culoare carduri - HSV picker custom -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
         <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Culoare carduri</div>
         <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <div style="font-size:13px;color:var(--text)">Fundal card</div>
-              <div style="font-size:10px;color:var(--text3);margin-top:2px">Carduri din listă și drawer</div>
+
+          <!-- Fundal card -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <div>
+                <div style="font-size:13px;color:var(--text)">Fundal card</div>
+                <div style="font-size:10px;color:var(--text3)">Carduri din listă și drawer</div>
+              </div>
+              <div id="swatch-surface" onclick="openHsvPicker('surface')"
+                style="width:44px;height:36px;border-radius:8px;cursor:pointer;border:2px solid var(--border);transition:transform .15s"
+                title="Click pentru a ajusta"></div>
             </div>
-            <input type="color" id="card-bg-picker"
-              style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none"
-              oninput="applyCardColor('surface', this.value)">
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <div style="font-size:13px;color:var(--text)">Fundal secundar</div>
-              <div style="font-size:10px;color:var(--text3);margin-top:2px">Secțiuni interioare, inputuri</div>
+            <div id="hsv-surface" style="display:none;background:var(--surface2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+                <div id="preview-surface" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);flex-shrink:0"></div>
+                <span id="hex-surface" style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text2)"></span>
+              </div>
+              <label style="font-size:11px;color:var(--text3)">Nuanță (H) <span id="hval-surface">0</span>°</label>
+              <input type="range" min="0" max="360" id="h-surface" oninput="updateHsv('surface')"
+                style="width:100%;margin:4px 0 8px;accent-color:var(--accent)">
+              <label style="font-size:11px;color:var(--text3)">Saturație (S) <span id="sval-surface">0</span>%</label>
+              <input type="range" min="0" max="100" id="s-surface" oninput="updateHsv('surface')"
+                style="width:100%;margin:4px 0 8px;accent-color:var(--accent)">
+              <label style="font-size:11px;color:var(--text3)">Valoare (V) <span id="vval-surface">0</span>%</label>
+              <input type="range" min="0" max="100" id="v-surface" oninput="updateHsv('surface')"
+                style="width:100%;margin:4px 0 0;accent-color:var(--accent)">
             </div>
-            <input type="color" id="card-bg2-picker"
-              style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none"
-              oninput="applyCardColor('surface2', this.value)">
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <div style="font-size:13px;color:var(--text)">Fundal pagină</div>
-              <div style="font-size:10px;color:var(--text3);margin-top:2px">Culoarea de bază a aplicației</div>
+
+          <!-- Fundal secundar -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <div>
+                <div style="font-size:13px;color:var(--text)">Fundal secundar</div>
+                <div style="font-size:10px;color:var(--text3)">Secțiuni interioare, inputuri</div>
+              </div>
+              <div id="swatch-surface2" onclick="openHsvPicker('surface2')"
+                style="width:44px;height:36px;border-radius:8px;cursor:pointer;border:2px solid var(--border);transition:transform .15s"
+                title="Click pentru a ajusta"></div>
             </div>
-            <input type="color" id="bg-picker"
-              style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none"
-              oninput="applyCardColor('bg', this.value)">
+            <div id="hsv-surface2" style="display:none;background:var(--surface2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+                <div id="preview-surface2" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);flex-shrink:0"></div>
+                <span id="hex-surface2" style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text2)"></span>
+              </div>
+              <label style="font-size:11px;color:var(--text3)">Nuanță (H) <span id="hval-surface2">0</span>°</label>
+              <input type="range" min="0" max="360" id="h-surface2" oninput="updateHsv('surface2')"
+                style="width:100%;margin:4px 0 8px;accent-color:var(--accent)">
+              <label style="font-size:11px;color:var(--text3)">Saturație (S) <span id="sval-surface2">0</span>%</label>
+              <input type="range" min="0" max="100" id="s-surface2" oninput="updateHsv('surface2')"
+                style="width:100%;margin:4px 0 8px;accent-color:var(--accent)">
+              <label style="font-size:11px;color:var(--text3)">Valoare (V) <span id="vval-surface2">0</span>%</label>
+              <input type="range" min="0" max="100" id="v-surface2" oninput="updateHsv('surface2')"
+                style="width:100%;margin:4px 0 0;accent-color:var(--accent)">
+            </div>
           </div>
+
+          <!-- Fundal pagina -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <div>
+                <div style="font-size:13px;color:var(--text)">Fundal pagină</div>
+                <div style="font-size:10px;color:var(--text3)">Culoarea de bază a aplicației</div>
+              </div>
+              <div id="swatch-bg" onclick="openHsvPicker('bg')"
+                style="width:44px;height:36px;border-radius:8px;cursor:pointer;border:2px solid var(--border);transition:transform .15s"
+                title="Click pentru a ajusta"></div>
+            </div>
+            <div id="hsv-bg" style="display:none;background:var(--surface2);border-radius:10px;padding:12px;border:1px solid var(--border)">
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+                <div id="preview-bg" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);flex-shrink:0"></div>
+                <span id="hex-bg" style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text2)"></span>
+              </div>
+              <label style="font-size:11px;color:var(--text3)">Nuanță (H) <span id="hval-bg">0</span>°</label>
+              <input type="range" min="0" max="360" id="h-bg" oninput="updateHsv('bg')"
+                style="width:100%;margin:4px 0 8px;accent-color:var(--accent)">
+              <label style="font-size:11px;color:var(--text3)">Saturație (S) <span id="sval-bg">0</span>%</label>
+              <input type="range" min="0" max="100" id="s-bg" oninput="updateHsv('bg')"
+                style="width:100%;margin:4px 0 8px;accent-color:var(--accent)">
+              <label style="font-size:11px;color:var(--text3)">Valoare (V) <span id="vval-bg">0</span>%</label>
+              <input type="range" min="0" max="100" id="v-bg" oninput="updateHsv('bg')"
+                style="width:100%;margin:4px 0 0;accent-color:var(--accent)">
+            </div>
+          </div>
+
           <button onclick="resetCardColors()"
-            style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--eroare);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;width:100%">
+            style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--eroare);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;width:100%;margin-top:4px">
             🔄 Reset culori temă activă (nu afectează cealaltă temă)
           </button>
         </div>
@@ -1774,6 +1832,140 @@ function applyThemeColors(theme) {
   return colors;
 }
 
+// Aplica culorile salvate din HSV store la pornire (mai precis decat hex)
+function applyHsvColors(theme) {
+  const store = getHsvStore(theme);
+  Object.entries(store).forEach(([varName, hsv]) => {
+    const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
+    document.documentElement.style.setProperty('--' + varName, hex);
+  });
+}
+
+// ─── HSV HELPERS ────────────────────────────────────────────
+function hsvToHex(h, s, v) {
+  s /= 100; v /= 100;
+  const f = (n, k=(n+h/60)%6) => v - v*s*Math.max(Math.min(k,4-k,1),0);
+  const r = Math.round(f(5)*255);
+  const g = Math.round(f(3)*255);
+  const b = Math.round(f(1)*255);
+  return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+function hexToHsv(hex) {
+  if (!hex || hex.length < 7) return { h:222, s:28, v:15 };
+  const r = parseInt(hex.slice(1,3),16)/255;
+  const g = parseInt(hex.slice(3,5),16)/255;
+  const b = parseInt(hex.slice(5,7),16)/255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+  let h=0, s=max===0?0:d/max, v=max;
+  if(d!==0){
+    switch(max){
+      case r: h=((g-b)/d+6)%6; break;
+      case g: h=(b-r)/d+2; break;
+      case b: h=(r-g)/d+4; break;
+    }
+    h=Math.round(h*60);
+  }
+  return { h, s:Math.round(s*100), v:Math.round(v*100) };
+}
+
+// Salveaza/citeste HSV per variabila per tema
+function getHsvStore(theme) {
+  return JSON.parse(localStorage.getItem('hsvColors_' + theme) || '{}');
+}
+function saveHsvStore(theme, store) {
+  localStorage.setItem('hsvColors_' + theme, JSON.stringify(store));
+}
+
+function openHsvPicker(varName) {
+  const panel = document.getElementById('hsv-' + varName);
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  // Inchide toate celelalte
+  ['surface','surface2','bg'].forEach(v => {
+    const p = document.getElementById('hsv-' + v);
+    const s = document.getElementById('swatch-' + v);
+    if (p) p.style.display = 'none';
+    if (s) s.style.transform = '';
+  });
+  if (!isOpen) {
+    panel.style.display = 'block';
+    const swatch = document.getElementById('swatch-' + varName);
+    if (swatch) swatch.style.transform = 'scale(0.9)';
+    // Populeaza sliderele cu valorile salvate sau derivate din culoarea curenta
+    loadHsvSliders(varName);
+  }
+}
+
+function loadHsvSliders(varName) {
+  const theme = currentTheme();
+  const store = getHsvStore(theme);
+  let hsv;
+  if (store[varName]) {
+    hsv = store[varName]; // Pozitii memorate
+  } else {
+    // Deriva din culoarea CSS curenta
+    const computed = getComputedStyle(document.documentElement).getPropertyValue('--' + varName).trim();
+    hsv = hexToHsv(computed || '#111827');
+  }
+  const hEl = document.getElementById('h-' + varName);
+  const sEl = document.getElementById('s-' + varName);
+  const vEl = document.getElementById('v-' + varName);
+  if (hEl) hEl.value = hsv.h;
+  if (sEl) sEl.value = hsv.s;
+  if (vEl) vEl.value = hsv.v;
+  refreshHsvUI(varName, hsv);
+}
+
+function updateHsv(varName) {
+  const h = parseInt(document.getElementById('h-' + varName)?.value || 0);
+  const s = parseInt(document.getElementById('s-' + varName)?.value || 0);
+  const v = parseInt(document.getElementById('v-' + varName)?.value || 0);
+  const hsv = { h, s, v };
+  refreshHsvUI(varName, hsv);
+
+  // Aplica culoarea
+  const hex = hsvToHex(h, s, v);
+  document.documentElement.style.setProperty('--' + varName, hex);
+
+  // Salveaza atat HSV cat si culoarea per tema
+  const theme = currentTheme();
+  const hsvStore = getHsvStore(theme);
+  hsvStore[varName] = hsv;
+  saveHsvStore(theme, hsvStore);
+
+  const colorStore = getThemeColors(theme);
+  colorStore[varName] = hex;
+  saveThemeColors(theme, colorStore);
+
+  // Actualizeaza swatch-ul
+  const swatch = document.getElementById('swatch-' + varName);
+  if (swatch) swatch.style.background = hex;
+}
+
+function refreshHsvUI(varName, hsv) {
+  const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
+  const preview = document.getElementById('preview-' + varName);
+  const hexEl   = document.getElementById('hex-' + varName);
+  const hval    = document.getElementById('hval-' + varName);
+  const sval    = document.getElementById('sval-' + varName);
+  const vval    = document.getElementById('vval-' + varName);
+  if (preview) preview.style.background = hex;
+  if (hexEl)   hexEl.textContent = hex.toUpperCase();
+  if (hval)    hval.textContent = hsv.h;
+  if (sval)    sval.textContent = hsv.s;
+  if (vval)    vval.textContent = hsv.v;
+}
+
+function initSwatches() {
+  ['surface','surface2','bg'].forEach(varName => {
+    const swatch = document.getElementById('swatch-' + varName);
+    if (!swatch) return;
+    const hex = getComputedStyle(document.documentElement).getPropertyValue('--' + varName).trim();
+    swatch.style.background = hex || '#111827';
+  });
+}
+
 function initSetari() {
   // Presets accent
   const container = document.getElementById('accent-presets');
@@ -1790,17 +1982,8 @@ function initSetari() {
     if (picker) picker.value = saved;
   }
 
-  // Pickere culori carduri — citeste valorile curente aplicate
-  const theme = currentTheme();
-  const def = DEFAULT_COLORS[theme];
-  const saved = getThemeColors(theme);
-  const colors = { ...def, ...saved };
-  const cardPicker  = document.getElementById('card-bg-picker');
-  const card2Picker = document.getElementById('card-bg2-picker');
-  const bgPicker    = document.getElementById('bg-picker');
-  if (cardPicker)  cardPicker.value  = colors.surface;
-  if (card2Picker) card2Picker.value = colors.surface2;
-  if (bgPicker)    bgPicker.value    = colors.bg;
+  // Initializeaza swatch-urile cu culorile curente
+  initSwatches();
 
   updateThemeButtons();
 
@@ -1854,20 +2037,20 @@ function applyCardColor(variable, value) {
 }
 
 function resetCardColors() {
-  // Reseteaza DOAR tema curenta la valorile ei default
   const theme = currentTheme();
   localStorage.removeItem('cardColors_' + theme);
+  localStorage.removeItem('hsvColors_' + theme); // reseteaza si pozitiile HSV
   const def = DEFAULT_COLORS[theme];
   Object.entries(def).forEach(([k, v]) => {
     document.documentElement.style.setProperty('--' + k, v);
   });
-  // Actualizeaza pickere
-  const cardPicker  = document.getElementById('card-bg-picker');
-  const card2Picker = document.getElementById('card-bg2-picker');
-  const bgPicker    = document.getElementById('bg-picker');
-  if (cardPicker)  cardPicker.value  = def.surface;
-  if (card2Picker) card2Picker.value = def.surface2;
-  if (bgPicker)    bgPicker.value    = def.bg;
+  // Inchide pickerele deschise si actualizeaza swatch-urile
+  ['surface','surface2','bg'].forEach(v => {
+    const p = document.getElementById('hsv-' + v);
+    const s = document.getElementById('swatch-' + v);
+    if (p) p.style.display = 'none';
+    if (s) { s.style.transform = ''; s.style.background = def[v] || ''; }
+  });
   showToast('Culori ' + (theme === 'dark' ? 'întunecat' : 'luminos') + ' resetate');
 }
 
@@ -1920,7 +2103,9 @@ function runDiagnostic() {
 (function() {
   const savedAccent = localStorage.getItem('accentColor');
   if (savedAccent) applyAccentColor(savedAccent);
-  applyThemeColors(currentTheme());
+  const theme = currentTheme();
+  applyThemeColors(theme);
+  applyHsvColors(theme); // Suprascrie cu valorile HSV exacte daca exista
 })();
 
 // ─── INIT ──────────────────────────────────────────────────
