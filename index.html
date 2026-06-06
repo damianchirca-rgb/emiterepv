@@ -1046,31 +1046,6 @@ async function loadUtile(uatId) {
 }
 
 // ─── SUMARE GPT AUDIO ──────────────────────────────────────
-async function loadAudioSumar(uatId) {
-  const el = document.getElementById('audio-sumar-' + uatId);
-  if (!el) return;
-  try {
-    const resp = await fetch(`${API_URL}?action=audio_sumar&uat_id=${uatId}`, {cache:'no-store'});
-    const data = await resp.json();
-    if (!data.items || !data.items.length) { el.innerHTML = ''; return; }
-    // Filtreaza doar cele cu sumar
-    const cuSumar = data.items.filter(i => i.sumar && i.sumar.trim());
-    if (!cuSumar.length) { el.innerHTML = ''; return; }
-    el.innerHTML = `
-      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🤖 Sumare GPT (${cuSumar.length})</div>
-      ${cuSumar.map(item => {
-        const tid = 'sm-' + Math.random().toString(36).slice(2);
-        return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid var(--accent2)">
-          <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px">📅 ${item.data}</div>
-          <div id="${tid}-prev" style="font-size:11px;color:var(--text2);line-height:1.5;cursor:pointer" onclick="document.getElementById('${tid}-full').style.display='block';this.style.display='none'">
-            ${item.sumar.substring(0,200)}${item.sumar.length>200?`… <span style="color:var(--accent)">▼ mai mult</span>`:''}
-          </div>
-          <div id="${tid}-full" style="display:none;font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap;cursor:pointer" onclick="document.getElementById('${tid}-prev').style.display='block';this.style.display='none'">
-            ${item.sumar} <span style="color:var(--accent)">▲ restrânge</span>
-          </div>
-        </div>`;
-      }).join('')}`;
-  } catch(e) { console.error('Eroare sumar:', e); }
 }
 
 // ─── CORESPONDENTA ──────────────────────────────────────────
@@ -1255,10 +1230,6 @@ function toggleSumar(btn) {
 
 
 
-// loadAudioUat si loadAudioSumar pastrate pentru compatibilitate (nu mai sunt folosite direct)
-async function loadAudioUat(uatId) { loadAudioTab(uatId); }
-async function loadAudioSumar(uatId) { /* integrat in loadAudioTab */ }
-
 
 // ─── CORESPONDENTA ──────────────────────────────────────────
 
@@ -1276,55 +1247,6 @@ async function loadCorespondenta(uatId) {
     renderCorespondenta(uatId);
   } catch(e) {
     el.innerHTML = `<div style="color:var(--eroare);font-size:12px">Eroare: ${e.message}</div>`;
-  }
-}
-async function loadAudioTab(uatId) {
-  // Reseteaza si reincarca
-  const ae = document.getElementById('audio-uat-' + uatId);
-  const as_ = document.getElementById('audio-sumar-' + uatId);
-  if (ae) { ae.dataset.loaded = ''; ae.innerHTML = '<div style="color:var(--text3);font-size:12px">Se încarcă…</div>'; }
-  if (as_) as_.innerHTML = '';
-  loadAudioUat(uatId);
-  loadAudioSumar(uatId);
-}
-
-async function loadAudioUat(uatId) {
-  const el = document.getElementById('audio-uat-' + uatId);
-  if (!el || el.dataset.loaded === '1') return;
-  el.dataset.loaded = '1';
-  el.innerHTML = '<div style="color:var(--text3);font-size:12px">Se încarcă înregistrările…</div>';
-  try {
-    const resp = await fetch(`${API_URL}?action=audio_uat&uat_id=${uatId}`, {cache:'no-store'});
-    const data = await resp.json();
-
-    if (data.eroare) {
-      el.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ ${data.eroare}</div>`;
-      return;
-    }
-    if (!data.fisiere || !data.fisiere.length) {
-      el.innerHTML = '<div style="color:var(--text3);font-size:12px">Nicio înregistrare audio găsită.</div>';
-      return;
-    }
-
-    el.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:8px">${data.fisiere.length} înregistrări${data.sursa==='index'?' (din index)':''}</div>` +
-      data.fisiere.map(f => {
-        const sizeStr = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : f.size > 0 ? (f.size/1024).toFixed(0)+'KB' : '';
-        const dateMatch = (f.name||'').match(/(\d{4}-\d{2}-\d{2})/);
-        const dateStr = dateMatch ? dateMatch[1] : (f.modified||'').substring(0,10);
-        const hasLink = f.view && f.view !== 'null';
-        return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-            <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:600">🎤 ${dateStr}</div>
-              <div style="font-size:10px;color:var(--text3);margin-top:2px">${f.name||''}${sizeStr?' · '+sizeStr:''}</div>
-              ${f.transcriere?`<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;font-style:italic">"${f.transcriere}…"</div>`:''}
-            </div>
-            ${hasLink ? `<a href="${f.view}" target="_blank" style="flex-shrink:0;padding:8px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">▶ Ascultă</a>` : ''}
-          </div>
-        </div>`;
-      }).join('');
-  } catch(err) {
-    el.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ Eroare: ${err.message}</div>`;
   }
 }
 
