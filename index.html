@@ -319,8 +319,10 @@
 
     <!-- Tab culori -->
     <div id="stab-culori">
+
+      <!-- Mod afisare -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px">Mod afișare</div>
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Mod afișare</div>
         <div style="display:flex;gap:8px">
           <button onclick="setThemeMode('dark')" id="theme-dark-btn"
             style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--accent);background:var(--surface2);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">
@@ -333,11 +335,10 @@
         </div>
       </div>
 
+      <!-- Culoare accent -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px">Culoare accent</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px" id="accent-presets">
-          <!-- Presets generate de JS -->
-        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Culoare accent</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="accent-presets"></div>
         <div style="display:flex;align-items:center;gap:10px">
           <label style="font-size:12px;color:var(--text2)">Personalizat:</label>
           <input type="color" id="accent-color-picker" value="#6366f1"
@@ -350,6 +351,44 @@
         </div>
       </div>
 
+      <!-- Culoare carduri -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Culoare carduri</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;color:var(--text)">Fundal card</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:2px">Carduri din listă și drawer</div>
+            </div>
+            <input type="color" id="card-bg-picker"
+              style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none"
+              oninput="applyCardColor('surface', this.value)">
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;color:var(--text)">Fundal secundar</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:2px">Secțiuni interioare, inputuri</div>
+            </div>
+            <input type="color" id="card-bg2-picker"
+              style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none"
+              oninput="applyCardColor('surface2', this.value)">
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;color:var(--text)">Fundal pagină</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:2px">Culoarea de bază a aplicației</div>
+            </div>
+            <input type="color" id="bg-picker"
+              style="width:44px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none"
+              oninput="applyCardColor('bg', this.value)">
+          </div>
+          <button onclick="resetCardColors()"
+            style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:inherit;font-size:12px;cursor:pointer;width:100%">
+            🔄 Reset culori carduri
+          </button>
+        </div>
+      </div>
+
       <!-- Preview card -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
         <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">Preview</div>
@@ -357,7 +396,9 @@
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
             <div>
               <div style="font-size:15px;font-weight:600;color:var(--text)">Năvodari</div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px"><span style="background:var(--surface3);padding:1px 5px;border-radius:4px;font-size:10px">CT</span> Constanța</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">
+                <span style="background:var(--surface3);padding:1px 5px;border-radius:4px;font-size:10px">CT</span> Constanța
+              </div>
             </div>
             <div style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--activ-bg);color:var(--activ)">✓ ACTIV</div>
           </div>
@@ -367,9 +408,10 @@
           </div>
         </div>
       </div>
+
     </div>
 
-    <!-- Tab info -->
+    <!-- Tab info / diagnostic -->
     <div id="stab-info" style="display:none">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
         <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Aplicație</div>
@@ -378,23 +420,36 @@
           <span style="font-size:13px;font-weight:600">EmiterePV v4</span>
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-          <span style="font-size:13px;color:var(--text2)">UAT-uri</span>
-          <span id="info-uats" style="font-size:13px;font-weight:600">—</span>
+          <span style="font-size:13px;color:var(--text2)">UAT-uri încărcate</span>
+          <span id="info-uats" style="font-size:13px;font-weight:600;color:var(--activ)">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:13px;color:var(--text2)">Ultima sincronizare</span>
+          <span id="info-ts" style="font-size:12px;color:var(--text3)">—</span>
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0">
-          <span style="font-size:13px;color:var(--text2)">Cache local</span>
-          <span id="info-ts" style="font-size:13px;color:var(--text3)">—</span>
+          <span style="font-size:13px;color:var(--text2)">Dimensiune cache</span>
+          <span id="info-size" style="font-size:12px;color:var(--text3)">—</span>
         </div>
       </div>
-      <button onclick="syncData()" style="width:100%;padding:13px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:white;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px">
-        🔄 Sincronizează datele
-      </button>
-      <button onclick="clearLocalCache()" style="width:100%;padding:13px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--eroare);font-family:inherit;font-size:15px;font-weight:600;cursor:pointer">
-        🗑️ Șterge cache local
-      </button>
+
+      <!-- Diagnostic -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Diagnostic cache</div>
+        <div id="diag-result" style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px;background:var(--surface2);border-radius:8px;padding:10px;display:none"></div>
+        <button onclick="runDiagnostic()"
+          style="width:100%;padding:12px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">
+          🔍 Verifică starea cache-ului
+        </button>
+        <button onclick="syncData()"
+          style="width:100%;padding:12px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">
+          🔄 Sincronizează datele
+        </button>
+      </div>
     </div>
 
   </div>
+
 
   <div id="bottom-nav">
     <button class="nav-btn active" id="nav-lista" onclick="showView('lista')">
@@ -1680,41 +1735,65 @@ document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[
 
 // ─── SETARI ────────────────────────────────────────────────
 const ACCENT_PRESETS = [
-  { label: 'Indigo',  value: '#6366f1' },
-  { label: 'Violet',  value: '#8b5cf6' },
-  { label: 'Roz',     value: '#ec4899' },
-  { label: 'Cyan',    value: '#06b6d4' },
-  { label: 'Verde',   value: '#10b981' },
-  { label: 'Portoc.', value: '#f59e0b' },
-  { label: 'Roșu',    value: '#ef4444' },
-  { label: 'Albastru',value: '#3b82f6' },
+  { label: 'Indigo',   value: '#6366f1' },
+  { label: 'Violet',   value: '#8b5cf6' },
+  { label: 'Roz',      value: '#ec4899' },
+  { label: 'Cyan',     value: '#06b6d4' },
+  { label: 'Verde',    value: '#10b981' },
+  { label: 'Portoc.',  value: '#f59e0b' },
+  { label: 'Roșu',     value: '#ef4444' },
+  { label: 'Albastru', value: '#3b82f6' },
 ];
 
+// Valorile default ale culorilor per tema
+const DEFAULT_COLORS = {
+  dark:  { bg: '#0a0f1e', surface: '#111827', surface2: '#1e2a3a', surface3: '#243044' },
+  light: { bg: '#f1f5f9', surface: '#ffffff', surface2: '#f8fafc', surface3: '#e2e8f0' },
+};
+
 function initSetari() {
-  // Presets
+  // Presets accent
   const container = document.getElementById('accent-presets');
   if (container) {
     const saved = localStorage.getItem('accentColor') || '#6366f1';
     container.innerHTML = ACCENT_PRESETS.map(p =>
-      `<button onclick="applyAccentColor('${p.value}')"
+      `<button onclick="applyAccentColor('${p.value}')" data-color="${p.value}"
         style="padding:6px 12px;border-radius:8px;border:2px solid ${p.value === saved ? p.value : 'transparent'};
-               background:${p.value}22;color:${p.value};font-size:12px;font-weight:600;cursor:pointer;
-               font-family:inherit;transition:all .2s" data-color="${p.value}">
+               background:${p.value}22;color:${p.value};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
         ${p.label}
       </button>`
     ).join('');
     const picker = document.getElementById('accent-color-picker');
     if (picker) picker.value = saved;
   }
-  // Sync theme buttons
+
+  // Initializeaza pickere culori carduri
+  const mode = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+  const def = DEFAULT_COLORS[mode];
+  const savedColors = JSON.parse(localStorage.getItem('cardColors') || '{}');
+  const colors = { ...def, ...savedColors };
+  const cardPicker  = document.getElementById('card-bg-picker');
+  const card2Picker = document.getElementById('card-bg2-picker');
+  const bgPicker    = document.getElementById('bg-picker');
+  if (cardPicker)  cardPicker.value  = colors.surface  || def.surface;
+  if (card2Picker) card2Picker.value = colors.surface2 || def.surface2;
+  if (bgPicker)    bgPicker.value    = colors.bg        || def.bg;
+
   updateThemeButtons();
-  // Info tab
+
+  // Info
   const infoUats = document.getElementById('info-uats');
-  const infoTs = document.getElementById('info-ts');
+  const infoTs   = document.getElementById('info-ts');
+  const infoSize = document.getElementById('info-size');
   if (infoUats) infoUats.textContent = uats.length || '—';
   if (infoTs) {
     const ts = localStorage.getItem('uats_ts');
     infoTs.textContent = ts ? new Date(ts).toLocaleString('ro-RO') : '—';
+  }
+  if (infoSize) {
+    const cache = localStorage.getItem('uats_cache') || '';
+    const kb = (cache.length / 1024).toFixed(0);
+    infoSize.textContent = kb + ' KB';
   }
 }
 
@@ -1732,24 +1811,44 @@ function showSetariTab(tab) {
 
 function applyAccentColor(color) {
   document.documentElement.style.setProperty('--accent', color);
-  // Calculeaza accent2 mai deschis
   document.documentElement.style.setProperty('--accent2', color + 'cc');
   localStorage.setItem('accentColor', color);
-  // Actualizeaza picker
   const picker = document.getElementById('accent-color-picker');
   if (picker) picker.value = color;
-  // Actualizeaza border presets
   document.querySelectorAll('#accent-presets button').forEach(btn => {
-    const c = btn.dataset.color;
-    btn.style.borderColor = c === color ? c : 'transparent';
+    btn.style.borderColor = btn.dataset.color === color ? btn.dataset.color : 'transparent';
   });
 }
 
-function resetAccentColor() {
-  applyAccentColor('#6366f1');
+function resetAccentColor() { applyAccentColor('#6366f1'); }
+
+function applyCardColor(variable, value) {
+  document.documentElement.style.setProperty('--' + variable, value);
+  const saved = JSON.parse(localStorage.getItem('cardColors') || '{}');
+  saved[variable] = value;
+  localStorage.setItem('cardColors', JSON.stringify(saved));
+}
+
+function resetCardColors() {
+  localStorage.removeItem('cardColors');
+  const mode = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+  const def = DEFAULT_COLORS[mode];
+  Object.entries(def).forEach(([k, v]) => {
+    document.documentElement.style.setProperty('--' + k, v);
+  });
+  // Reseteaza pickere
+  const cardPicker  = document.getElementById('card-bg-picker');
+  const card2Picker = document.getElementById('card-bg2-picker');
+  const bgPicker    = document.getElementById('bg-picker');
+  if (cardPicker)  cardPicker.value  = def.surface;
+  if (card2Picker) card2Picker.value = def.surface2;
+  if (bgPicker)    bgPicker.value    = def.bg;
+  showToast('Culori resetate la valorile implicite');
 }
 
 function setThemeMode(mode) {
+  // Reseteaza culorile custom inainte de schimbarea temei
+  resetCardColors();
   if (mode === 'light') {
     document.documentElement.classList.add('light');
     localStorage.setItem('theme', 'light');
@@ -1758,28 +1857,44 @@ function setThemeMode(mode) {
     localStorage.setItem('theme', 'dark');
   }
   updateThemeButtons();
+  // Reinitializeaza pickere cu noile culori default
+  setTimeout(initSetari, 50);
 }
 
 function updateThemeButtons() {
   const isLight = document.documentElement.classList.contains('light');
   const darkBtn  = document.getElementById('theme-dark-btn');
   const lightBtn = document.getElementById('theme-light-btn');
-  if (darkBtn)  { darkBtn.style.borderColor  = isLight ? 'var(--border)' : 'var(--accent)'; }
-  if (lightBtn) { lightBtn.style.borderColor = isLight ? 'var(--accent)' : 'var(--border)'; }
+  if (darkBtn)  darkBtn.style.borderColor  = isLight ? 'var(--border)' : 'var(--accent)';
+  if (lightBtn) lightBtn.style.borderColor = isLight ? 'var(--accent)' : 'var(--border)';
 }
 
-function clearLocalCache() {
-  if (!confirm('Șterge tot cache-ul local? Aplicația va reîncărca datele de la server.')) return;
-  localStorage.removeItem('uats_cache');
-  localStorage.removeItem('uats_ts');
-  showToast('Cache șters. Se reîncarcă…');
-  setTimeout(() => syncData(), 800);
+function runDiagnostic() {
+  const el = document.getElementById('diag-result');
+  if (!el) return;
+  const cache = localStorage.getItem('uats_cache');
+  const ts = localStorage.getItem('uats_ts');
+  const age = ts ? Math.round((Date.now() - new Date(ts).getTime()) / 60000) : null;
+  const lines = [
+    cache ? `✅ Cache prezent: ${(cache.length/1024).toFixed(0)} KB` : '❌ Cache absent',
+    ts    ? `🕐 Vârstă cache: ${age} minute` : '⚠️ Timestamp lipsă',
+    `📦 UAT-uri în memorie: ${uats.length}`,
+    `🎨 Culoare accent: ${localStorage.getItem('accentColor') || 'default'}`,
+    `🌙 Temă: ${localStorage.getItem('theme') || 'dark'}`,
+    cache && age > 360 ? '⚠️ Cache mai vechi de 6 ore — recomandăm sincronizare' : '',
+  ].filter(Boolean);
+  el.innerHTML = lines.join('<br>');
+  el.style.display = 'block';
 }
 
-// Aplica culoarea salvata la pornire
+// Aplica culori salvate la pornire
 (function() {
-  const saved = localStorage.getItem('accentColor');
-  if (saved && saved !== '#6366f1') applyAccentColor(saved);
+  const savedAccent = localStorage.getItem('accentColor');
+  if (savedAccent) applyAccentColor(savedAccent);
+  const savedColors = JSON.parse(localStorage.getItem('cardColors') || '{}');
+  Object.entries(savedColors).forEach(([k, v]) => {
+    document.documentElement.style.setProperty('--' + k, v);
+  });
 })();
 
 // ─── INIT ──────────────────────────────────────────────────
