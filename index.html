@@ -1186,7 +1186,6 @@ async function loadAudioTab(uatId) {
     const dataSumar = await respSumar.json();
 
     if (!elAudio) return;
-
     if (dataAudio.eroare) {
       elAudio.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ ${dataAudio.eroare}</div>`;
       return;
@@ -1197,49 +1196,43 @@ async function loadAudioTab(uatId) {
       return;
     }
 
-    // Normalizeaza data in format YYYY-MM-DD indiferent de format sursa
-    function toDateKey(s) {
-      if (!s) return '';
-      s = String(s).trim();
-      // YYYY-MM-DD sau YYYY_MM_DD
-      let m = s.match(/^(\d{4})[_-](\d{2})[_-](\d{2})/);
-      if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-      // dd.MM.yyyy sau dd/MM/yyyy
-      m = s.match(/^(\d{2})[.\/](\d{2})[.\/](\d{4})/);
-      if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-      return s.substring(0, 10);
-    }
-
-    // Indexeaza sumarele dupa data normalizata
+    // Indexeaza sumarele dupa fullName (filename complet cu prefix UAT)
+    // item.key = "1_Mirela...", f.fullName = "1_Mirela..." -> match exact
     const sumareMap = {};
+    const transcrMap = {};
     (dataSumar.items || []).forEach(item => {
-      if (item.sumar && item.sumar.trim()) {
-        const key = toDateKey(item.data);
-        if (key) sumareMap[key] = item.sumar;
-      }
+      const key = item.key || '';
+      if (item.sumar && item.sumar.trim()) sumareMap[key] = item.sumar;
+      if (item.transcriere_preview) transcrMap[key] = item.transcriere_preview;
     });
 
     elAudio.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:10px">${fisiere.length} înregistrări</div>` +
       fisiere.map(f => {
         const sizeStr = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : f.size > 0 ? (f.size/1024).toFixed(0)+'KB' : '';
-        // Extrage data din numele fisierului
-        const dateKey = toDateKey(f.name || '');
-        const dateRo = dateKey ? new Date(dateKey).toLocaleDateString('ro-RO', {day:'2-digit', month:'long', year:'numeric'}) : (f.modified || '').substring(0,10);
-        const sumar = sumareMap[dateKey] || '';
+        // Data din campul data sau din filename
+        const dateKey = f.data || (f.name||'').match(/(\d{4}-\d{2}-\d{2})/)?.[1] || '';
+        const dateRo = dateKey ? new Date(dateKey).toLocaleDateString('ro-RO', {day:'2-digit', month:'long', year:'numeric'}) : '';
+
+        // Matching dupa fullName (exact) sau fallback dupa data
+        const fullName = f.fullName || (uatId + '_' + f.name);
+        const sumar = sumareMap[fullName] || '';
+        const transcr = f.transcriere || transcrMap[fullName] || '';
         const tid = 'sm-' + Math.random().toString(36).slice(2);
+
         const fileId = f.id || '';
         const previewUrl = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : '';
         const viewUrl = f.view || '';
 
         return `<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
-            <div>
-              <div style="font-size:13px;font-weight:600">🎤 ${dateRo}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:${previewUrl||transcr||sumar?'10px':'0'}">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600">🎤 ${dateRo || f.name}</div>
               ${sizeStr ? `<div style="font-size:10px;color:var(--text3);margin-top:2px">${sizeStr}</div>` : ''}
             </div>
             ${viewUrl ? `<a href="${viewUrl}" target="_blank" style="flex-shrink:0;padding:6px 12px;background:var(--surface3);color:var(--text2);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;text-decoration:none">🔗 Drive</a>` : ''}
           </div>
-          ${previewUrl ? `<iframe src="${previewUrl}" style="width:100%;height:54px;border:none;border-radius:8px;margin-bottom:${sumar?'10px':'0'}" allow="autoplay"></iframe>` : ''}
+          ${previewUrl ? `<iframe src="${previewUrl}" style="width:100%;height:54px;border:none;border-radius:8px;margin-bottom:${transcr||sumar?'8px':'0'}" allow="autoplay"></iframe>` : ''}
+          ${transcr && !sumar ? `<div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:${sumar?'8px':'0'};line-height:1.4">"${transcr.substring(0,200)}…"</div>` : ''}
           ${sumar ? `<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">
             <div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:4px">🤖 Sumar GPT</div>
             <div id="${tid}-prev" style="font-size:11px;color:var(--text2);line-height:1.5;cursor:pointer"
@@ -1259,6 +1252,7 @@ async function loadAudioTab(uatId) {
     if (el) el.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ Eroare: ${err.message}</div>`;
   }
 }
+
 
 
 // loadAudioUat si loadAudioSumar pastrate pentru compatibilitate (nu mai sunt folosite direct)
