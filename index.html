@@ -303,6 +303,99 @@
     </div>
   </div>
 
+  <div id="setari-view" class="view" style="overflow-y:auto;padding:16px;flex-direction:column;gap:12px">
+
+    <!-- Subtaburi -->
+    <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:4px">
+      <button id="stab-btn-culori" onclick="showSetariTab('culori')"
+        style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);color:white;transition:all .2s">
+        🎨 Teme
+      </button>
+      <button id="stab-btn-info" onclick="showSetariTab('info')"
+        style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text2);transition:all .2s">
+        ℹ️ Info
+      </button>
+    </div>
+
+    <!-- Tab culori -->
+    <div id="stab-culori">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px">Mod afișare</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="setThemeMode('dark')" id="theme-dark-btn"
+            style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--accent);background:var(--surface2);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">
+            🌙 Întunecat
+          </button>
+          <button onclick="setThemeMode('light')" id="theme-light-btn"
+            style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer">
+            ☀️ Luminos
+          </button>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px">Culoare accent</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px" id="accent-presets">
+          <!-- Presets generate de JS -->
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <label style="font-size:12px;color:var(--text2)">Personalizat:</label>
+          <input type="color" id="accent-color-picker" value="#6366f1"
+            style="width:40px;height:36px;border:none;border-radius:8px;cursor:pointer;background:none"
+            oninput="applyAccentColor(this.value)">
+          <button onclick="resetAccentColor()"
+            style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:inherit;font-size:12px;cursor:pointer">
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">Preview</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;border-left:3px solid var(--accent)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:15px;font-weight:600;color:var(--text)">Năvodari</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px"><span style="background:var(--surface3);padding:1px 5px;border-radius:4px;font-size:10px">CT</span> Constanța</div>
+            </div>
+            <div style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:var(--activ-bg);color:var(--activ)">✓ ACTIV</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:var(--accent);color:white;opacity:0.85">Registru Agricol</span>
+            <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:var(--surface3);color:var(--text2)">1.300 Lei</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab info -->
+    <div id="stab-info" style="display:none">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Aplicație</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:13px;color:var(--text2)">Versiune</span>
+          <span style="font-size:13px;font-weight:600">EmiterePV v4</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:13px;color:var(--text2)">UAT-uri</span>
+          <span id="info-uats" style="font-size:13px;font-weight:600">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0">
+          <span style="font-size:13px;color:var(--text2)">Cache local</span>
+          <span id="info-ts" style="font-size:13px;color:var(--text3)">—</span>
+        </div>
+      </div>
+      <button onclick="syncData()" style="width:100%;padding:13px;border-radius:var(--radius-sm);background:var(--accent);border:none;color:white;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px">
+        🔄 Sincronizează datele
+      </button>
+      <button onclick="clearLocalCache()" style="width:100%;padding:13px;border-radius:var(--radius-sm);background:var(--surface2);border:1px solid var(--border);color:var(--eroare);font-family:inherit;font-size:15px;font-weight:600;cursor:pointer">
+        🗑️ Șterge cache local
+      </button>
+    </div>
+
+  </div>
+
   <div id="bottom-nav">
     <button class="nav-btn active" id="nav-lista" onclick="showView('lista')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -323,6 +416,10 @@
     <button class="nav-btn" id="nav-stats" onclick="showView('stats')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       <span>Statistici</span>
+    </button>
+    <button class="nav-btn" id="nav-setari" onclick="showView('setari')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Setări</span>
     </button>
   </div>
 </div>
@@ -1471,6 +1568,7 @@ function showView(v) {
   else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
   else if(v==='mentenanta'){document.getElementById('mentenanta-view').classList.add('active');document.getElementById('nav-mentenanta').classList.add('active');loadMentenanta();}
   else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
+  else if(v==='setari'){document.getElementById('setari-view').classList.add('active');document.getElementById('nav-setari').classList.add('active');initSetari();}
 }
 
 // ─── CAUTARE ───────────────────────────────────────────────
@@ -1579,6 +1677,110 @@ document.getElementById('search').addEventListener('input',e=>{
 let touchY=0;
 document.getElementById('drawer').addEventListener('touchstart',e=>{touchY=e.touches[0].clientY;},{passive:true});
 document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[0].clientY-touchY>80)closeDrawer();},{passive:true});
+
+// ─── SETARI ────────────────────────────────────────────────
+const ACCENT_PRESETS = [
+  { label: 'Indigo',  value: '#6366f1' },
+  { label: 'Violet',  value: '#8b5cf6' },
+  { label: 'Roz',     value: '#ec4899' },
+  { label: 'Cyan',    value: '#06b6d4' },
+  { label: 'Verde',   value: '#10b981' },
+  { label: 'Portoc.', value: '#f59e0b' },
+  { label: 'Roșu',    value: '#ef4444' },
+  { label: 'Albastru',value: '#3b82f6' },
+];
+
+function initSetari() {
+  // Presets
+  const container = document.getElementById('accent-presets');
+  if (container) {
+    const saved = localStorage.getItem('accentColor') || '#6366f1';
+    container.innerHTML = ACCENT_PRESETS.map(p =>
+      `<button onclick="applyAccentColor('${p.value}')"
+        style="padding:6px 12px;border-radius:8px;border:2px solid ${p.value === saved ? p.value : 'transparent'};
+               background:${p.value}22;color:${p.value};font-size:12px;font-weight:600;cursor:pointer;
+               font-family:inherit;transition:all .2s" data-color="${p.value}">
+        ${p.label}
+      </button>`
+    ).join('');
+    const picker = document.getElementById('accent-color-picker');
+    if (picker) picker.value = saved;
+  }
+  // Sync theme buttons
+  updateThemeButtons();
+  // Info tab
+  const infoUats = document.getElementById('info-uats');
+  const infoTs = document.getElementById('info-ts');
+  if (infoUats) infoUats.textContent = uats.length || '—';
+  if (infoTs) {
+    const ts = localStorage.getItem('uats_ts');
+    infoTs.textContent = ts ? new Date(ts).toLocaleString('ro-RO') : '—';
+  }
+}
+
+function showSetariTab(tab) {
+  document.getElementById('stab-culori').style.display = tab === 'culori' ? 'block' : 'none';
+  document.getElementById('stab-info').style.display   = tab === 'info'   ? 'block' : 'none';
+  ['culori','info'].forEach(t => {
+    const btn = document.getElementById('stab-btn-' + t);
+    if (btn) {
+      btn.style.background = t === tab ? 'var(--accent)' : 'transparent';
+      btn.style.color = t === tab ? 'white' : 'var(--text2)';
+    }
+  });
+}
+
+function applyAccentColor(color) {
+  document.documentElement.style.setProperty('--accent', color);
+  // Calculeaza accent2 mai deschis
+  document.documentElement.style.setProperty('--accent2', color + 'cc');
+  localStorage.setItem('accentColor', color);
+  // Actualizeaza picker
+  const picker = document.getElementById('accent-color-picker');
+  if (picker) picker.value = color;
+  // Actualizeaza border presets
+  document.querySelectorAll('#accent-presets button').forEach(btn => {
+    const c = btn.dataset.color;
+    btn.style.borderColor = c === color ? c : 'transparent';
+  });
+}
+
+function resetAccentColor() {
+  applyAccentColor('#6366f1');
+}
+
+function setThemeMode(mode) {
+  if (mode === 'light') {
+    document.documentElement.classList.add('light');
+    localStorage.setItem('theme', 'light');
+  } else {
+    document.documentElement.classList.remove('light');
+    localStorage.setItem('theme', 'dark');
+  }
+  updateThemeButtons();
+}
+
+function updateThemeButtons() {
+  const isLight = document.documentElement.classList.contains('light');
+  const darkBtn  = document.getElementById('theme-dark-btn');
+  const lightBtn = document.getElementById('theme-light-btn');
+  if (darkBtn)  { darkBtn.style.borderColor  = isLight ? 'var(--border)' : 'var(--accent)'; }
+  if (lightBtn) { lightBtn.style.borderColor = isLight ? 'var(--accent)' : 'var(--border)'; }
+}
+
+function clearLocalCache() {
+  if (!confirm('Șterge tot cache-ul local? Aplicația va reîncărca datele de la server.')) return;
+  localStorage.removeItem('uats_cache');
+  localStorage.removeItem('uats_ts');
+  showToast('Cache șters. Se reîncarcă…');
+  setTimeout(() => syncData(), 800);
+}
+
+// Aplica culoarea salvata la pornire
+(function() {
+  const saved = localStorage.getItem('accentColor');
+  if (saved && saved !== '#6366f1') applyAccentColor(saved);
+})();
 
 // ─── INIT ──────────────────────────────────────────────────
 // Încearcă cache offline primul, apoi sync
