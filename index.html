@@ -1172,6 +1172,188 @@ async function loadFisiereUtile(uatId) {
 }
 
 async function loadAudioTab(uatId) {
+  const elAudio = document.getElementById('audio-uat-' + uatId);
+  const elSumar = document.getElementById('audio-sumar-' + uatId);
+  if (elAudio) elAudio.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:16px 0;text-align:center"><div class="spinner" style="margin:0 auto 8px;width:24px;height:24px;border-width:2px"></div>Se încarcă…</div>';
+  if (elSumar) elSumar.innerHTML = '';
+
+  try {
+    // Fetch paralel: inregistrari + sumare GPT
+    const [respAudio, respSumar] = await Promise.all([
+      fetch(`${API_URL}?action=audio_uat&uat_id=${uatId}`, {cache:'no-store'}),
+      fetch(`${API_URL}?action=audio_sumar&uat_id=${uatId}`, {cache:'no-store'})
+    ]);
+    const dataAudio = await respAudio.json();
+    const dataSumar = await respSumar.json();
+
+    if (!elAudio) return;
+
+    if (dataAudio.eroare) {
+      elAudio.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ ${dataAudio.eroare}</div>`;
+      return;
+    }
+    const fisiere = dataAudio.fisiere || [];
+    if (!fisiere.length) {
+      elAudio.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px 0">Nicio înregistrare audio.</div>';
+      return;
+    }
+
+    // Indexeaza sumarele dupa data (YYYY-MM-DD)
+    const sumareMap = {};
+    (dataSumar.items || []).forEach(item => {
+      if (item.sumar && item.sumar.trim()) {
+        const key = (item.data || '').substring(0, 10);
+        if (key) sumareMap[key] = item.sumar;
+      }
+    });
+
+    elAudio.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:10px">${fisiere.length} înregistrări</div>` +
+      fisiere.map(f => {
+        const sizeStr = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : f.size > 0 ? (f.size/1024).toFixed(0)+'KB' : '';
+        const dateMatch = (f.name||'').match(/(\d{4}-\d{2}-\d{2})/);
+        const dateKey = dateMatch ? dateMatch[1] : '';
+        const dateRo = dateKey ? new Date(dateKey).toLocaleDateString('ro-RO', {day:'2-digit', month:'long', year:'numeric'}) : f.modified || '';
+        const sumar = sumareMap[dateKey] || '';
+        const tid = 'sm-' + Math.random().toString(36).slice(2);
+        // URL pentru player audio direct
+        const audioSrc = f.id ? `https://drive.google.com/uc?export=download&id=${f.id}` : '';
+        const viewUrl = f.view || '';
+
+        return `<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+            <div>
+              <div style="font-size:13px;font-weight:600">🎤 ${dateRo}</div>
+              ${sizeStr ? `<div style="font-size:10px;color:var(--text3);margin-top:2px">${sizeStr}</div>` : ''}
+            </div>
+            ${viewUrl ? `<a href="${viewUrl}" target="_blank" style="flex-shrink:0;padding:6px 12px;background:var(--surface3);color:var(--text2);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;text-decoration:none">🔗 Drive</a>` : ''}
+          </div>
+          ${audioSrc ? `<audio controls preload="none" style="width:100%;height:36px;border-radius:8px;margin-bottom:${sumar?'10px':'0'}">
+            <source src="${audioSrc}">
+          </audio>` : ''}
+          ${sumar ? `<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">
+            <div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:4px">🤖 Sumar GPT</div>
+            <div id="${tid}-prev" style="font-size:11px;color:var(--text2);line-height:1.5;cursor:pointer"
+              onclick="document.getElementById('${tid}-full').style.display='block';this.style.display='none'">
+              ${sumar.substring(0,200)}${sumar.length>200?`… <span style="color:var(--accent)">▼ mai mult</span>`:''}
+            </div>
+            <div id="${tid}-full" style="display:none;font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap;cursor:pointer"
+              onclick="document.getElementById('${tid}-prev').style.display='block';this.style.display='none'">
+              ${sumar} <span style="color:var(--accent)">▲ restrânge</span>
+            </div>
+          </div>` : ''}
+        </div>`;
+      }).join('');
+
+  } catch(err) {
+    const el = document.getElementById('audio-uat-' + uatId);
+    if (el) el.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ Eroare: ${err.message}</div>`;
+  }
+}
+
+// loadAudioUat si loadAudioSumar pastrate pentru compatibilitate (nu mai sunt folosite direct)
+async function loadAudioUat(uatId) { loadAudioTab(uatId); }
+async function loadAudioSumar(uatId) { /* integrat in loadAudioTab */ }
+
+
+// ─── CORESPONDENTA ──────────────────────────────────────────
+let corsData = {};
+let corsFilter = {};
+
+async function loadCorespondenta(uatId) {
+  const el = document.getElementById('cors-list-' + uatId);
+  if (!el) return;
+  if (corsData[uatId]) { renderCorespondenta(uatId); return; }
+  el.textContent = 'Se încarcă corespondența…';
+  try {
+    const resp = await fetch(`${API_URL}?action=corespondenta&uat_id=${uatId}`, {cache:'no-store'});
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    corsData[uatId] = data.items || [];
+    corsFilter[uatId] = 'all';
+    renderCorespondenta(uatId);
+  } catch(e) {
+    el.innerHTML = `<div style="color:var(--eroare);font-size:12px">Eroare: ${e.message}</div>`;
+  }
+}
+
+function setCorsFilter(uatId, filter, btn) {
+  corsFilter[uatId] = filter;
+  btn.closest('div').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderCorespondenta(uatId);
+}
+
+function filterCorespondenta(uatId) { renderCorespondenta(uatId); }
+
+function renderCorespondenta(uatId) {
+  const el = document.getElementById('cors-list-' + uatId);
+  if (!el || !corsData[uatId]) return;
+  const q = norm(document.getElementById('cors-search-' + uatId)?.value || '');
+  const filter = corsFilter[uatId] || 'all';
+  const DIRECTIE_ICON = { trimis: '↑', primit: '↓', inbox: '↓' };
+  const DIRECTIE_COLOR = { trimis: 'var(--accent)', primit: 'var(--activ)', inbox: 'var(--activ)' };
+
+  let items = corsData[uatId] || [];
+  if (filter !== 'all') items = items.filter(i => (i.item?.directie||'').toLowerCase().includes(filter));
+  if (q) items = items.filter(i => {
+    const it = i.item || {};
+    return norm(it.subiect||'').includes(q) || norm(it.de_la||'').includes(q) ||
+           norm(it.catre||'').includes(q) || norm(it.body_preview||'').includes(q);
+  });
+
+  if (!items.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center">Nicio corespondență găsită</div>'; return; }
+
+  el.innerHTML = `<div style="font-size:11px;color:var(--text3);margin-bottom:10px">${items.length} mesaje</div>` +
+    items.map(i => {
+      const it = i.item || {};
+      const dir = (it.directie||'').toLowerCase();
+      const icon = DIRECTIE_ICON[dir] || '•';
+      const col = DIRECTIE_COLOR[dir] || 'var(--text3)';
+      const tid = 'cors-' + Math.random().toString(36).slice(2);
+      const hasSumar = it.sumar && it.sumar.trim();
+      const hasPreview = it.body_preview && it.body_preview.trim();
+      return `<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid ${col}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;color:var(--text);line-height:1.3">${it.subiect||'(fără subiect)'}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px">${dir==='trimis'?'Către: '+it.catre:'De la: '+it.de_la}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:11px;color:${col};font-weight:700">${icon}</div>
+            <div style="font-size:10px;color:var(--text3);white-space:nowrap">${(it.data||'').substring(0,16)}</div>
+          </div>
+        </div>
+        ${hasSumar ? `<div style="font-size:11px;color:var(--accent2);background:var(--surface3);border-radius:6px;padding:6px 8px;margin-bottom:6px;line-height:1.4">🤖 ${it.sumar.substring(0,200)}${it.sumar.length>200?'…':''}</div>` : ''}
+        ${hasPreview ? `<div id="${tid}" style="font-size:11px;color:var(--text3);line-height:1.4;cursor:pointer;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden" onclick="this.style.webkitLineClamp=this.style.webkitLineClamp?'':'2';this.style.overflow=this.style.overflow?'':'hidden'">${it.body_preview.trim().substring(0,400)}</div>` : ''}
+        ${it.nr_atasamente ? `<div style="font-size:10px;color:var(--text3);margin-top:4px">📎 ${it.nr_atasamente} atașament(e)</div>` : ''}
+      </div>`;
+    }).join('');
+}
+
+async function loadFisiereUtile(uatId) {
+  const el = document.getElementById('fisiere-utile-' + uatId);
+  if (!el || el.dataset.loaded === '1') return;
+  el.dataset.loaded = '1';
+  el.textContent = 'Se încarcă…';
+  try {
+    const resp = await fetch(`${API_URL}?action=fisiere_utile&uat_id=${uatId}`, {cache:'no-store'});
+    const data = await resp.json();
+    if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Niciun fișier atașat.'; return; }
+    const tipIcon = {pdf:'📄', imagine:'🖼', excel:'📊', word:'📝', text:'📋', fisier:'📎'};
+    el.innerHTML = data.fisiere.map(f => {
+      const size = f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500">${tipIcon[f.tip]||'📎'} ${f.name}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${size} · ${f.modified}</div>
+        </div>
+        <a href="${f.view}" target="_blank" style="flex-shrink:0;margin-left:10px;padding:6px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">Deschide</a>
+      </div>`;
+    }).join('');
+  } catch(err) { el.textContent = 'Eroare: ' + err.message; }
+}
+
+async function loadAudioTab(uatId) {
   // Reseteaza si reincarca
   const ae = document.getElementById('audio-uat-' + uatId);
   const as_ = document.getElementById('audio-sumar-' + uatId);
