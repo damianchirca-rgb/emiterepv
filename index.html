@@ -146,9 +146,7 @@
   .judet-count { font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text2);min-width:20px;text-align:right; }
   .contact-section-title { font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:10px 4px 6px; }
 
-  /* DRAWER */
-  #drawer-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(4px); }
-  #drawer-overlay.open { opacity:1;pointer-events:all; }
+  /* DRAWER - overlay eliminat (pagina full-screen) */
   #drawer {
     position:fixed;top:0;left:0;right:0;bottom:0;z-index:101;
     background:var(--surface);
@@ -556,7 +554,7 @@
   </div>
 </div>
 
-<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<!-- overlay eliminat -->
 <div id="drawer">
   <div id="drawer-handle"></div>
   <div id="drawer-header">
@@ -1185,7 +1183,6 @@ function openUat(id) {
       :`<div style="color:var(--text3);font-size:13px;padding:12px 0">Coordonate GPS nedisponibile</div>`}
     </div>
   `;
-  document.getElementById('drawer-overlay').classList.add('open');
   document.getElementById('drawer').classList.add('open');
 }
 
@@ -1269,6 +1266,10 @@ function buildCalendarUrl(localitate, contact, nota) {
 
 function closeDrawer() {
   document.getElementById('drawer').classList.remove('open');
+  // Curata history state daca a fost adaugat
+  if (location.hash.startsWith('#uat-')) {
+    history.pushState({}, '', location.pathname);
+  }
   currentUat = null;
 }
 
