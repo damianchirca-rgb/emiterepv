@@ -2078,25 +2078,49 @@ function updateThemeButtons() {
   if (lightBtn) lightBtn.style.borderColor = isLight ? 'var(--accent)' : 'var(--border)';
 }
 
-function runDiagnostic() {
+async function runDiagnostic() {
   const el = document.getElementById('diag-result');
   if (!el) return;
+  el.innerHTML = '🔍 Se verifică…';
+  el.style.display = 'block';
+
   const cache = localStorage.getItem('uats_cache');
   const ts = localStorage.getItem('uats_ts');
   const age = ts ? Math.round((Date.now() - new Date(ts).getTime()) / 60000) : null;
   const darkColors  = Object.keys(getThemeColors('dark')).length;
   const lightColors = Object.keys(getThemeColors('light')).length;
+
   const lines = [
-    cache ? `✅ Cache prezent: ${(cache.length/1024).toFixed(0)} KB` : '❌ Cache absent',
-    ts    ? `🕐 Vârstă cache: ${age} minute` : '⚠️ Timestamp lipsă',
+    '<b>📱 Cache local</b>',
+    cache ? `✅ Cache prezent: ${(cache.length/1024).toFixed(0)} KB` : '❌ Cache local absent',
+    ts ? `🕐 Vârstă: ${age} min${age > 360 ? ' — <span style="color:var(--eroare)">recomandăm sincronizare</span>' : ' ✅'}` : '⚠️ Timestamp lipsă',
     `📦 UAT-uri în memorie: ${uats.length}`,
-    `🌙 Temă activă: ${currentTheme() === 'dark' ? 'Întunecat' : 'Luminos'}`,
-    `🎨 Culori custom întunecat: ${darkColors} câmpuri`,
-    `☀️ Culori custom luminos: ${lightColors} câmpuri`,
-    age > 360 ? '⚠️ Cache mai vechi de 6h — recomandăm sincronizare' : '✅ Cache recent',
+    '',
+    '<b>🎨 Teme</b>',
+    `Temă activă: ${currentTheme() === 'dark' ? '🌙 Întunecat' : '☀️ Luminos'}`,
+    `Culori custom întunecat: ${darkColors} câmpuri`,
+    `Culori custom luminos: ${lightColors} câmpuri`,
   ];
+
   el.innerHTML = lines.join('<br>');
-  el.style.display = 'block';
+
+  // Verifica drive_index de pe server
+  try {
+    const resp = await fetch(`${API_URL}?action=index_status`, {cache:'no-store'});
+    const data = await resp.json();
+    const indexLines = [
+      '',
+      '<b>🗂️ Drive Index (server)</b>',
+      data.exists
+        ? `✅ drive_index.json: ${data.count} fișiere`
+        : '❌ drive_index.json absent — rulează buildIndexPart1() + buildIndexPart2()',
+      data.updated ? `🕐 Actualizat: ${data.updated}` : '',
+      data.eroare ? `⚠️ Eroare: ${data.eroare}` : '',
+    ].filter(Boolean);
+    el.innerHTML += indexLines.join('<br>');
+  } catch(e) {
+    el.innerHTML += '<br><br><b>🗂️ Drive Index</b><br>⚠️ Nu s-a putut verifica (offline?)';
+  }
 }
 
 // Aplica culorile salvate la pornire
