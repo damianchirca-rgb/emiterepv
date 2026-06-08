@@ -963,7 +963,7 @@ function renderList() {
         <div class="card-top">
           <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
             <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
-              ${poza ? `<img src="${pozaUrl(poza)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3)" onerror="pozaOnerror(this,'${poza}');this.nextElementSibling.style.display='flex'"><div style="display:none;width:56px;height:56px;border-radius:50%;background:var(--surface3);align-items:center;justify-content:center;font-size:22px">🏛️</div>` : `<div style="width:56px;height:56px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:22px">🏛️</div>`}
+              ${poza ? `<img src="${pozaUrl(poza)}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--surface3)" onerror="pozaOnerror(this,'${poza}');this.nextElementSibling.style.display='flex'"><div style="display:none;width:80px;height:80px;border-radius:50%;background:var(--surface3);align-items:center;justify-content:center;font-size:32px">🏛️</div>` : `<div style="width:80px;height:80px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:32px">🏛️</div>`}
               <div style="font-size:11px;color:var(--text2);text-align:center;max-width:64px;line-height:1.3;word-break:break-word;font-weight:500">${responsabil}</div>
             </div>
             <div style="min-width:0">
@@ -1215,7 +1215,7 @@ function openUat(id) {
     if (!img) {
       img = document.createElement('img');
       img.id = 'drawer-poza';
-      img.style.cssText = 'width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--surface3);flex-shrink:0';
+      img.style.cssText = 'width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--surface3);flex-shrink:0';
       titleWrap.parentNode.insertBefore(img, titleWrap);
     }
     img.src = pozaUrl(poza);
