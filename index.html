@@ -526,6 +526,14 @@
   </div>
 
 
+  <div id="update-banner">
+    <span id="update-msg">🔄 Date noi disponibile</span>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button id="update-btn-later" onclick="dismissUpdate()">Mai târziu</button>
+      <button id="update-btn-apply" onclick="applyUpdates()">Actualizează</button>
+    </div>
+  </div>
+
   <div id="bottom-nav">
     <button class="nav-btn active" id="nav-lista" onclick="showView('lista')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -677,6 +685,7 @@ async function syncData() {
     // Salvează offline
     localStorage.setItem('uats_cache', JSON.stringify(uats));
     localStorage.setItem('uats_ts', new Date().toISOString());
+    localStorage.setItem('server_ts', String(Date.now()));
 
     showMainUI();
     renderCurrent();
@@ -2193,6 +2202,109 @@ window.addEventListener('popstate', function(e) {
   }
 });
 
+// ─── SMART UPDATE SYSTEM ────────────────────────────────────
+let _pendingServerTs = null;
+
+// Verificare silentioasa in background dupa incarcare
+async function checkForUpdates() {
+  try {
+    const localTs = parseInt(localStorage.getItem('server_ts') || '0');
+    const resp = await fetch(`${API_URL}?action=version`, {cache: 'no-store'});
+    const data = await resp.json();
+    const serverTs = data.ts || 0;
+
+    if (serverTs > localTs) {
+      _pendingServerTs = serverTs;
+      showUpdateBanner();
+    }
+  } catch(e) {
+    // Silentios - nu deranja userul daca nu e retea
+  }
+}
+
+function showUpdateBanner() {
+  const banner = document.getElementById('update-banner');
+  if (banner) banner.classList.add('show');
+}
+
+function dismissUpdate() {
+  const banner = document.getElementById('update-banner');
+  if (banner) banner.classList.remove('show');
+  // Nu uitam ts-ul - vom intreba din nou la urmatoarea sesiune
+}
+
+async function applyUpdates() {
+  const banner = document.getElementById('update-banner');
+  const btn = document.getElementById('update-btn-apply');
+  if (btn) { btn.textContent = 'Se încarcă…'; btn.disabled = true; }
+
+  try {
+    // Fetch date noi de la server
+    const resp = await fetch(`${API_URL}?action=uats`, {cache: 'no-store'});
+    const newData = await resp.json();
+    if (!newData.uats) throw new Error('Date invalide');
+
+    // Compara UAT cu UAT - actualizeaza doar ce s-a schimbat
+    let changedCount = 0;
+    const changedIds = new Set();
+
+    newData.uats.forEach(newUat => {
+      const id = String(newUat['ID'] || '');
+      const oldIdx = uats.findIndex(u => String(u['ID']) === id);
+
+      if (oldIdx === -1) {
+        // UAT nou
+        uats.push(newUat);
+        changedIds.add(id);
+        changedCount++;
+      } else {
+        // Compara campurile importante
+        const old = uats[oldIdx];
+        const changed = ['Localitate','Judet','Responsabil','EmailUAT','BeneficiarActiv',
+                         'Note','DataUrmatorContact','NoteCalendar','_contracte','_aplicatii']
+          .some(k => JSON.stringify(old[k]) !== JSON.stringify(newUat[k]));
+
+        if (changed) {
+          uats[oldIdx] = newUat;
+          changedIds.add(id);
+          changedCount++;
+        }
+      }
+    });
+
+    // Sterge cache audio/mail DOAR pentru UAT-urile modificate
+    changedIds.forEach(id => {
+      delete audioData[id];
+      delete corsData[id];
+    });
+
+    // Actualizeaza localStorage
+    localStorage.setItem('uats_cache', JSON.stringify(newData));
+    localStorage.setItem('uats_ts', new Date().toISOString());
+    if (_pendingServerTs) {
+      localStorage.setItem('server_ts', String(_pendingServerTs));
+      _pendingServerTs = null;
+    }
+
+    // Re-randeaza lista si ascunde banner-ul
+    renderList();
+    if (banner) banner.classList.remove('show');
+
+    // Daca un drawer e deschis si apartine unui UAT modificat, re-randeaza
+    if (currentUat && changedIds.has(String(currentUat))) {
+      openUat(currentUat);
+    }
+
+    showToast(changedCount > 0
+      ? `✅ ${changedCount} UAT${changedCount===1?'':'uri'} actualizat${changedCount===1?'':'e'}`
+      : '✅ Totul era deja actualizat');
+
+  } catch(e) {
+    if (btn) { btn.textContent = 'Actualizează'; btn.disabled = false; }
+    showToast('⚠️ Eroare la actualizare: ' + e.message);
+  }
+}
+
 // ─── INIT ──────────────────────────────────────────────────
 // Încearcă cache offline primul, apoi sync
 const cached=localStorage.getItem('uats_cache');
@@ -2203,6 +2315,8 @@ if(cached){
   renderCurrent();
   const d=ts?new Date(ts).toLocaleString('ro-RO'):'?';
   document.getElementById('last-sync').textContent=`Cache din ${d}`;
+      // Verificare silentioasa daca exista date noi
+      setTimeout(checkForUpdates, 2000);
 }
 syncData();
 </script>
