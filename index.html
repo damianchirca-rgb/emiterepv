@@ -527,9 +527,13 @@
 
 
   <div id="update-banner">
-    <span id="update-msg">🔄 Date noi disponibile</span>
-    <div style="display:flex;gap:8px;flex-shrink:0">
-      <button id="update-btn-later" onclick="dismissUpdate()">Mai târziu</button>
+    <div class="upd-icon">🔄</div>
+    <div class="upd-text">
+      <div class="upd-title">Date noi disponibile</div>
+      <div class="upd-sub" id="update-msg">Apasă pentru a actualiza</div>
+    </div>
+    <div class="upd-actions">
+      <button id="update-btn-later" onclick="dismissUpdate()">Acum nu</button>
       <button id="update-btn-apply" onclick="applyUpdates()">Actualizează</button>
     </div>
   </div>
@@ -2215,16 +2219,23 @@ async function checkForUpdates() {
 
     if (serverTs > localTs) {
       _pendingServerTs = serverTs;
-      showUpdateBanner();
+      showUpdateBanner('Modificări detectate pe server');
     }
   } catch(e) {
     // Silentios - nu deranja userul daca nu e retea
   }
 }
 
-function showUpdateBanner() {
+function showUpdateBanner(msg) {
   const banner = document.getElementById('update-banner');
-  if (banner) banner.classList.add('show');
+  const sub = document.getElementById('update-msg');
+  if (sub && msg) sub.textContent = msg;
+  if (banner) {
+    banner.classList.add('show');
+    // Auto-dismiss dupa 15 secunde daca nu e atins
+    clearTimeout(banner._autoDismiss);
+    banner._autoDismiss = setTimeout(() => banner.classList.remove('show'), 15000);
+  }
 }
 
 function dismissUpdate() {
@@ -2283,7 +2294,8 @@ async function applyUpdates() {
 
     // Re-randeaza lista si ascunde banner-ul
     renderList();
-    if (banner) banner.classList.remove('show');
+    // Asteapta putin ca userul sa vada toastul inainte de dismiss banner
+    setTimeout(() => { if (banner) banner.classList.remove('show'); }, 500);
 
     // Daca un drawer e deschis si apartine unui UAT modificat, re-randeaza
     if (currentUat && changedIds.has(String(currentUat))) {
