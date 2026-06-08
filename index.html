@@ -684,10 +684,20 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v4.3';
+const APP_VERSION = 'v4.4';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v4.4',
+    data: '08.06.2026',
+    titlu: 'Ordonare listă după expirare contract',
+    items: [
+      'Lista UAT-uri sortată după data expirare contract (cea mai apropiată prima)',
+      'UAT-urile fără contract merg la final, sortate alfabetic'
+    ]
+  },
+
   {
     version: 'v4.3',
     data: '08.06.2026',
@@ -900,6 +910,20 @@ async function apiPost(action, payload) {
 }
 
 // ─── FILTERING ─────────────────────────────────────────────
+// Extrage data expirare contract activ (DD.MM.YYYY -> Date)
+function getContractExpiry(u) {
+  const contracte = u._contracte || [];
+  let earliest = null;
+  contracte.forEach(function(c) {
+    if (!c.data_incetare) return;
+    const parts = c.data_incetare.split('.');
+    if (parts.length !== 3) return;
+    const d = new Date(parts[2], parts[1]-1, parts[0]);
+    if (!isNaN(d) && (earliest === null || d < earliest)) earliest = d;
+  });
+  return earliest;
+}
+
 function filteredUats() {
   let res = uats;
   const q = norm(currentSearch);
@@ -916,6 +940,18 @@ function filteredUats() {
   else if (currentFilter === 'note') res = res.filter(u => getField(u,'Note'));
   else if (currentFilter === 'urgenta') res = res.filter(u => { const d=getDaysUntil(getField(u,'DataUrmatorContact')); return d!==null && d<30; });
   else if (['TL','CT','CL','GR','PH'].includes(currentFilter)) res = res.filter(u => getField(u,'CodJudet') === currentFilter);
+
+  // Sorteaza dupa data expirare contract (cea mai apropiata prima)
+  // UAT-urile fara contract expira merg la sfarsit
+  res = res.slice().sort(function(a, b) {
+    const da = getContractExpiry(a);
+    const db = getContractExpiry(b);
+    if (da && db) return da - db;
+    if (da) return -1; // a are data, b nu -> a primul
+    if (db) return 1;  // b are data, a nu -> b primul
+    return (getField(a,'Localitate')||'').localeCompare(getField(b,'Localitate')||'');
+  });
+
   return res;
 }
 
