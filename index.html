@@ -1340,6 +1340,37 @@ async function loadUtile(uatId) {
   loadFisiereUtile(uatId);
 }
 
+async function loadFullSumar(elId, fullName, btnId) {
+  const el  = document.getElementById(elId);
+  const btn = document.getElementById(btnId);
+  if (!el || !fullName) return;
+
+  if (el.dataset.sumarLoaded === '1') { toggleExpand(elId, btn); return; }
+
+  if (btn) { btn.textContent = 'Se încarcă…'; btn.disabled = true; }
+
+  try {
+    const resp = await fetch(API_URL + '?action=sumar_audio&full_name=' + encodeURIComponent(fullName), {cache:'no-store'});
+    const data = await resp.json();
+    if (data.eroare) {
+      if (btn) { btn.textContent = '⚠️ ' + data.eroare; btn.disabled = false; }
+      return;
+    }
+    const fullText = data.text || '';
+    el.dataset.full = fullText;
+    el.dataset.sumarLoaded = '1';
+    el.dataset.expanded = '1';
+    el.textContent = fullText;
+    if (btn) {
+      btn.textContent = '▲ Restrânge';
+      btn.disabled = false;
+      btn.setAttribute('onclick', 'toggleExpand("' + elId + '", this)');
+    }
+  } catch(err) {
+    if (btn) { btn.textContent = '⚠️ Eroare rețea'; btn.disabled = false; }
+  }
+}
+
 // ─── CORESPONDENTA ──────────────────────────────────────────
 let corsData   = {};
 let corsFilter = {};
@@ -1638,21 +1669,26 @@ function renderAudio(uatId) {
       html += '</div>';
     }
 
-    // Sumar GPT
+    // Sumar GPT - indexul are max ~300 chars, fisierul complet e _sumar.txt in Drive
     if (sumar) {
-      const sShort = sumar.length > 200 ? sumar.substring(0, 200) + '…' : sumar;
-      const sExpand = sumar.length > 200;
+      const sShort = sumar.substring(0, 300) + (sumar.length >= 300 ? '…' : '');
       html += '<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">';
       html += '<div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:6px">🤖 Sumar GPT</div>';
       html += '<div id="sm-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"';
       html += ' data-short="' + sShort.replace(/"/g, '&quot;') + '"';
       html += ' data-full="' + sumar.replace(/"/g, '&quot;') + '"';
       html += ' data-expanded="0">' + sShort + '</div>';
-      if (sExpand) {
-        html += '<button data-elid="sm-text-' + k + '"';
-        html += ' onclick="toggleExpand(this.dataset.elid, this)"';
-        html += ' style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;font-family:inherit">▼ Citește tot</button>';
+      html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">';
+      if (sumar.length > 200) {
+        html += '<button data-elid="sm-text-' + k + '" onclick="toggleExpand(this.dataset.elid, this)"';
+        html += ' style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;font-family:inherit">▼ Extinde</button>';
       }
+      if (fullName) {
+        html += '<button id="sm-btn-' + k + '" data-elid="sm-text-' + k + '" data-fname="' + fullName.replace(/"/g, '&quot;') + '" data-btnid="sm-btn-' + k + '"';
+        html += ' onclick="loadFullSumar(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"';
+        html += ' style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent2);font-size:11px;cursor:pointer;font-family:inherit">🤖 Citește integral</button>';
+      }
+      html += '</div>';
       html += '</div>';
     }
 
