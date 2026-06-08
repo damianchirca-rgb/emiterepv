@@ -351,6 +351,23 @@
       <div class="stat-card e"><div class="num" id="s-urgente">—</div><div class="lbl">Contacte urgente</div></div>
     </div>
     <div class="detail-section" style="margin-top:4px" id="stats-luna"></div>
+
+    <!-- Contacte urgente detaliat -->
+    <div class="detail-section" style="margin-top:4px">
+      <h3 onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="cursor:pointer">
+        📅 Contacte depășite <span style="font-size:11px;font-weight:400;color:var(--text3)">(click pentru detalii)</span>
+      </h3>
+      <div id="stats-urgente-list" style="display:none;margin-top:8px"></div>
+    </div>
+
+    <!-- PV generate detaliat -->
+    <div class="detail-section" style="margin-top:4px">
+      <h3 onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="cursor:pointer">
+        📋 PV generate <span style="font-size:11px;font-weight:400;color:var(--text3)">(click pentru detalii)</span>
+      </h3>
+      <div id="stats-generat-list" style="display:none;margin-top:8px"></div>
+    </div>
+
     <div class="detail-section" style="margin-top:4px">
       <h3>Distribuție județe</h3>
       <div class="judet-list" id="judet-chart"></div>
@@ -927,8 +944,21 @@ function renderContacts() {
 // ─── STATS ─────────────────────────────────────────────────
 function renderStats() {
   const activ   = uats.filter(u => getField(u,'BeneficiarActiv') !== 'NU').length;
-  const inactiv  = uats.filter(u => getField(u,'BeneficiarActiv') === 'NU').length;
-  const urgente  = uats.filter(u => { const d = getDaysUntil(getField(u,'DataUrmatorContact')); return d !== null && d < 0; }).length;
+  const inactiv = uats.filter(u => getField(u,'BeneficiarActiv') === 'NU').length;
+
+  // Contacte urgente - data depasita
+  const urgenteList = uats.filter(u => {
+    const d = getDaysUntil(getField(u,'DataUrmatorContact'));
+    return d !== null && d < 0;
+  });
+  const urgente = urgenteList.length;
+
+  // PV generate - afisam lista ca sa poata fi verificata
+  const generatList = uats.filter(u => {
+    const sg = getField(u,'StatusGenerare') || '';
+    return sg.includes('generat') && !sg.includes('eroare');
+  });
+  const generat = generatList.length;
 
   // Luna curenta YYYY-MM
   const now = new Date();
@@ -958,17 +988,47 @@ function renderStats() {
       }
     });
   });
-
-  // PV generate luna curenta
-  const generat = uats.filter(u => {
-    const sg = getField(u,'StatusGenerare') || '';
-    return sg.includes('generat') && !sg.includes('eroare');
-  }).length;
-
   document.getElementById('s-activ').textContent    = activ;
   document.getElementById('s-inactiv').textContent  = inactiv;
   document.getElementById('s-generat').textContent  = generat;
   document.getElementById('s-urgente').textContent  = urgente;
+
+  // Lista UAT-uri urgente (clickabila)
+  const urgenteEl = document.getElementById('stats-urgente-list');
+  if (urgenteEl) {
+    urgenteEl.innerHTML = urgenteList.length
+      ? urgenteList.map(u => {
+          const d = getDaysUntil(getField(u,'DataUrmatorContact'));
+          const loc = getField(u,'Localitate');
+          const jud = getField(u,'Judet');
+          const data = getField(u,'DataUrmatorContact');
+          const id = u['ID'];
+          return '<div onclick="openUat(' + id + ')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;cursor:pointer;border-left:3px solid var(--eroare)">'
+            + '<div><div style="font-size:13px;font-weight:600">' + loc + '</div>'
+            + '<div style="font-size:10px;color:var(--text3)">' + jud + ' · ' + data + '</div></div>'
+            + '<span style="font-size:11px;color:var(--eroare);font-weight:600">' + (-d) + 'z depășit</span>'
+            + '</div>';
+        }).join('')
+      : '<div style="font-size:12px;color:var(--activ);padding:8px">✅ Niciun contact depășit</div>';
+  }
+
+  // Lista PV generate
+  const generatEl = document.getElementById('stats-generat-list');
+  if (generatEl) {
+    generatEl.innerHTML = generatList.length
+      ? generatList.map(u => {
+          const loc = getField(u,'Localitate');
+          const jud = getField(u,'Judet');
+          const sg  = getField(u,'StatusGenerare') || '';
+          const id  = u['ID'];
+          return '<div onclick="openUat(' + id + ')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;cursor:pointer;border-left:3px solid var(--accent)">'
+            + '<div><div style="font-size:13px;font-weight:600">' + loc + '</div>'
+            + '<div style="font-size:10px;color:var(--text3)">' + jud + '</div></div>'
+            + '<span style="font-size:10px;color:var(--text3);max-width:120px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + sg + '</span>'
+            + '</div>';
+        }).join('')
+      : '<div style="font-size:12px;color:var(--text3);padding:8px">Niciun PV generat</div>';
+  }
 
   // Afiseaza statistici luna curenta
   const lunaEl = document.getElementById('stats-luna');
