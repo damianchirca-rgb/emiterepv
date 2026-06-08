@@ -1627,9 +1627,14 @@ function renderAudio(uatId) {
       html += ' data-full="' + transcr.replace(/"/g, '&quot;') + '"';
       html += ' data-expanded="0">' + tShort + '</div>';
       if (tNeedsFull && fullName) {
-        html += '<button id="tr-btn-' + k + '" onclick="loadFullTranscr('tr-text-' + k + '','' + fullName.replace(/'/g, "\'") + '','tr-btn-' + k + '')" ';
-        html += 'style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">📄 Citește tot</button>';
+        html += '<button id="tr-btn-' + k + '"';
+        html += ' data-elid="tr-text-' + k + '"';
+        html += ' data-fname="' + fullName.replace(/"/g, '&quot;') + '"';
+        html += ' data-btnid="tr-btn-' + k + '"';
+        html += ' onclick="loadFullTranscr(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"';
+        html += ' style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">📄 Citește tot</button>';
       }
+      html += '</div>';
       html += '</div>';
     }
 
@@ -1644,8 +1649,9 @@ function renderAudio(uatId) {
       html += ' data-full="' + sumar.replace(/"/g, '&quot;') + '"';
       html += ' data-expanded="0">' + sShort + '</div>';
       if (sExpand) {
-        html += '<button onclick="toggleExpand('sm-text-' + k + '', this)" ';
-        html += 'style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;font-family:inherit">▼ Citește tot</button>';
+        html += '<button data-elid="sm-text-' + k + '"';
+        html += ' onclick="toggleExpand(this.dataset.elid, this)"';
+        html += ' style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;font-family:inherit">▼ Citește tot</button>';
       }
       html += '</div>';
     }
