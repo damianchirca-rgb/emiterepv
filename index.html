@@ -1113,7 +1113,6 @@ function openUat(id) {
       <button class="tab-btn" id="tab-btn-facturi" onclick="switchTab('facturi')">Facturi</button>
       <button class="tab-btn" id="tab-btn-corespondenta" onclick="switchTab('corespondenta');loadCorespondenta('${id}')">Mail</button>
       <button class="tab-btn" id="tab-btn-audio" onclick="switchTab('audio');loadAudioTab('${id}')">Audio</button>
-      <button class="tab-btn" id="tab-btn-aplicatii" onclick="switchTab('aplicatii')">Aplicații</button>
       <button class="tab-btn" id="tab-btn-utile" onclick="switchTab('utile');loadUtile('${id}')">Utile</button>
     </div>
     <div id="tab-main" class="tab-content active">
@@ -1130,6 +1129,10 @@ function openUat(id) {
         🗺️ Deschide în Google Maps
         <span style="font-size:10px;color:var(--text3);margin-left:auto;font-family:monospace">${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}</span>
       </a>` : ''}
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">📦 Aplicații</div>
+        ${aplicatiiHtml}
+      </div>
     </div>
     <div id="tab-contracte" class="tab-content">
       ${contracteHtml}
@@ -1153,7 +1156,7 @@ function openUat(id) {
       </div>
       <div id="cors-list-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
     </div>
-    <div id="tab-aplicatii" class="tab-content">${aplicatiiHtml}</div>
+
     <div id="tab-utile" class="tab-content">
       <div class="detail-section">
         <h3>📅 Data următor contact</h3>
