@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0a0f1e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>EmiterePV</title>
+<title>Mentenanță</title>
 <style>
   html { font-size: 16px !important; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 </style>
@@ -258,7 +258,7 @@
       <div id="logo">
         <div id="logo-icon">🏛️</div>
         <div id="logo-text">
-          <h1>EmiterePV</h1>
+          <h1>Mentenanță</h1>
           <p id="last-sync">Se încarcă…</p>
         </div>
       </div>
@@ -588,7 +588,7 @@
         <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Aplicație</div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
           <span style="font-size:13px;color:var(--text2)">Versiune</span>
-          <span style="font-size:13px;font-weight:600">EmiterePV v4</span>
+          <span style="font-size:13px;font-weight:600">Mentenanță v4.2</span>
         </div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
           <span style="font-size:13px;color:var(--text2)">UAT-uri încărcate</span>
@@ -678,6 +678,55 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
+const APP_VERSION = 'v4.2';
+const APP_NAME    = 'Mentenanță';
+
+const CHANGELOG = [
+  {
+    version: 'v4.2',
+    data: '08.06.2026',
+    titlu: 'Căutare globală + Audio îmbunătățit',
+    items: [
+      'Căutare globală în Audio și Corespondență (tab Căutare)',
+      'Tab Audio: transcriere completă + sumar GPT integral din Drive',
+      'Smart update: notificare la date noi, actualizare selectivă per UAT',
+      'Cache audio persistent între taburi (instant la revenire)',
+      'Statistici: contracte care expiră + contacte depășite cu detalii',
+      'Versioning aplicație cu changelog'
+    ]
+  },
+  {
+    version: 'v4.1',
+    data: '07.06.2026',
+    titlu: 'Pagini full-screen + Setări extinse',
+    items: [
+      'UAT-uri se deschid ca pagini full-screen (slide dreapta)',
+      'Buton Back hardware Android suportat',
+      'Tab Aplicații mutat în Main ca secțiune card',
+      'Link Google Maps mutat în Main sub Adresă',
+      'Setări: picker HSV pentru culori carduri per temă',
+      'Cache dual: date bază + extras (invalidare selectivă)',
+      'Email raport nocturn după indexare Drive',
+      'Trigere separate: buildIndexPart1 (02:00) + Part2 (02:30)'
+    ]
+  },
+  {
+    version: 'v4.0',
+    data: '06.06.2026',
+    titlu: 'Lansare PWA cu funcționalități complete',
+    items: [
+      'Tab Audio separat cu înregistrări per UAT',
+      'Tab Mail (fostă Corespondență) cu body complet și atașamente',
+      'Poze primari cu fallback automat',
+      'Fișiere arhivate în tab Contracte',
+      'Căutare fără diacritice în toate taburile',
+      'Indexare Drive automată cu drive_index.json',
+      'Tab Setări cu teme zi/noapte și culori personalizate'
+    ]
+  }
+];
+
+
 // ÎNLOCUIEȘTE cu URL-ul tău după deploy în Apps Script!
 const API_URL = 'https://script.google.com/macros/s/AKfycbyrIKVxXAULXoHszaN60nQQqNAK6N_j_PqNmhAsRZ_D7fdvzf38euhpPH95Z0PHcw/exec';
 
@@ -2309,6 +2358,7 @@ function initSetari() {
   const infoUats = document.getElementById('info-uats');
   const infoTs   = document.getElementById('info-ts');
   const infoSize = document.getElementById('info-size');
+  const infoVer  = document.getElementById('info-version-label');
   if (infoUats) infoUats.textContent = uats.length || '—';
   if (infoTs) {
     const ts = localStorage.getItem('uats_ts');
@@ -2317,6 +2367,25 @@ function initSetari() {
   if (infoSize) {
     const cache = localStorage.getItem('uats_cache') || '';
     infoSize.textContent = (cache.length / 1024).toFixed(0) + ' KB';
+  }
+  if (infoVer) infoVer.textContent = APP_NAME + ' ' + APP_VERSION;
+
+  // Render changelog
+  const clEl = document.getElementById('changelog-list');
+  if (clEl) {
+    clEl.innerHTML = CHANGELOG.map(function(v) {
+      return '<div style="margin-bottom:12px;background:var(--surface2);border-radius:10px;padding:12px;border-left:3px solid var(--accent)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+        + '<span style="font-size:13px;font-weight:700">' + v.version + ' — ' + v.titlu + '</span>'
+        + '<span style="font-size:10px;color:var(--text3)">' + v.data + '</span>'
+        + '</div>'
+        + '<ul style="margin:0;padding-left:16px">'
+        + v.items.map(function(item) {
+            return '<li style="font-size:11px;color:var(--text2);margin-bottom:3px;line-height:1.4">' + item + '</li>';
+          }).join('')
+        + '</ul>'
+        + '</div>';
+    }).join('');
   }
 }
 
