@@ -1679,10 +1679,6 @@ function renderAudio(uatId) {
       html += ' data-full="' + sumar.replace(/"/g, '&quot;') + '"';
       html += ' data-expanded="0">' + sShort + '</div>';
       html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">';
-      if (sumar.length > 200) {
-        html += '<button data-elid="sm-text-' + k + '" onclick="toggleExpand(this.dataset.elid, this)"';
-        html += ' style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;font-family:inherit">▼ Extinde</button>';
-      }
       if (fullName) {
         html += '<button id="sm-btn-' + k + '" data-elid="sm-text-' + k + '" data-fname="' + fullName.replace(/"/g, '&quot;') + '" data-btnid="sm-btn-' + k + '"';
         html += ' onclick="loadFullSumar(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"';
