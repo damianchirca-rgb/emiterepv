@@ -1115,7 +1115,6 @@ function openUat(id) {
       <button class="tab-btn" id="tab-btn-audio" onclick="switchTab('audio');loadAudioTab('${id}')">Audio</button>
       <button class="tab-btn" id="tab-btn-aplicatii" onclick="switchTab('aplicatii')">Aplicații</button>
       <button class="tab-btn" id="tab-btn-utile" onclick="switchTab('utile');loadUtile('${id}')">Utile</button>
-      <button class="tab-btn" id="tab-btn-harta" onclick="switchTab('harta')">Hartă</button>
     </div>
     <div id="tab-main" class="tab-content active">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
@@ -1126,6 +1125,11 @@ function openUat(id) {
       <div class="detail-row"><div class="detail-label">CIF client</div><div class="detail-value mono">${cif||'—'}</div></div>
       <div class="detail-row"><div class="detail-label">Email UAT</div><div class="detail-value" style="font-size:11px;word-break:break-all">${email||'—'}</div></div>
       <div class="detail-row"><div class="detail-label">Adresă</div><div class="detail-value" style="font-size:11px">${adresa||'—'}</div></div>
+      ${lat ? `<a href="https://maps.google.com/?q=${lat},${lng}" target="_blank"
+        style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-weight:600;text-decoration:none">
+        🗺️ Deschide în Google Maps
+        <span style="font-size:10px;color:var(--text3);margin-left:auto;font-family:monospace">${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}</span>
+      </a>` : ''}
     </div>
     <div id="tab-contracte" class="tab-content">
       ${contracteHtml}
@@ -1177,11 +1181,7 @@ function openUat(id) {
       <div id="audio-uat-${id}" style="color:var(--text3);font-size:13px">Se încarcă…</div>
       <div id="audio-sumar-${id}" style="margin-top:8px"></div>
     </div>
-    <div id="tab-harta" class="tab-content">
-      ${lat?`<a class="map-btn" href="https://maps.google.com/?q=${lat},${lng}" target="_blank">🗺 Deschide în Google Maps</a>
-      <div class="coord-box">📍 ${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)}</div>`
-      :`<div style="color:var(--text3);font-size:13px;padding:12px 0">Coordonate GPS nedisponibile</div>`}
-    </div>
+
   `;
   document.getElementById('drawer').classList.add('open');
 }
