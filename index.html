@@ -350,6 +350,7 @@
       <div class="stat-card s"><div class="num" id="s-generat">—</div><div class="lbl">PV generate</div></div>
       <div class="stat-card e"><div class="num" id="s-urgente">—</div><div class="lbl">Contacte urgente</div></div>
     </div>
+    <div class="detail-section" style="margin-top:4px" id="stats-luna"></div>
     <div class="detail-section" style="margin-top:4px">
       <h3>Distribuție județe</h3>
       <div class="judet-list" id="judet-chart"></div>
@@ -925,20 +926,81 @@ function renderContacts() {
 
 // ─── STATS ─────────────────────────────────────────────────
 function renderStats() {
-  const activ=uats.filter(u=>getField(u,'BeneficiarActiv') !== 'NU').length;
-  const inactiv=uats.filter(u=>getField(u,'BeneficiarActiv') === 'NU').length;
-  const generat=uats.filter(u=>{const sg=getField(u,'StatusGenerare')||'';return sg.includes('generat')&&!sg.includes('eroare');}).length;
-  const urgente=uats.filter(u=>{const d=getDaysUntil(getField(u,'DataUrmatorContact'));return d!==null&&d<0;}).length;
-  document.getElementById('s-activ').textContent=activ;
-  document.getElementById('s-inactiv').textContent=inactiv;
-  document.getElementById('s-generat').textContent=generat;
-  document.getElementById('s-urgente').textContent=urgente;
-  const byJudet={};
-  uats.forEach(u=>{const j=getField(u,'Judet')||'?';byJudet[j]=(byJudet[j]||0)+1;});
-  const max=Math.max(...Object.values(byJudet));
-  document.getElementById('judet-chart').innerHTML=Object.entries(byJudet).sort((a,b)=>b[1]-a[1]).map(([j,c])=>
-    `<div class="judet-row"><div class="judet-name">${j}</div><div class="judet-bar-wrap"><div class="judet-bar" style="width:${(c/max*100).toFixed(0)}%"></div></div><div class="judet-count">${c}</div></div>`
-  ).join('');
+  const activ   = uats.filter(u => getField(u,'BeneficiarActiv') !== 'NU').length;
+  const inactiv  = uats.filter(u => getField(u,'BeneficiarActiv') === 'NU').length;
+  const urgente  = uats.filter(u => { const d = getDaysUntil(getField(u,'DataUrmatorContact')); return d !== null && d < 0; }).length;
+
+  // Luna curenta YYYY-MM
+  const now = new Date();
+  const lunaCurenta = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const lunaAfisaj  = now.toLocaleDateString('ro-RO', {month:'long', year:'numeric'});
+
+  // Statistici facturi luna curenta
+  let facturiEmise = 0, facturiAchitate = 0, facturiNeemise = 0;
+  uats.forEach(u => {
+    (u._contracte || []).forEach(c => {
+      // Construieste toate facturile (ca in openUat)
+      const toateFacturile = {};
+      if (c.istorice) Object.entries(c.istorice).forEach(([luna, f]) => { toateFacturile[luna] = f; });
+      if (c.nr_factura || c.data_factura || c.status_factura) {
+        const lunaC = c.data_factura ? c.data_factura.substring(3,10).split('.').reverse().join('-') : null;
+        if (lunaC && !toateFacturile[lunaC]) {
+          toateFacturile[lunaC] = { nr_factura: c.nr_factura, data_factura: c.data_factura, status_factura: c.status_factura };
+        }
+      }
+      const f = toateFacturile[lunaCurenta];
+      if (f) {
+        if (f.status_factura === 'achitata') facturiAchitate++;
+        else if (f.status_factura === 'emisa' || f.nr_factura) facturiEmise++;
+      } else {
+        // Contract activ fara factura luna curenta
+        if (getField(u,'BeneficiarActiv') !== 'NU') facturiNeemise++;
+      }
+    });
+  });
+
+  // PV generate luna curenta
+  const generat = uats.filter(u => {
+    const sg = getField(u,'StatusGenerare') || '';
+    return sg.includes('generat') && !sg.includes('eroare');
+  }).length;
+
+  document.getElementById('s-activ').textContent    = activ;
+  document.getElementById('s-inactiv').textContent  = inactiv;
+  document.getElementById('s-generat').textContent  = generat;
+  document.getElementById('s-urgente').textContent  = urgente;
+
+  // Afiseaza statistici luna curenta
+  const lunaEl = document.getElementById('stats-luna');
+  if (lunaEl) {
+    lunaEl.innerHTML = `
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">
+        Facturi ${lunaAfisaj}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px">
+        <div style="background:var(--activ-bg);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--activ)">${facturiAchitate}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Achitate</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--accent2)">${facturiEmise}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Emise</div>
+        </div>
+        <div style="background:var(--eroare-bg,rgba(239,68,68,0.1));border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--eroare)">${facturiNeemise}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">Neemise</div>
+        </div>
+      </div>`;
+  }
+
+  // Distributie judete
+  const byJudet = {};
+  uats.forEach(u => { const j = getField(u,'Judet') || '?'; byJudet[j] = (byJudet[j] || 0) + 1; });
+  const max = Math.max(...Object.values(byJudet));
+  document.getElementById('judet-chart').innerHTML = Object.entries(byJudet)
+    .sort((a,b) => b[1]-a[1])
+    .map(([j,c]) => `<div class="judet-row"><div class="judet-name">${j}</div><div class="judet-bar-wrap"><div class="judet-bar" style="width:${(c/max*100).toFixed(0)}%"></div></div><div class="judet-count">${c}</div></div>`)
+    .join('');
 }
 
 // ─── DRAWER ────────────────────────────────────────────────
