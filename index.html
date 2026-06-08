@@ -315,23 +315,65 @@
   </div>
 
   <div id="cautare-view" class="view" style="flex-direction:column">
+
+    <!-- Search bar global -->
     <div style="padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
-      <div style="display:flex;gap:8px">
-        <input id="cautare-input" type="text" placeholder="Caută în toate documentele…" 
-          style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;outline:none"
-          onkeydown="if(event.key==='Enter')doCautare()">
-        <button onclick="doCautare()" style="padding:10px 16px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Caută</button>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap" id="cautare-tip-filters">
-        <span class="filter-chip active" onclick="toggleTip('contract',this)">📄 Contracte</span>
-        <span class="filter-chip active" onclick="toggleTip('factura',this)">💰 Facturi</span>
-        <span class="filter-chip active" onclick="toggleTip('pv',this)">📋 PV-uri</span>
-        <span class="filter-chip active" onclick="toggleTip('util',this)">📁 Utile</span>
+      <input id="global-search-input" type="text" placeholder="🔍 Caută în înregistrări audio și corespondență…"
+        style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;outline:none"
+        oninput="filterGlobal(this.value)">
+      <!-- Tab-uri sectiuni -->
+      <div style="display:flex;gap:0;margin-top:10px;background:var(--surface2);border-radius:10px;padding:3px">
+        <button id="gtab-btn-audio" onclick="switchGlobalTab('audio')"
+          style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);color:white;transition:all .2s">
+          🎤 Audio recente
+        </button>
+        <button id="gtab-btn-mail" onclick="switchGlobalTab('mail')"
+          style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text2);transition:all .2s">
+          ✉️ Corespondență
+        </button>
+        <button id="gtab-btn-fisiere" onclick="switchGlobalTab('fisiere')"
+          style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text2);transition:all .2s">
+          📄 Documente
+        </button>
       </div>
     </div>
-    <div id="cautare-rezultate" style="flex:1;overflow-y:auto;padding:10px 12px">
-      <div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px">Introduceți un termen de căutare</div>
+
+    <!-- Tab Audio recente -->
+    <div id="gtab-audio" style="flex:1;overflow-y:auto;padding:12px">
+      <div id="global-audio-list"><div style="color:var(--text3);font-size:13px;padding:20px;text-align:center"><div class="spinner" style="margin:0 auto 12px;width:24px;height:24px;border-width:2px"></div>Se încarcă…</div></div>
     </div>
+
+    <!-- Tab Corespondenta -->
+    <div id="gtab-mail" style="flex:1;overflow-y:auto;padding:12px;display:none">
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="filter-chip active" id="gmf-all"   onclick="setGlobalMailFilter('all',this)">Toate</button>
+        <button class="filter-chip"        id="gmf-primit" onclick="setGlobalMailFilter('primit',this)">↓ Primite</button>
+        <button class="filter-chip"        id="gmf-trimis" onclick="setGlobalMailFilter('trimis',this)">↑ Trimise</button>
+      </div>
+      <div id="global-mail-list"><div style="color:var(--text3);font-size:13px;padding:20px;text-align:center"><div class="spinner" style="margin:0 auto 12px;width:24px;height:24px;border-width:2px"></div>Se încarcă…</div></div>
+    </div>
+
+    <!-- Tab Documente (cautare existenta) -->
+    <div id="gtab-fisiere" style="flex:1;overflow-y:auto;padding:0;display:none;flex-direction:column">
+      <div style="padding:12px 12px 0">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input id="cautare-input" type="text" placeholder="Caută în toate documentele…"
+            style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;outline:none"
+            onkeydown="if(event.key==='Enter')doCautare()">
+          <button onclick="doCautare()" style="padding:10px 16px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Caută</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap" id="cautare-tip-filters">
+          <span class="filter-chip active" onclick="toggleTip('contract',this)">📄 Contracte</span>
+          <span class="filter-chip active" onclick="toggleTip('factura',this)">💰 Facturi</span>
+          <span class="filter-chip active" onclick="toggleTip('pv',this)">📋 PV-uri</span>
+          <span class="filter-chip active" onclick="toggleTip('util',this)">📁 Utile</span>
+        </div>
+      </div>
+      <div id="cautare-rezultate" style="flex:1;overflow-y:auto;padding:10px 12px">
+        <div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px">Introduceți un termen de căutare</div>
+      </div>
+    </div>
+
   </div>
 
   <div id="mentenanta-view" class="view" style="overflow-y:auto;padding:16px;flex-direction:column;gap:12px">
@@ -1957,7 +1999,7 @@ function showView(v) {
   if (filterBar && v!=='lista') { filterBar.style.display='none'; filterBarOpen=false; if(filterBtn) filterBtn.classList.remove('active'); }
   if(v==='lista'){document.getElementById('list-view').classList.add('active');document.getElementById('nav-lista').classList.add('active');renderList();}
   else if(v==='contacte'){document.getElementById('contacts-view').classList.add('active');document.getElementById('nav-contacte').classList.add('active');renderContacts();}
-  else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
+  else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');if(!globalAudioData)loadGlobalData();setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
   else if(v==='mentenanta'){document.getElementById('mentenanta-view').classList.add('active');document.getElementById('nav-mentenanta').classList.add('active');loadMentenanta();}
   else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
   else if(v==='setari'){document.getElementById('setari-view').classList.add('active');document.getElementById('nav-setari').classList.add('active');initSetari();}
@@ -2427,6 +2469,133 @@ window.addEventListener('popstate', function(e) {
     }
   }
 });
+
+// ─── GLOBAL SEARCH (Audio + Mail) ──────────────────────────
+let globalAudioData = null;
+let globalMailData  = null;
+let globalMailFilter = 'all';
+
+async function loadGlobalData() {
+  // Fetch paralel audio + mail
+  try {
+    const [rAudio, rMail] = await Promise.all([
+      fetch(API_URL + '?action=recent_audio&n=30', {cache:'no-store'}),
+      fetch(API_URL + '?action=recent_mail&n=50',  {cache:'no-store'})
+    ]);
+    const dAudio = await rAudio.json();
+    const dMail  = await rMail.json();
+    globalAudioData = dAudio.items || [];
+    globalMailData  = dMail.items  || [];
+    renderGlobalAudio();
+    renderGlobalMail();
+  } catch(e) {
+    document.getElementById('global-audio-list').innerHTML = '<div style="color:var(--eroare);padding:16px">⚠️ Eroare încărcare: ' + e.message + '</div>';
+    document.getElementById('global-mail-list').innerHTML  = '<div style="color:var(--eroare);padding:16px">⚠️ Eroare încărcare: ' + e.message + '</div>';
+  }
+}
+
+function switchGlobalTab(tab) {
+  ['audio','mail','fisiere'].forEach(t => {
+    document.getElementById('gtab-' + t).style.display = t === tab ? (t==='fisiere'?'flex':'block') : 'none';
+    const btn = document.getElementById('gtab-btn-' + t);
+    if (btn) {
+      btn.style.background = t === tab ? 'var(--accent)' : 'transparent';
+      btn.style.color      = t === tab ? 'white' : 'var(--text2)';
+    }
+  });
+}
+
+function filterGlobal(q) {
+  if (globalAudioData) renderGlobalAudio(q);
+  if (globalMailData)  renderGlobalMail(q);
+}
+
+function setGlobalMailFilter(filter, btn) {
+  globalMailFilter = filter;
+  document.querySelectorAll('#gtab-mail .filter-chip').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const q = document.getElementById('global-search-input')?.value || '';
+  renderGlobalMail(q);
+}
+
+function renderGlobalAudio(q) {
+  const el = document.getElementById('global-audio-list');
+  if (!el || !globalAudioData) return;
+  const qn = norm(q || '');
+  const items = qn
+    ? globalAudioData.filter(f =>
+        norm(f.localitate||'').includes(qn) ||
+        norm(f.sumar||'').includes(qn) ||
+        norm(f.transcriere_preview||'').includes(qn) ||
+        norm(f.display_name||'').includes(qn))
+    : globalAudioData;
+
+  if (!items.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center">Niciun rezultat</div>';
+    return;
+  }
+
+  let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:8px">' + items.length + ' înregistrări</div>';
+  items.forEach(function(f) {
+    const dateRo = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'short',year:'numeric'}) : '';
+    const sumarShort = f.sumar ? f.sumar.substring(0,120) + (f.sumar.length>120?'…':'') : '';
+    out += '<div onclick="openUat(' + f.uat_id + ')" style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid var(--accent)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
+      + '<span style="font-size:13px;font-weight:700;color:var(--accent)">' + (f.localitate||'') + '</span>'
+      + '<span style="font-size:11px;color:var(--text3)">' + dateRo + '</span>'
+      + '</div>'
+      + '<div style="font-size:11px;color:var(--text3);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (f.display_name||'') + '</div>'
+      + (sumarShort ? '<div style="font-size:11px;color:var(--text2);line-height:1.4;font-style:italic">' + sumarShort + '</div>' : '')
+      + '</div>';
+  });
+  el.innerHTML = out;
+}
+
+function renderGlobalMail(q) {
+  const el = document.getElementById('global-mail-list');
+  if (!el || !globalMailData) return;
+  const qn = norm(q || '');
+  let items = globalMailData;
+
+  if (globalMailFilter !== 'all') {
+    items = items.filter(function(i) {
+      return (i.item&&i.item.directie||'').toLowerCase().includes(globalMailFilter);
+    });
+  }
+  if (qn) {
+    items = items.filter(function(i) {
+      const it = i.item || {};
+      return norm(it.subiect||'').includes(qn) || norm(it.de_la||'').includes(qn) ||
+             norm(it.catre||'').includes(qn) || norm(it.body_preview||'').includes(qn) ||
+             norm(i.localitate||'').includes(qn);
+    });
+  }
+
+  if (!items.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center">Niciun rezultat</div>';
+    return;
+  }
+
+  let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:8px">' + items.length + ' mesaje</div>';
+  items.forEach(function(i) {
+    const it = i.item || {};
+    const dir = (it.directie||'').toLowerCase();
+    const col = dir==='trimis' ? 'var(--accent)' : 'var(--activ)';
+    const icon = dir==='trimis' ? '↑' : '↓';
+    const subprev = (it.body_preview||'').substring(0,80);
+    out += '<div onclick="openUat(' + i.uat_id + ')" style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px">'
+      + '<div style="flex:1;min-width:0">'
+      + '<span style="font-size:13px;font-weight:700;color:' + col + '">' + (i.localitate||'') + '</span>'
+      + ' <span style="font-size:11px;color:var(--text2)">' + icon + ' ' + (it.subiect||'') + '</span>'
+      + '</div>'
+      + '<span style="font-size:10px;color:var(--text3);white-space:nowrap">' + ((it.data||'').substring(0,10)) + '</span>'
+      + '</div>'
+      + (subprev ? '<div style="font-size:11px;color:var(--text3);line-height:1.4">' + subprev + '…</div>' : '')
+      + '</div>';
+  });
+  el.innerHTML = out;
+}
 
 // ─── SMART UPDATE SYSTEM ────────────────────────────────────
 let _pendingServerTs = null;
