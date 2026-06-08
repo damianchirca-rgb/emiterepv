@@ -684,10 +684,22 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v4.5';
+const APP_VERSION = 'v4.6';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v4.6',
+    data: '08.06.2026',
+    titlu: 'Căutare globală în toate înregistrările',
+    items: [
+      'Căutarea în Audio și Corespondență acoperă TOATE înregistrările, nu doar primele 30/50',
+      'Afișaj inițial: 30 audio recente + 50 mail recente (instant)',
+      'La căutare: rezultate din 1162+ audio și 600+ mailuri',
+      'Label dinamic: "X rezultate din Y înregistrări"'
+    ]
+  },
+
   {
     version: 'v4.5',
     data: '08.06.2026',
@@ -2602,21 +2614,31 @@ window.addEventListener('popstate', function(e) {
 });
 
 // ─── GLOBAL SEARCH (Audio + Mail) ──────────────────────────
-let globalAudioData = null;
-let globalMailData  = null;
+let globalAudioData = null;  // top 30 recente (Drive API)
+let allAudioData    = null;  // tot indexul audio (pentru cautare)
+let globalMailData  = null;  // top 50 recente
+let allMailData     = null;  // tot indexul mail (pentru cautare)
 let globalMailFilter = 'all';
 
 async function loadGlobalData() {
-  // Fetch paralel audio + mail
   try {
-    const [rAudio, rMail] = await Promise.all([
-      fetch(API_URL + '?action=recent_audio&n=30', {cache:'no-store'}),
-      fetch(API_URL + '?action=recent_mail&n=50',  {cache:'no-store'})
+    // Fetch paralel: recente (afisare) + indexuri complete (cautare)
+    const [rAudio, rMail, rAllAudio, rAllMail] = await Promise.all([
+      fetch(API_URL + '?action=recent_audio&n=30',  {cache:'no-store'}),
+      fetch(API_URL + '?action=recent_mail&n=50',   {cache:'no-store'}),
+      fetch(API_URL + '?action=all_audio_index',    {cache:'no-store'}),
+      fetch(API_URL + '?action=all_mail_index',     {cache:'no-store'})
     ]);
-    const dAudio = await rAudio.json();
-    const dMail  = await rMail.json();
-    globalAudioData = dAudio.items || [];
-    globalMailData  = dMail.items  || [];
+    const dAudio    = await rAudio.json();
+    const dMail     = await rMail.json();
+    const dAllAudio = await rAllAudio.json();
+    const dAllMail  = await rAllMail.json();
+
+    globalAudioData = dAudio.items    || [];
+    globalMailData  = dMail.items     || [];
+    allAudioData    = dAllAudio.items || globalAudioData;
+    allMailData     = dAllMail.items  || globalMailData;
+
     renderGlobalAudio();
     renderGlobalMail();
   } catch(e) {
@@ -2637,8 +2659,8 @@ function switchGlobalTab(tab) {
 }
 
 function filterGlobal(q) {
-  if (globalAudioData) renderGlobalAudio(q);
-  if (globalMailData)  renderGlobalMail(q);
+  renderGlobalAudio(q);
+  renderGlobalMail(q);
 }
 
 function setGlobalMailFilter(filter, btn) {
@@ -2653,20 +2675,23 @@ function renderGlobalAudio(q) {
   const el = document.getElementById('global-audio-list');
   if (!el || !globalAudioData) return;
   const qn = norm(q || '');
+  // La cautare foloseste indexul complet, altfel top 30 recente
+  const source = qn ? (allAudioData || globalAudioData || []) : (globalAudioData || []);
   const items = qn
-    ? globalAudioData.filter(f =>
+    ? source.filter(f =>
         norm(f.localitate||'').includes(qn) ||
         norm(f.sumar||'').includes(qn) ||
         norm(f.transcriere_preview||'').includes(qn) ||
         norm(f.display_name||'').includes(qn))
-    : globalAudioData;
+    : source;
 
   if (!items.length) {
     el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center">Niciun rezultat</div>';
     return;
   }
 
-  let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:8px">' + items.length + ' înregistrări</div>';
+  const label = qn ? items.length + ' rezultate din ' + (allAudioData||[]).length + ' înregistrări' : items.length + ' înregistrări recente';
+  let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:8px">' + label + '</div>';
   items.forEach(function(f) {
     const dateRo = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'short',year:'numeric'}) : '';
     const sumarShort = f.sumar ? f.sumar.substring(0,120) + (f.sumar.length>120?'…':'') : '';
@@ -2692,11 +2717,15 @@ function renderGlobalMail(q) {
   const el = document.getElementById('global-mail-list');
   if (!el || !globalMailData) return;
   const qn = norm(q || '');
-  let items = globalMailData;
+  // La cautare sau filtru foloseste indexul complet
+  const mailSource = (qn || globalMailFilter !== 'all')
+    ? (allMailData || globalMailData || [])
+    : (globalMailData || []);
 
+  let items = mailSource;
   if (globalMailFilter !== 'all') {
     items = items.filter(function(i) {
-      return (i.item&&i.item.directie||'').toLowerCase().includes(globalMailFilter);
+      return ((i.item&&i.item.directie)||'').toLowerCase().includes(globalMailFilter);
     });
   }
   if (qn) {
@@ -2713,7 +2742,8 @@ function renderGlobalMail(q) {
     return;
   }
 
-  let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:8px">' + items.length + ' mesaje</div>';
+  const mailLabel = qn ? items.length + ' rezultate din ' + (allMailData||[]).length + ' mesaje' : items.length + ' mesaje recente';
+  let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:8px">' + mailLabel + '</div>';
   items.forEach(function(i) {
     const it = i.item || {};
     const dir = (it.directie||'').toLowerCase();
