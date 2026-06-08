@@ -1294,6 +1294,7 @@ async function loadUtile(uatId) {
 // ─── CORESPONDENTA ──────────────────────────────────────────
 let corsData = {};
 let corsFilter = {};
+let audioData  = {}; // cache audio - incarcat o singura data per UAT
 
 async function loadCorespondenta(uatId) {
   const el = document.getElementById('cors-list-' + uatId);
@@ -1500,81 +1501,88 @@ async function loadFisiereUtile(uatId) {
 async function loadAudioTab(uatId) {
   const elAudio = document.getElementById('audio-uat-' + uatId);
   if (!elAudio) return;
+
+  // Daca e deja incarcat, afiseaza instant din cache
+  if (audioData[uatId]) {
+    renderAudio(uatId);
+    return;
+  }
+
   elAudio.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:16px 0;text-align:center"><div class="spinner" style="margin:0 auto 8px;width:24px;height:24px;border-width:2px"></div>Se încarcă…</div>';
 
   try {
     const resp = await fetch(`${API_URL}?action=audio_uat&uat_id=${uatId}`, {cache:'no-store'});
     const data = await resp.json();
 
-    if (data.eroare) { elAudio.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ ${data.eroare}</div>`; return; }
-    const fisiere = data.fisiere || [];
-    if (!fisiere.length) { elAudio.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px 0">Nicio înregistrare audio.</div>'; return; }
+    if (data.eroare) {
+      elAudio.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ ${data.eroare}</div>`;
+      return;
+    }
 
-    // Stocheaza sumarele si transcrierile in variabile globale
-    window._audioSumars = window._audioSumars || {};
-    window._audioTranscr = window._audioTranscr || {};
-    fisiere.forEach((f, i) => {
-      const k = uatId + '_' + i;
-      if (f.sumar) window._audioSumars[k] = f.sumar;
-      if (f.transcriere) window._audioTranscr[k] = { preview: f.transcriere, full: null, fullName: f.fullName };
-    });
-
-    elAudio.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:10px">${fisiere.length} înregistrări</div>` +
-      fisiere.map((f, i) => {
-        const dateRo = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'long',year:'numeric'}) : '';
-        const sumar  = f.sumar || '';
-        const transcr = f.transcriere || '';
-        const k = uatId + '_' + i;
-        const viewUrl = f.view || '';
-        const needsExpandSumar = sumar.length > 200;
-        const sumarPrev = sumar.substring(0, 200);
-
-        return `<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)">
-          
-          <!-- Header: data + buton ascultare -->
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600">🎤 ${dateRo || f.name.substring(0,30)}</div>
-              <div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</div>
-            </div>
-            ${viewUrl
-              ? `<a href="${viewUrl}" target="_blank" style="flex-shrink:0;padding:8px 14px;background:var(--accent);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">▶ Ascultă</a>`
-              : `<span style="font-size:10px;color:var(--eroare)">⚠️ fără ID</span>`
-            }
-          </div>
-
-          <!-- Transcriere (preview + buton citeste tot) -->
-          ${transcr ? `<div style="background:var(--surface3);border-radius:8px;padding:10px;margin-bottom:${sumar?'8px':'0'};border-left:2px solid var(--text3)">
-            <div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:4px">📝 Transcriere</div>
-            <div class="transcr-text" id="tr-${k}" style="font-size:11px;color:var(--text2);line-height:1.6;font-style:italic">"${transcr.substring(0,300)}${transcr.length>=300?'…':'"'}</div>
-            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-              ${transcr.length >= 300
-                ? `<button onclick="loadFullTranscr('${k}','${(f.fullName||'').replace(/'/g,"\'")}')" id="tr-btn-${k}"
-                    style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">
-                    📄 Citește tot
-                  </button>`
-                : ''}
-            </div>
-          </div>` : ''}
-
-          <!-- Sumar GPT -->
-          ${sumar ? `<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">
-            <div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:4px">🤖 Sumar GPT</div>
-            <div class="sumar-text" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"
-              data-full="${k}" data-expanded="0">${sumarPrev}${needsExpandSumar?'…':''}</div>
-            ${needsExpandSumar ? `<button onclick="toggleSumar(this)" data-key="${k}"
-              style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;font-family:inherit">
-              ▼ Citește tot
-            </button>` : ''}
-          </div>` : ''}
-
-        </div>`;
-      }).join('');
+    // Salveaza in cache
+    audioData[uatId] = data.fisiere || [];
+    renderAudio(uatId);
 
   } catch(err) {
     elAudio.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ Eroare: ${err.message}</div>`;
   }
 }
+
+function renderAudio(uatId) {
+  const elAudio = document.getElementById('audio-uat-' + uatId);
+  if (!elAudio) return;
+  const fisiere = audioData[uatId] || [];
+
+  if (!fisiere.length) {
+    elAudio.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px 0">Nicio înregistrare audio.</div>';
+    return;
+  }
+
+  window._audioSumars = window._audioSumars || {};
+
+  elAudio.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:10px">${fisiere.length} înregistrări</div>` +
+    fisiere.map((f, i) => {
+      const dateRo = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'long',year:'numeric'}) : '';
+      const sumar  = f.sumar || '';
+      const transcr = f.transcriere || '';
+      const k = uatId + '_' + i;
+      if (sumar) window._audioSumars[k] = sumar;
+      const viewUrl = f.view || '';
+      const sumarPrev = sumar.substring(0, 200);
+      const needsExpand = sumar.length > 200;
+
+      return `<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600">🎤 ${dateRo || f.name.substring(0,30)}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</div>
+          </div>
+          ${viewUrl ? `<a href="${viewUrl}" target="_blank"
+            style="flex-shrink:0;padding:8px 14px;background:var(--accent);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">
+            ▶ Ascultă
+          </a>` : `<span style="font-size:10px;color:var(--eroare)">⚠️ fără ID</span>`}
+        </div>
+        ${transcr ? `<div style="background:var(--surface3);border-radius:8px;padding:10px;margin-bottom:${sumar?'8px':'0'};border-left:2px solid var(--text3)">
+          <div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:4px">📝 Transcriere</div>
+          <div class="transcr-text" id="tr-${k}" style="font-size:11px;color:var(--text2);line-height:1.6;font-style:italic">"${transcr.substring(0,300)}${transcr.length>=300?'…':'"'}</div>
+          ${transcr.length >= 300 ? `<button onclick="loadFullTranscr('${k}','${(f.fullName||'').replace(/'/g,"\'")}')" id="tr-btn-${k}"
+            style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">
+            📄 Citește tot
+          </button>` : ''}
+        </div>` : ''}
+        ${sumar ? `<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">
+          <div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:4px">🤖 Sumar GPT</div>
+          <div class="sumar-text" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"
+            data-full="${k}" data-expanded="0">${sumarPrev}${needsExpand?'…':''}</div>
+          ${needsExpand ? `<button onclick="toggleSumar(this)" data-key="${k}"
+            style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;font-family:inherit">
+            ▼ Citește tot
+          </button>` : ''}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+}
+
 
 function toggleSumar(btn) {
   const key = btn.dataset.key;
