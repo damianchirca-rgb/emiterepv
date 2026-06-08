@@ -2272,12 +2272,7 @@ async function applyUpdates() {
       }
     });
 
-    // Sterge cache audio/mail DOAR pentru UAT-urile modificate
-    changedIds.forEach(id => {
-      delete audioData[id];
-      delete corsData[id];
-    });
-
+    // Audio si mail raman in cache - se schimba independent de datele UAT
     // Actualizeaza localStorage
     localStorage.setItem('uats_cache', JSON.stringify(newData));
     localStorage.setItem('uats_ts', new Date().toISOString());
