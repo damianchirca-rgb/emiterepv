@@ -1116,23 +1116,31 @@ function openUat(id) {
       <button class="tab-btn" id="tab-btn-utile" onclick="switchTab('utile');loadUtile('${id}')">Utile</button>
     </div>
     <div id="tab-main" class="tab-content active">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-        <div class="status-badge ${isActiv?'status-ACTIV':'status-INACTIV'}" style="font-size:13px;padding:6px 14px">${isActiv?'✓ ACTIV':'✕ INACTIV'}</div>
+
+      <!-- Card status + date primarie -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="status-badge ${isActiv?'status-ACTIV':'status-INACTIV'}" style="font-size:12px;padding:5px 12px">${isActiv?'✓ ACTIV':'✕ INACTIV'}</div>
+          ${contractNr ? `<span style="font-size:11px;color:var(--text3)">Nr. ${contractNr}</span>` : ''}
+        </div>
+        <div class="detail-row"><div class="detail-label">Județ</div><div class="detail-value">${judet} <span class="judet-badge">${cod}</span></div></div>
+        <div class="detail-row"><div class="detail-label">Responsabil</div><div class="detail-value">${responsabil||'—'}</div></div>
+        <div class="detail-row"><div class="detail-label">CIF client</div><div class="detail-value mono">${cif||'—'}</div></div>
+        <div class="detail-row"><div class="detail-label">Email UAT</div><div class="detail-value" style="font-size:11px;word-break:break-all">${email||'—'}</div></div>
+        <div class="detail-row" style="border-bottom:none"><div class="detail-label">Adresă</div><div class="detail-value" style="font-size:11px">${adresa||'—'}</div></div>
+        ${lat ? `<a href="https://maps.google.com/?q=${lat},${lng}" target="_blank"
+          style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 12px;background:var(--surface3);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:12px;font-weight:600;text-decoration:none">
+          🗺️ Deschide în Google Maps
+          <span style="font-size:10px;color:var(--text3);margin-left:auto;font-family:monospace">${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}</span>
+        </a>` : ''}
       </div>
-      <div class="detail-row"><div class="detail-label">Județ</div><div class="detail-value">${judet} <span class="judet-badge">${cod}</span></div></div>
-      <div class="detail-row"><div class="detail-label">Responsabil</div><div class="detail-value">${responsabil||'—'}</div></div>
-      <div class="detail-row"><div class="detail-label">CIF client</div><div class="detail-value mono">${cif||'—'}</div></div>
-      <div class="detail-row"><div class="detail-label">Email UAT</div><div class="detail-value" style="font-size:11px;word-break:break-all">${email||'—'}</div></div>
-      <div class="detail-row"><div class="detail-label">Adresă</div><div class="detail-value" style="font-size:11px">${adresa||'—'}</div></div>
-      ${lat ? `<a href="https://maps.google.com/?q=${lat},${lng}" target="_blank"
-        style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:13px;font-weight:600;text-decoration:none">
-        🗺️ Deschide în Google Maps
-        <span style="font-size:10px;color:var(--text3);margin-left:auto;font-family:monospace">${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}</span>
-      </a>` : ''}
-      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+
+      <!-- Card aplicatii -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:16px">
         <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">📦 Aplicații</div>
         ${aplicatiiHtml}
       </div>
+
     </div>
     <div id="tab-contracte" class="tab-content">
       ${contracteHtml}
