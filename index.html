@@ -1588,50 +1588,181 @@ function renderAudio(uatId) {
     return;
   }
 
-  window._audioSumars = window._audioSumars || {};
+  let html = '<div style="font-size:10px;color:var(--text3);margin-bottom:10px">' + fisiere.length + ' înregistrări</div>';
 
-  elAudio.innerHTML = `<div style="font-size:10px;color:var(--text3);margin-bottom:10px">${fisiere.length} înregistrări</div>` +
-    fisiere.map((f, i) => {
-      const dateRo = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'long',year:'numeric'}) : '';
-      const sumar  = f.sumar || '';
-      const transcr = f.transcriere || '';
-      const k = uatId + '_' + i;
-      if (sumar) window._audioSumars[k] = sumar;
-      const viewUrl = f.view || '';
-      const sumarPrev = sumar.substring(0, 200);
-      const needsExpand = sumar.length > 200;
+  fisiere.forEach(function(f, i) {
+    const k = uatId + '_' + i;
+    const dateRo = f.data
+      ? new Date(f.data).toLocaleDateString('ro-RO', {day:'2-digit', month:'long', year:'numeric'})
+      : '';
+    const sumar   = (f.sumar || '').trim();
+    const transcr = (f.transcriere || '').trim();
+    const viewUrl = f.view || '';
+    const fullName = (f.fullName || '');
 
-      return `<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600">🎤 ${dateRo || f.name.substring(0,30)}</div>
-            <div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</div>
-          </div>
-          ${viewUrl ? `<a href="${viewUrl}" target="_blank"
-            style="flex-shrink:0;padding:8px 14px;background:var(--accent);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">
-            ▶ Ascultă
-          </a>` : `<span style="font-size:10px;color:var(--eroare)">⚠️ fără ID</span>`}
-        </div>
-        ${transcr ? `<div style="background:var(--surface3);border-radius:8px;padding:10px;margin-bottom:${sumar?'8px':'0'};border-left:2px solid var(--text3)">
-          <div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:4px">📝 Transcriere</div>
-          <div class="transcr-text" id="tr-${k}" style="font-size:11px;color:var(--text2);line-height:1.6;font-style:italic">"${transcr.substring(0,300)}${transcr.length>=300?'…':'"'}</div>
-          ${transcr.length >= 300 ? `<button onclick="loadFullTranscr('${k}','${(f.fullName||'').replace(/'/g,"\'")}')" id="tr-btn-${k}"
-            style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">
-            📄 Citește tot
-          </button>` : ''}
-        </div>` : ''}
-        ${sumar ? `<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">
-          <div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:4px">🤖 Sumar GPT</div>
-          <div class="sumar-text" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"
-            data-full="${k}" data-expanded="0">${sumarPrev}${needsExpand?'…':''}</div>
-          ${needsExpand ? `<button onclick="toggleSumar(this)" data-key="${k}"
-            style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;font-family:inherit">
-            ▼ Citește tot
-          </button>` : ''}
-        </div>` : ''}
-      </div>`;
-    }).join('');
+    // Card wrapper
+    html += '<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)">';
+
+    // Header: data + buton ascultare
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:' + (transcr||sumar?'10px':'0') + '">';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="font-size:13px;font-weight:600">🎤 ' + (dateRo || f.name.substring(0,30)) + '</div>';
+    html += '<div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.name + '</div>';
+    html += '</div>';
+    if (viewUrl) {
+      html += '<a href="' + viewUrl + '" target="_blank" style="flex-shrink:0;padding:8px 14px;background:var(--accent);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">▶ Ascultă</a>';
+    } else {
+      html += '<span style="font-size:10px;color:var(--eroare)">⚠️ fără ID</span>';
+    }
+    html += '</div>';
+
+    // Transcriere
+    if (transcr) {
+      const tShort = transcr.length > 300 ? transcr.substring(0, 300) + '…' : transcr;
+      const tNeedsFull = transcr.length >= 300;
+      html += '<div style="background:var(--surface3);border-radius:8px;padding:10px;margin-bottom:' + (sumar?'8px':'0') + ';border-left:2px solid var(--text3)">';
+      html += '<div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:6px">📝 Transcriere</div>';
+      html += '<div id="tr-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.6;font-style:italic;white-space:pre-wrap"';
+      html += ' data-short="' + tShort.replace(/"/g, '&quot;') + '"';
+      html += ' data-full="' + transcr.replace(/"/g, '&quot;') + '"';
+      html += ' data-expanded="0">' + tShort + '</div>';
+      if (tNeedsFull && fullName) {
+        html += '<button id="tr-btn-' + k + '" onclick="loadFullTranscr('tr-text-' + k + '','' + fullName.replace(/'/g, "\'") + '','tr-btn-' + k + '')" ';
+        html += 'style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">📄 Citește tot</button>';
+      }
+      html += '</div>';
+    }
+
+    // Sumar GPT
+    if (sumar) {
+      const sShort = sumar.length > 200 ? sumar.substring(0, 200) + '…' : sumar;
+      const sExpand = sumar.length > 200;
+      html += '<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">';
+      html += '<div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:6px">🤖 Sumar GPT</div>';
+      html += '<div id="sm-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"';
+      html += ' data-short="' + sShort.replace(/"/g, '&quot;') + '"';
+      html += ' data-full="' + sumar.replace(/"/g, '&quot;') + '"';
+      html += ' data-expanded="0">' + sShort + '</div>';
+      if (sExpand) {
+        html += '<button onclick="toggleExpand('sm-text-' + k + '', this)" ';
+        html += 'style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer;font-family:inherit">▼ Citește tot</button>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>'; // fine card
+  });
+
+  elAudio.innerHTML = html;
 }
+
+function toggleExpand(elId, btn) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const isExpanded = el.dataset.expanded === '1';
+  if (isExpanded) {
+    el.textContent = el.dataset.short || '';
+    el.dataset.expanded = '0';
+    if (btn) btn.textContent = '▼ Citește tot';
+  } else {
+    el.textContent = el.dataset.full || el.dataset.short || '';
+    el.dataset.expanded = '1';
+    if (btn) btn.textContent = '▲ Restrânge';
+  }
+}
+
+async function loadFullTranscr(elId, fullName, btnId) {
+  const el  = document.getElementById(elId);
+  const btn = document.getElementById(btnId);
+  if (!el || !fullName) return;
+
+  if (el.dataset.loaded === '1') { toggleExpand(elId, btn); return; }
+
+  if (btn) { btn.textContent = 'Se încarcă…'; btn.disabled = true; }
+
+  try {
+    const resp = await fetch(API_URL + '?action=transcriere&full_name=' + encodeURIComponent(fullName), {cache:'no-store'});
+    const data = await resp.json();
+    if (data.eroare) {
+      if (btn) { btn.textContent = '⚠️ ' + data.eroare; btn.disabled = false; }
+      return;
+    }
+    const fullText = data.text || '';
+    el.dataset.full    = fullText;
+    el.dataset.loaded  = '1';
+    el.dataset.expanded = '1';
+    el.textContent = fullText;
+    if (btn) {
+      btn.textContent = '▲ Restrânge';
+      btn.disabled = false;
+      btn.setAttribute('onclick', "toggleExpand('" + elId + "', this)");
+    }
+  } catch(err) {
+    if (btn) { btn.textContent = '⚠️ Eroare rețea'; btn.disabled = false; }
+  }
+}
+
+
+// Toggle expand/collapse pentru sumar si transcrieri deja incarcate
+function toggleExpand(elId, btn) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const isExpanded = el.dataset.expanded === '1';
+  if (isExpanded) {
+    el.textContent = el.dataset.short || '';
+    el.dataset.expanded = '0';
+    if (btn) btn.textContent = '▼ Citește tot';
+  } else {
+    el.textContent = el.dataset.full || el.dataset.short || '';
+    el.dataset.expanded = '1';
+    if (btn) btn.textContent = '▲ Restrânge';
+  }
+}
+
+// Incarca transcrierea completa din Drive
+async function loadFullTranscr(elId, fullName, btnId) {
+  const el  = document.getElementById(elId);
+  const btn = document.getElementById(btnId);
+  if (!el || !fullName) return;
+
+  // Daca e deja incarcata complet
+  if (el.dataset.loaded === '1') {
+    toggleExpand(elId, btn);
+    return;
+  }
+
+  if (btn) { btn.textContent = 'Se încarcă…'; btn.disabled = true; }
+
+  try {
+    const resp = await fetch(
+      `${API_URL}?action=transcriere&full_name=${encodeURIComponent(fullName)}`,
+      {cache: 'no-store'}
+    );
+    const data = await resp.json();
+
+    if (data.eroare) {
+      if (btn) { btn.textContent = '⚠️ ' + data.eroare; btn.disabled = false; }
+      return;
+    }
+
+    const fullText = data.text || '';
+    // Salveaza textul complet in data-full si expandeaza
+    el.dataset.full = fullText;
+    el.dataset.loaded = '1';
+    el.dataset.expanded = '0'; // reset ca sa triggeram expand
+    el.textContent = fullText;
+    el.dataset.expanded = '1';
+    if (btn) {
+      btn.textContent = '▲ Restrânge';
+      btn.disabled = false;
+      btn.onclick = () => toggleExpand(elId, btn);
+    }
+
+  } catch(err) {
+    if (btn) { btn.textContent = '⚠️ Eroare rețea'; btn.disabled = false; }
+  }
+}
+
 
 
 function toggleSumar(btn) {
