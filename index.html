@@ -347,7 +347,7 @@
     <div class="stats-grid">
       <div class="stat-card a"><div class="num" id="s-activ">—</div><div class="lbl">UAT-uri active</div></div>
       <div class="stat-card i"><div class="num" id="s-inactiv">—</div><div class="lbl">UAT-uri inactive</div></div>
-      <div class="stat-card s"><div class="num" id="s-generat">—</div><div class="lbl">PV generate</div></div>
+      <div class="stat-card s"><div class="num" id="s-generat">—</div><div class="lbl">Contracte expiră (&lt;30 zile)</div></div>
       <div class="stat-card e"><div class="num" id="s-urgente">—</div><div class="lbl">Contacte urgente</div></div>
     </div>
     <div class="detail-section" style="margin-top:4px" id="stats-luna"></div>
@@ -363,7 +363,7 @@
     <!-- PV generate detaliat -->
     <div class="detail-section" style="margin-top:4px">
       <h3 onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="cursor:pointer">
-        📋 PV generate <span style="font-size:11px;font-weight:400;color:var(--text3)">(click pentru detalii)</span>
+        📋 Contracte care expiră <span style="font-size:11px;font-weight:400;color:var(--text3)">(click pentru detalii)</span>
       </h3>
       <div id="stats-generat-list" style="display:none;margin-top:8px"></div>
     </div>
@@ -953,10 +953,21 @@ function renderStats() {
   });
   const urgente = urgenteList.length;
 
-  // PV generate - afisam lista ca sa poata fi verificata
-  const generatList = uats.filter(u => {
-    const sg = getField(u,'StatusGenerare') || '';
-    return sg.includes('generat') && !sg.includes('eroare');
+  // Contracte care expira in urmatoarele 30 zile
+  const generatList = [];
+  uats.forEach(u => {
+    (u._contracte || []).forEach(c => {
+      if (!c.data_incetare) return;
+      // data_incetare format DD.MM.YYYY
+      const parts = c.data_incetare.split('.');
+      if (parts.length !== 3) return;
+      const exp = new Date(parts[2], parts[1]-1, parts[0]);
+      const today = new Date(); today.setHours(0,0,0,0);
+      const zile = Math.floor((exp - today) / (1000*60*60*24));
+      if (zile >= 0 && zile <= 30) {
+        generatList.push({ u, c, zile });
+      }
+    });
   });
   const generat = generatList.length;
 
@@ -1012,22 +1023,23 @@ function renderStats() {
       : '<div style="font-size:12px;color:var(--activ);padding:8px">✅ Niciun contact depășit</div>';
   }
 
-  // Lista PV generate
+  // Lista contracte care expira curand
   const generatEl = document.getElementById('stats-generat-list');
   if (generatEl) {
     generatEl.innerHTML = generatList.length
-      ? generatList.map(u => {
-          const loc = getField(u,'Localitate');
-          const jud = getField(u,'Judet');
-          const sg  = getField(u,'StatusGenerare') || '';
-          const id  = u['ID'];
-          return '<div onclick="openUat(' + id + ')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;cursor:pointer;border-left:3px solid var(--accent)">'
+      ? generatList.map(item => {
+          const loc = getField(item.u, 'Localitate');
+          const jud = getField(item.u, 'Judet');
+          const id  = item.u['ID'];
+          const zile = item.zile;
+          const color = zile <= 7 ? 'var(--eroare)' : zile <= 14 ? '#f59e0b' : 'var(--accent2)';
+          return '<div onclick="openUat(' + id + ')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;cursor:pointer;border-left:3px solid ' + color + '">'
             + '<div><div style="font-size:13px;font-weight:600">' + loc + '</div>'
-            + '<div style="font-size:10px;color:var(--text3)">' + jud + '</div></div>'
-            + '<span style="font-size:10px;color:var(--text3);max-width:120px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + sg + '</span>'
+            + '<div style="font-size:10px;color:var(--text3)">' + jud + ' · expiră ' + item.c.data_incetare + '</div></div>'
+            + '<span style="font-size:12px;font-weight:700;color:' + color + '">' + zile + 'z</span>'
             + '</div>';
         }).join('')
-      : '<div style="font-size:12px;color:var(--text3);padding:8px">Niciun PV generat</div>';
+      : '<div style="font-size:12px;color:var(--activ);padding:8px">✅ Niciun contract nu expiră în 30 zile</div>';
   }
 
   // Afiseaza statistici luna curenta
