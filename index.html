@@ -688,10 +688,19 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v5.3';
+const APP_VERSION = 'v5.4';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v5.4',
+    data: '09.06.2026',
+    titlu: 'Fix Mail și Audio - funcție duplicată',
+    items: [
+      'Eliminat duplicat loadCorespondenta care bloca încărcarea Mail și Audio'
+    ]
+  },
+
   {
     version: 'v5.3',
     data: '08.06.2026',
@@ -2197,22 +2206,6 @@ async function loadFullTranscr(elId, fullName, btnId) {
 }
 // ─── CORESPONDENTA ──────────────────────────────────────────
 
-async function loadCorespondenta(uatId) {
-  const el = document.getElementById('cors-list-' + uatId);
-  if (!el) return;
-  if (corsData[uatId]) { renderCorespondenta(uatId); return; }
-  el.textContent = 'Se încarcă corespondența…';
-  try {
-    const resp = await fetch(`${API_URL}?action=corespondenta&uat_id=${uatId}`, {cache:'no-store'});
-    const data = await resp.json();
-    if (data.error) throw new Error(data.error);
-    corsData[uatId] = data.items || [];
-    corsFilter[uatId] = 'all';
-    renderCorespondenta(uatId);
-  } catch(e) {
-    el.innerHTML = `<div style="color:var(--eroare);font-size:12px">Eroare: ${e.message}</div>`;
-  }
-}
 
 
 async function loadFisiere(uatId) {
