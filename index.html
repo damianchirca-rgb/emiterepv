@@ -391,16 +391,27 @@
 
   <div id="stats-view" class="view">
     <div class="stats-grid">
-      <div class="stat-card a"><div class="num" id="s-activ">—</div><div class="lbl">UAT-uri active</div></div>
-      <div class="stat-card i"><div class="num" id="s-inactiv">—</div><div class="lbl">UAT-uri inactive</div></div>
-      <div class="stat-card s"><div class="num" id="s-generat">—</div><div class="lbl">Contracte expiră (&lt;30 zile)</div></div>
-      <div class="stat-card e"><div class="num" id="s-urgente">—</div><div class="lbl">Contacte urgente</div></div>
+      <div class="stat-card a" onclick="toggleStatList('activ')" style="cursor:pointer">
+        <div class="num" id="s-activ">—</div><div class="lbl">UAT-uri active</div>
+      </div>
+      <div class="stat-card i" onclick="toggleStatList('inactiv')" style="cursor:pointer">
+        <div class="num" id="s-inactiv">—</div><div class="lbl">UAT-uri inactive</div>
+      </div>
+      <div class="stat-card s" onclick="toggleStatList('generat')" style="cursor:pointer">
+        <div class="num" id="s-generat">—</div><div class="lbl">Contracte expiră (&lt;30 zile)</div>
+      </div>
+      <div class="stat-card e" onclick="toggleStatList('urgente')" style="cursor:pointer">
+        <div class="num" id="s-urgente">—</div><div class="lbl">Contacte urgente</div>
+      </div>
     </div>
+    <!-- Liste expandabile pentru carduri -->
+    <div id="stat-list-activ"   style="display:none;padding:0 4px 8px"></div>
+    <div id="stat-list-inactiv" style="display:none;padding:0 4px 8px"></div>
     <div class="detail-section" style="margin-top:4px" id="stats-luna"></div>
 
     <!-- Contacte urgente detaliat -->
     <div class="detail-section" style="margin-top:4px">
-      <h3 onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="cursor:pointer">
+      <h3 id="stat-h3-urgente" onclick="toggleStatList('urgente')" style="cursor:pointer">
         📅 Contacte depășite <span style="font-size:11px;font-weight:400;color:var(--text3)">(click pentru detalii)</span>
       </h3>
       <div id="stats-urgente-list" style="display:none;margin-top:8px"></div>
@@ -408,7 +419,7 @@
 
     <!-- PV generate detaliat -->
     <div class="detail-section" style="margin-top:4px">
-      <h3 onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="cursor:pointer">
+      <h3 id="stat-h3-generat" onclick="toggleStatList('generat')" style="cursor:pointer">
         📋 Contracte care expiră <span style="font-size:11px;font-weight:400;color:var(--text3)">(click pentru detalii)</span>
       </h3>
       <div id="stats-generat-list" style="display:none;margin-top:8px"></div>
@@ -688,10 +699,23 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v4.9';
+const APP_VERSION = 'v5.0';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v5.0',
+    data: '08.06.2026',
+    titlu: 'Carduri statistici interactive',
+    items: [
+      'Click pe "UAT-uri inactive" → lista UAT-urilor inactive cu data expirare contract',
+      'Click pe "UAT-uri active" → lista tuturor UAT-urilor active',
+      'Click pe "Contracte expiră" → lista contractelor care expiră în 30 zile',
+      'Click pe "Contacte urgente" → lista contactelor depășite',
+      'Click din nou pe card → închide lista. O singură secțiune deschisă la un moment'
+    ]
+  },
+
   {
     version: 'v4.9',
     data: '08.06.2026',
@@ -1265,6 +1289,36 @@ function renderStats() {
           <div style="font-size:10px;color:var(--text3);margin-top:2px">Neemise</div>
         </div>
       </div>`;
+  }
+
+  // Liste UAT active/inactive
+  const activEl   = document.getElementById('stat-list-activ');
+  const inactivEl = document.getElementById('stat-list-inactiv');
+
+  function makeUatRow(u) {
+    const loc  = getField(u, 'Localitate');
+    const jud  = getField(u, 'Judet');
+    const id   = u['ID'];
+    const exp  = getContractExpiry(u);
+    const expStr = exp ? exp.toLocaleDateString('ro-RO') : '—';
+    return '<div onclick="openUat(' + id + ')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px;cursor:pointer">'
+      + '<div><div style="font-size:13px;font-weight:600">' + loc + '</div>'
+      + '<div style="font-size:10px;color:var(--text3)">' + jud + '</div></div>'
+      + '<span style="font-size:11px;color:var(--text3)">' + expStr + '</span>'
+      + '</div>';
+  }
+
+  if (activEl) {
+    const activList = uats.filter(u => getField(u,'BeneficiarActiv') !== 'NU');
+    activEl.innerHTML = '<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:0 2px">' + activList.length + ' UAT-uri active</div>'
+      + activList.map(makeUatRow).join('');
+  }
+  if (inactivEl) {
+    const inactivList = uats.filter(u => getField(u,'BeneficiarActiv') === 'NU');
+    inactivEl.innerHTML = inactivList.length
+      ? '<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:0 2px">' + inactivList.length + ' UAT-uri inactive</div>'
+        + inactivList.map(makeUatRow).join('')
+      : '<div style="font-size:12px;color:var(--activ);padding:8px">✅ Niciun UAT inactiv</div>';
   }
 
   // Distributie judete
@@ -2311,6 +2365,45 @@ document.getElementById('search').addEventListener('input',e=>{
 });
 
 // Swipe to close: dezactivat (pagina full-screen)
+
+// ─── STATS TOGGLE ────────────────────────────────────────────
+const STAT_SECTIONS = {
+  activ:   { listId: 'stat-list-activ',    scrollTo: 'stat-list-activ' },
+  inactiv: { listId: 'stat-list-inactiv',  scrollTo: 'stat-list-inactiv' },
+  generat: { listId: 'stats-generat-list', scrollTo: 'stat-h3-generat' },
+  urgente: { listId: 'stats-urgente-list', scrollTo: 'stat-h3-urgente' }
+};
+let activeStatSection = null;
+
+function toggleStatList(key) {
+  const sec = STAT_SECTIONS[key];
+  if (!sec) return;
+  const el = document.getElementById(sec.listId);
+  if (!el) return;
+
+  // Daca era deja deschis, inchide
+  if (activeStatSection === key) {
+    el.style.display = 'none';
+    activeStatSection = null;
+    return;
+  }
+
+  // Inchide orice alta sectiune deschisa
+  Object.entries(STAT_SECTIONS).forEach(function([k, s]) {
+    const other = document.getElementById(s.listId);
+    if (other && k !== key) other.style.display = 'none';
+  });
+
+  // Deschide aceasta sectiune
+  el.style.display = 'block';
+  activeStatSection = key;
+
+  // Scroll la sectiune
+  setTimeout(function() {
+    const anchor = document.getElementById(sec.scrollTo);
+    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+}
 
 // ─── SETARI ────────────────────────────────────────────────
 const ACCENT_PRESETS = [
