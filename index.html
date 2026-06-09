@@ -407,23 +407,9 @@
     <!-- Liste expandabile pentru carduri -->
     <div id="stat-list-activ"   style="display:none;padding:0 4px 8px"></div>
     <div id="stat-list-inactiv" style="display:none;padding:0 4px 8px"></div>
+    <div id="stat-list-generat" style="display:none;padding:0 4px 8px"></div>
+    <div id="stat-list-urgente" style="display:none;padding:0 4px 8px"></div>
     <div class="detail-section" style="margin-top:4px" id="stats-luna"></div>
-
-    <!-- Contacte urgente detaliat -->
-    <div class="detail-section" style="margin-top:4px">
-      <h3 id="stat-h3-urgente" onclick="toggleStatList('urgente')" style="cursor:pointer">
-        📅 Contacte depășite <span style="font-size:11px;font-weight:400;color:var(--text3)">(click pentru detalii)</span>
-      </h3>
-      <div id="stats-urgente-list" style="display:none;margin-top:8px"></div>
-    </div>
-
-    <!-- PV generate detaliat -->
-    <div class="detail-section" style="margin-top:4px">
-      <h3 id="stat-h3-generat" onclick="toggleStatList('generat')" style="cursor:pointer">
-        📋 Contracte care expiră <span style="font-size:11px;font-weight:400;color:var(--text3)">(click pentru detalii)</span>
-      </h3>
-      <div id="stats-generat-list" style="display:none;margin-top:8px"></div>
-    </div>
 
     <div class="detail-section" style="margin-top:4px">
       <h3>Distribuție județe</h3>
@@ -699,10 +685,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v5.0';
+const APP_VERSION = 'v5.1';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v5.1',
+    data: '08.06.2026',
+    titlu: 'Statistici unificate',
+    items: [
+      'Toate listele din statistici apar inline sub grid (același stil)',
+      'Eliminate secțiunile separate "Contacte depășite" și "Contracte care expiră"',
+      'Click pe orice card → lista apare direct sub grid, click din nou → dispare'
+    ]
+  },
+
   {
     version: 'v5.0',
     data: '08.06.2026',
@@ -1231,10 +1228,11 @@ function renderStats() {
   document.getElementById('s-urgente').textContent  = urgente;
 
   // Lista UAT-uri urgente (clickabila)
-  const urgenteEl = document.getElementById('stats-urgente-list');
+  const urgenteEl = document.getElementById('stat-list-urgente');
   if (urgenteEl) {
     urgenteEl.innerHTML = urgenteList.length
-      ? urgenteList.map(u => {
+      ? '<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:0 2px">' + urgenteList.length + ' contacte depășite</div>'
+      + urgenteList.map(u => {
           const d = getDaysUntil(getField(u,'DataUrmatorContact'));
           const loc = getField(u,'Localitate');
           const jud = getField(u,'Judet');
@@ -1250,10 +1248,11 @@ function renderStats() {
   }
 
   // Lista contracte care expira curand
-  const generatEl = document.getElementById('stats-generat-list');
+  const generatEl = document.getElementById('stat-list-generat');
   if (generatEl) {
     generatEl.innerHTML = generatList.length
-      ? generatList.map(item => {
+      ? '<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:0 2px">' + generatList.length + ' contracte expiră în 30 zile</div>'
+      + generatList.map(item => {
           const loc = getField(item.u, 'Localitate');
           const jud = getField(item.u, 'Judet');
           const id  = item.u['ID'];
@@ -2368,10 +2367,10 @@ document.getElementById('search').addEventListener('input',e=>{
 
 // ─── STATS TOGGLE ────────────────────────────────────────────
 const STAT_SECTIONS = {
-  activ:   { listId: 'stat-list-activ',    scrollTo: 'stat-list-activ' },
-  inactiv: { listId: 'stat-list-inactiv',  scrollTo: 'stat-list-inactiv' },
-  generat: { listId: 'stats-generat-list', scrollTo: 'stat-h3-generat' },
-  urgente: { listId: 'stats-urgente-list', scrollTo: 'stat-h3-urgente' }
+  activ:   { listId: 'stat-list-activ',   scrollTo: 'stat-list-activ' },
+  inactiv: { listId: 'stat-list-inactiv', scrollTo: 'stat-list-inactiv' },
+  generat: { listId: 'stat-list-generat', scrollTo: 'stat-list-generat' },
+  urgente: { listId: 'stat-list-urgente', scrollTo: 'stat-list-urgente' }
 };
 let activeStatSection = null;
 
