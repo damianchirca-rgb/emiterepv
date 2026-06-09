@@ -2,6 +2,8 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#0a0f1e">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -260,7 +262,7 @@
   <div id="header">
     <div id="header-top">
       <div id="logo">
-        <div id="logo-icon">🏛️</div>
+        <div id="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" style="vertical-align:middle"><rect width="512" height="512" rx="115" fill="#18181b"/><circle cx="256" cy="256" r="168" fill="none" stroke="#f59e0b" stroke-width="14"/><path d="M282 88 L186 262 L256 262 L230 410 L328 224 L258 224 Z" fill="#f59e0b"/></svg></div>
         <div id="logo-text">
           <h1>Mentenanță</h1>
           <p id="last-sync">Se încarcă…</p>
@@ -685,10 +687,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v5.2';
+const APP_VERSION = 'v5.3';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v5.3',
+    data: '08.06.2026',
+    titlu: 'Icon nou aplicație',
+    items: [
+      'Icon nou: bolt amber în cerc pe fundal negru',
+      'Înlocuiește emoji 🏛️ în header și favicon',
+      'Fișier icon.svg adăugat în repository'
+    ]
+  },
+
   {
     version: 'v5.2',
     data: '08.06.2026',
@@ -1099,7 +1112,7 @@ function renderList() {
         <div class="card-top">
           <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
             <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0">
-              ${poza ? `<img src="${pozaUrl(poza)}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--surface3)" onerror="pozaOnerror(this,'${poza}');this.nextElementSibling.style.display='flex'"><div style="display:none;width:80px;height:80px;border-radius:50%;background:var(--surface3);align-items:center;justify-content:center;font-size:32px">🏛️</div>` : `<div style="width:80px;height:80px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:32px">🏛️</div>`}
+              ${poza ? `<img src="${pozaUrl(poza)}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--surface3)" onerror="pozaOnerror(this,'${poza}');this.nextElementSibling.style.display='flex'"><div style="display:none;width:80px;height:80px;border-radius:50%;background:var(--surface3);align-items:center;justify-content:center;font-size:32px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" style="vertical-align:middle"><rect width="512" height="512" rx="115" fill="#18181b"/><circle cx="256" cy="256" r="168" fill="none" stroke="#f59e0b" stroke-width="14"/><path d="M282 88 L186 262 L256 262 L230 410 L328 224 L258 224 Z" fill="#f59e0b"/></svg></div>` : `<div style="width:80px;height:80px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:32px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" style="vertical-align:middle"><rect width="512" height="512" rx="115" fill="#18181b"/><circle cx="256" cy="256" r="168" fill="none" stroke="#f59e0b" stroke-width="14"/><path d="M282 88 L186 262 L256 262 L230 410 L328 224 L258 224 Z" fill="#f59e0b"/></svg></div>`}
               <div style="font-size:11px;color:var(--text2);text-align:center;max-width:64px;line-height:1.3;word-break:break-word;font-weight:500">${responsabil}</div>
             </div>
             <div style="min-width:0">
