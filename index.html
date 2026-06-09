@@ -684,10 +684,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v4.6';
+const APP_VERSION = 'v4.7';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v4.7',
+    data: '08.06.2026',
+    titlu: 'Swipe între taburi UAT',
+    items: [
+      'Swipe stânga/dreapta în pagina UAT navighează între taburi (Main → Contracte → Facturi → Mail → Audio → Utile)',
+      'Swipe-ul ignoră tab-bar, player audio și inputuri',
+      'Tab activ se auto-scroll-ează în centrul barei la navigare'
+    ]
+  },
+
   {
     version: 'v4.6',
     data: '08.06.2026',
@@ -1241,11 +1252,40 @@ function renderStats() {
 }
 
 // ─── DRAWER ────────────────────────────────────────────────
+let currentTab = 'main';
+
+// Ordinea taburilor pentru swipe
+const TAB_ORDER = ['main','contracte','facturi','corespondenta','audio','utile'];
+// Actiunile de incarcare per tab (apelate la swipe)
+const TAB_LOAD = {
+  contracte:    function(id) { loadFisiere(id); },
+  corespondenta:function(id) { loadCorespondenta(id); },
+  audio:        function(id) { loadAudioTab(id); },
+  utile:        function(id) { loadUtile(id); }
+};
+
 function switchTab(tabId) {
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-  document.getElementById('tab-btn-'+tabId).classList.add('active');
-  document.getElementById('tab-'+tabId).classList.add('active');
+  currentTab = tabId;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const btn = document.getElementById('tab-btn-' + tabId);
+  const tab = document.getElementById('tab-' + tabId);
+  if (btn) btn.classList.add('active');
+  if (tab) tab.classList.add('active');
+}
+
+function swipeToTab(direction) {
+  const idx = TAB_ORDER.indexOf(currentTab);
+  if (idx === -1) return;
+  const nextIdx = direction === 'left' ? idx + 1 : idx - 1;
+  if (nextIdx < 0 || nextIdx >= TAB_ORDER.length) return;
+  const nextTab = TAB_ORDER[nextIdx];
+  switchTab(nextTab);
+  // Apeleaza loadAction daca exista
+  if (TAB_LOAD[nextTab] && currentUat) TAB_LOAD[nextTab](currentUat);
+  // Scroll tab bar ca sa fie vizibil butonul activ
+  const btn = document.getElementById('tab-btn-' + nextTab);
+  if (btn) btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 }
 
 function openUat(id) {
@@ -2869,6 +2909,41 @@ async function applyUpdates() {
     showToast('⚠️ Eroare la actualizare: ' + e.message);
   }
 }
+
+// ─── SWIPE INTRE TABURI ──────────────────────────────────────
+(function() {
+  var startX = 0, startY = 0, startTime = 0;
+  var SWIPE_THRESHOLD = 60;   // minim px orizontal
+  var ANGLE_THRESHOLD = 35;   // maxim grade fata de orizontal
+  var TIME_THRESHOLD  = 400;  // maxim ms
+
+  document.addEventListener('touchstart', function(e) {
+    const drawer = document.getElementById('drawer');
+    if (!drawer || !drawer.classList.contains('open')) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    startTime = Date.now();
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    const drawer = document.getElementById('drawer');
+    if (!drawer || !drawer.classList.contains('open')) return;
+    // Ignora swipe pe tab-bar sau scrollabile orizontal
+    const target = e.target;
+    if (target.closest('.tab-bar') || target.closest('audio') || target.closest('input')) return;
+
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    const dt = Date.now() - startTime;
+
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+    if (dt > TIME_THRESHOLD) return;
+    const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+    if (angle > ANGLE_THRESHOLD && angle < 180 - ANGLE_THRESHOLD) return;
+
+    swipeToTab(dx < 0 ? 'left' : 'right');
+  }, { passive: true });
+})();
 
 // ─── INIT ──────────────────────────────────────────────────
 // Încearcă cache offline primul, apoi sync
