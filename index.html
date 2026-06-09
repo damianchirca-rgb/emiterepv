@@ -181,6 +181,10 @@
   .tab-btn.active { color:var(--accent2);border-bottom-color:var(--accent2); }
   .tab-content { display:none;padding:16px 20px; }
   .tab-content.active { display:block; }
+  @keyframes slideFromRight { from { opacity:0;transform:translateX(40px) } to { opacity:1;transform:translateX(0) } }
+  @keyframes slideFromLeft  { from { opacity:0;transform:translateX(-40px) } to { opacity:1;transform:translateX(0) } }
+  .tab-anim-right { animation: slideFromRight .25s cubic-bezier(.4,0,.2,1) forwards; }
+  .tab-anim-left  { animation: slideFromLeft  .25s cubic-bezier(.4,0,.2,1) forwards; }
 
   .note-area { width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:inherit;font-size:14px;padding:12px;resize:none;outline:none;min-height:90px;line-height:1.5; }
   .note-area:focus { border-color:var(--accent); }
@@ -1292,48 +1296,24 @@ function swipeToTab(direction) {
   if (nextIdx < 0 || nextIdx >= TAB_ORDER.length) return;
   const nextTab = TAB_ORDER[nextIdx];
 
-  const currentEl = document.getElementById('tab-' + currentTab);
-  const nextEl    = document.getElementById('tab-' + nextTab);
-  if (!currentEl || !nextEl) return;
+  // Schimba tab-ul folosind switchTab normal
+  switchTab(nextTab);
 
-  // Pozitioneaza noul tab in afara ecranului (stanga sau dreapta)
-  const inClass  = direction === 'left' ? 'slide-in-right'  : 'slide-in-left';
-  const outClass = direction === 'left' ? 'slide-out-left'  : 'slide-out-right';
-
-  // Pregateste noul tab - vizibil dar in afara ecranului
-  nextEl.classList.remove('active', 'slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
-  nextEl.classList.add(inClass);
-  nextEl.style.display = 'block';
-
-  // Forteaza reflow
-  nextEl.offsetHeight;
-
-  // Porneste animatia
-  requestAnimationFrame(() => {
-    // Tab curent iese
-    currentEl.classList.add(outClass);
-    currentEl.classList.remove('active');
-    // Tab nou intra
-    nextEl.classList.remove(inClass);
-    nextEl.classList.add('active');
-
-    // Cleanup dupa animatie
-    const cleanup = () => {
-      currentEl.classList.remove('slide-out-left', 'slide-out-right', 'active');
-      nextEl.classList.remove('slide-in-left', 'slide-in-right');
-      currentEl.removeEventListener('transitionend', cleanup);
-    };
-    currentEl.addEventListener('transitionend', cleanup, { once: true });
-  });
-
-  // Seteaza tab-ul curent si incarca datele
-  currentTab = nextTab;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.getElementById('tab-btn-' + nextTab);
-  if (btn) {
-    btn.classList.add('active');
-    btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  // Adauga clasa de animatie pe tab-ul nou activ
+  const nextEl = document.getElementById('tab-' + nextTab);
+  if (nextEl) {
+    const animClass = direction === 'left' ? 'tab-anim-right' : 'tab-anim-left';
+    nextEl.classList.remove('tab-anim-right', 'tab-anim-left');
+    void nextEl.offsetWidth; // reflow
+    nextEl.classList.add(animClass);
+    setTimeout(() => nextEl.classList.remove(animClass), 300);
   }
+
+  // Scroll tab bar la butonul activ
+  const btn = document.getElementById('tab-btn-' + nextTab);
+  if (btn) btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+
+  // Incarca datele daca e necesar
   if (TAB_LOAD[nextTab] && currentUat) TAB_LOAD[nextTab](currentUat);
 }
 
