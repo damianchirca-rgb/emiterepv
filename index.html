@@ -715,10 +715,19 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v5.6';
+const APP_VERSION = 'v5.7';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v5.7',
+    data: '10.06.2026',
+    titlu: 'Loading detaliat tab Contracte',
+    items: [
+      'Tab Contracte: loading cu pași vizuali identic cu Mail și Audio'
+    ]
+  },
+
   {
     version: 'v5.6',
     data: '10.06.2026',
@@ -2283,11 +2292,22 @@ async function loadFisiere(uatId) {
   const el = document.getElementById('fisiere-' + uatId);
   if (!el || el.dataset.loaded) return;
   el.dataset.loaded = '1';
-  el.textContent = 'Se încarcă fișierele…';
+  const elId = 'fisiere-' + uatId;
+  showLoading(elId, [
+    'Conectare la server…',
+    'Se caută fișierele contractelor…',
+    'Se procesează lista…'
+  ]);
   try {
-    const resp = await fetch(`${API_URL}?action=contracte_fisiere&uat_id=${uatId}`, { cache: 'no-store' });
+    setLoadingStep(elId, 0, 'done');
+    setLoadingStep(elId, 1, 'active');
+    const resp = await fetch(API_URL + '?action=contracte_fisiere&uat_id=' + uatId, { cache: 'no-store' });
+    if (!resp.ok) throw new Error('Server ' + resp.status);
+    setLoadingStep(elId, 1, 'done');
+    setLoadingStep(elId, 2, 'active');
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
+    setLoadingStep(elId, 2, 'done');
     const fisiereActive = data.fisiere || [];
     const fisiereArh = data.fisiereArhivate || [];
 
@@ -2326,7 +2346,7 @@ async function loadFisiere(uatId) {
 
     el.innerHTML = html;
   } catch(err) {
-    el.textContent = 'Eroare: ' + err.message;
+    showLoadingError('fisiere-' + uatId, err.message);
   }
 }
 
