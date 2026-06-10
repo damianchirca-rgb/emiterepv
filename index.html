@@ -3184,6 +3184,7 @@ function _openMailByIdx(idx) {
 function openEmailModal(itemJson) {
   const i    = typeof itemJson === 'string' ? JSON.parse(itemJson) : itemJson;
   const it   = i.item || i;
+  console.log('[Modal] it.nr_atasamente=', it.nr_atasamente, 'it.atasamente=', it.atasamente, 'it.id=', it.id);
   const emailId   = it.id || it.email_id || '';
   const bodyFisier = it.body_fisier || '';
   const preview   = (it.body_preview || '').trim();
@@ -3203,7 +3204,7 @@ function openEmailModal(itemJson) {
   // Atașamente
   const atasEl   = document.getElementById('eml-atasamente');
   const atasEmailId = it.id || '';
-  const nrAtas   = parseInt(it.nr_atasamente || 0);
+  const nrAtas   = parseInt(it.nr_atasamente || '0', 10) || 0;
 
   function _renderAtas(list) {
     window._modalAtasamente = list;
