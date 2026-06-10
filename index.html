@@ -715,10 +715,22 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v5.8';
+const APP_VERSION = 'v5.9';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v5.9',
+    data: '10.06.2026',
+    titlu: 'Vizualizare email direct din Căutare',
+    items: [
+      'Click pe orice email din Căutare → modal cu emailul complet',
+      'Afișează: subiect, direcție, expeditor, destinatar, dată, localitate',
+      'Atașamente cu buton deschidere Drive',
+      'Body complet încărcat automat (nu mai e nevoie să navighezi la primărie)'
+    ]
+  },
+
   {
     version: 'v5.8',
     data: '10.06.2026',
@@ -2903,6 +2915,74 @@ window.addEventListener('popstate', function(e) {
   }
 });
 
+// ─── MODAL EMAIL GLOBAL ──────────────────────────────────────
+function openEmailModal(itemJson) {
+  const i = typeof itemJson === 'string' ? JSON.parse(itemJson) : itemJson;
+  const it = i.item || i;
+
+  // Populeaza header
+  document.getElementById('eml-subiect').textContent = it.subiect || '(fără subiect)';
+
+  const dir = (it.directie||'').toLowerCase() === 'trimis' ? '↑ Trimis' : '↓ Primit';
+  const meta = [
+    dir,
+    it.de_la ? 'De la: ' + it.de_la : '',
+    it.catre  ? 'Către: ' + it.catre : '',
+    (it.data||'').substring(0,16)
+  ].filter(Boolean).join(' · ');
+  document.getElementById('eml-meta').textContent = meta;
+
+  // Localitate badge
+  if (i.localitate) {
+    document.getElementById('eml-meta').innerHTML =
+      '<span style="font-weight:600;color:var(--accent)">' + i.localitate + '</span> · ' + meta;
+  }
+
+  // Atașamente
+  const atasEl = document.getElementById('eml-atasamente');
+  const atas = it.atasamente || [];
+  atasEl.innerHTML = atas.map(function(a) {
+    const url = a.drive_id ? 'https://drive.google.com/file/d/' + a.drive_id + '/view' : a.url || '';
+    return url
+      ? '<a href="' + url + '" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);text-decoration:none">📎 ' + (a.name||'Atașament') + '</a>'
+      : '';
+  }).join('');
+
+  // Body - arata preview imediat, incarca complet
+  const bodyEl = document.getElementById('eml-body-content');
+  const preview = it.body_preview || it.body || '';
+  bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">' + preview + '</div>'
+    + (it.email_id ? '<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--text3);text-align:center" id="eml-loading-full">⟳ Se încarcă emailul complet…</div>' : '');
+
+  // Deschide modal
+  document.getElementById('email-modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Fetch body complet
+  if (it.email_id) {
+    fetch(API_URL + '?action=email_body&email_id=' + encodeURIComponent(it.email_id), {cache:'no-store'})
+      .then(r => r.json())
+      .then(data => {
+        const fullBody = data.body || data.text || '';
+        if (fullBody && fullBody.length > preview.length) {
+          bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">' + fullBody + '</div>';
+        } else {
+          const loadingEl = document.getElementById('eml-loading-full');
+          if (loadingEl) loadingEl.remove();
+        }
+      })
+      .catch(() => {
+        const loadingEl = document.getElementById('eml-loading-full');
+        if (loadingEl) loadingEl.textContent = '⚠️ Nu s-a putut încărca emailul complet';
+      });
+  }
+}
+
+function closeEmailModal() {
+  document.getElementById('email-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 // ─── LOADING PROGRESS VIZUAL ─────────────────────────────────
 function showLoading(elId, steps) {
   const el = document.getElementById(elId);
@@ -3095,7 +3175,9 @@ function renderGlobalMail(q) {
     const col = dir==='trimis' ? 'var(--accent)' : 'var(--activ)';
     const icon = dir==='trimis' ? '↑' : '↓';
     const subprev = (it.body_preview||'').substring(0,80);
-    out += '<div onclick="openUat(' + i.uat_id + ')" style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
+    // Serializeaza itemul pentru onclick
+    const itemStr = JSON.stringify(i).replace(/\\/g,'\\\\').replace(/"/g,'&quot;');
+    out += '<div onclick="openEmailModal(JSON.parse(this.dataset.item))" data-item="' + itemStr + '" style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px">'
       + '<div style="flex:1;min-width:0">'
       + '<span style="font-size:13px;font-weight:700;color:' + col + '">' + (i.localitate||'') + '</span>'
