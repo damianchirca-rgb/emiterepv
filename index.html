@@ -733,10 +733,20 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v7.1';
+const APP_VERSION = 'v7.2';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v7.2',
+    data: '10.06.2026',
+    titlu: 'Fix atașamente - fetch pentru orice email',
+    items: [
+      'nr_atasamente era 0 chiar dacă emailul had atașamente',
+      'Fix: fetch atașamente pentru orice email cu ID, indiferent de nr_atasamente'
+    ]
+  },
+
   {
     version: 'v7.1',
     data: '10.06.2026',
@@ -3221,8 +3231,8 @@ function openEmailModal(itemJson) {
 
   if (atas.length) {
     _renderAtas(atas);
-  } else if (nrAtas > 0 && atasEmailId) {
-    atasEl.innerHTML = '<span style="font-size:11px;color:var(--text3)">⟳ ' + nrAtas + ' atașament(e)…</span>';
+  } else if (atasEmailId) {
+    // Fetch intotdeauna daca avem ID - nr_atasamente poate fi 0 chiar si cu atasamente
     fetch(API_URL + '?action=email_atasamente_list&email_id=' + encodeURIComponent(atasEmailId), {cache:'no-store'})
       .then(function(r) { return r.json(); })
       .then(function(d) {
