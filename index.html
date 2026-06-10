@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
@@ -715,10 +715,22 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v5.5';
+const APP_VERSION = 'v5.6';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v5.6',
+    data: '10.06.2026',
+    titlu: 'Loading detaliat Mail, Audio, Fișiere',
+    items: [
+      'Loading cu pași vizuali: Conectare → Citire date → Procesare',
+      'Fiecare pas arată ✓ la finalizare sau ✕ la eroare',
+      'La eroare: mesaj detaliat + buton Reîncearcă',
+      'Aplicat pe: Mail, Audio, Fișiere utile'
+    ]
+  },
+
   {
     version: 'v5.5',
     data: '09.06.2026',
@@ -1882,19 +1894,32 @@ let audioData  = {}; // cache audio - incarcat o singura data per UAT
 let currentUat = null; // ID-ul UAT-ului deschis curent
 
 async function loadCorespondenta(uatId) {
-  const el = document.getElementById('cors-list-' + uatId);
+  const elId = 'cors-list-' + uatId;
+  const el = document.getElementById(elId);
   if (!el) return;
   if (corsData[uatId]) { renderCorespondenta(uatId); return; }
-  el.textContent = 'Se încarcă corespondența…';
+
+  showLoading(elId, [
+    'Conectare la server…',
+    'Se citesc emailurile…',
+    'Se procesează datele…'
+  ]);
+
   try {
-    const resp = await fetch(`${API_URL}?action=corespondenta&uat_id=${uatId}`, {cache:'no-store'});
+    setLoadingStep(elId, 0, 'done');
+    setLoadingStep(elId, 1, 'active');
+    const resp = await fetch(API_URL + '?action=corespondenta&uat_id=' + uatId, {cache:'no-store'});
+    if (!resp.ok) throw new Error('Server ' + resp.status);
+    setLoadingStep(elId, 1, 'done');
+    setLoadingStep(elId, 2, 'active');
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
+    setLoadingStep(elId, 2, 'done');
     corsData[uatId] = data.items || [];
     corsFilter[uatId] = 'all';
     renderCorespondenta(uatId);
   } catch(e) {
-    el.innerHTML = `<div style="color:var(--eroare);font-size:12px">Eroare: ${e.message}</div>`;
+    showLoadingError(elId, e.message);
   }
 }
 
@@ -2061,12 +2086,15 @@ async function deschideAtasament(fisierName) {
 
 
 async function loadFisiereUtile(uatId) {
-  const el = document.getElementById('fisiere-utile-' + uatId);
+  const elId = 'fisiere-utile-' + uatId;
+  const el = document.getElementById(elId);
   if (!el || el.dataset.loaded === '1') return;
   el.dataset.loaded = '1';
-  el.textContent = 'Se încarcă…';
+  showLoading(elId, ['Conectare la server…', 'Se caută fișierele…']);
   try {
-    const resp = await fetch(`${API_URL}?action=fisiere_utile&uat_id=${uatId}`, {cache:'no-store'});
+    setLoadingStep(elId, 0, 'done');
+    setLoadingStep(elId, 1, 'active');
+    const resp = await fetch(API_URL + '?action=fisiere_utile&uat_id=' + uatId, {cache:'no-store'});
     const data = await resp.json();
     if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Niciun fișier atașat.'; return; }
     const tipIcon = {pdf:'📄', imagine:'🖼', excel:'📊', word:'📝', text:'📋', fisier:'📎'};
@@ -2080,7 +2108,7 @@ async function loadFisiereUtile(uatId) {
         <a href="${f.view}" target="_blank" style="flex-shrink:0;margin-left:10px;padding:6px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">Deschide</a>
       </div>`;
     }).join('');
-  } catch(err) { el.textContent = 'Eroare: ' + err.message; }
+  } catch(err) { showLoadingError(elId, err.message); }
 }
 
 async function loadAudioTab(uatId) {
@@ -2093,23 +2121,27 @@ async function loadAudioTab(uatId) {
     return;
   }
 
-  elAudio.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:16px 0;text-align:center"><div class="spinner" style="margin:0 auto 8px;width:24px;height:24px;border-width:2px"></div>Se încarcă…</div>';
+  const elId = 'audio-uat-' + uatId;
+  showLoading(elId, [
+    'Conectare la server…',
+    'Se citesc înregistrările…',
+    'Se pregătesc datele audio…'
+  ]);
 
   try {
-    const resp = await fetch(`${API_URL}?action=audio_uat&uat_id=${uatId}`, {cache:'no-store'});
+    setLoadingStep(elId, 0, 'done');
+    setLoadingStep(elId, 1, 'active');
+    const resp = await fetch(API_URL + '?action=audio_uat&uat_id=' + uatId, {cache:'no-store'});
+    if (!resp.ok) throw new Error('Server a returnat ' + resp.status);
+    setLoadingStep(elId, 1, 'done');
+    setLoadingStep(elId, 2, 'active');
     const data = await resp.json();
-
-    if (data.eroare) {
-      elAudio.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ ${data.eroare}</div>`;
-      return;
-    }
-
-    // Salveaza in cache
+    if (data.eroare) { showLoadingError(elId, data.eroare); return; }
+    setLoadingStep(elId, 2, 'done');
     audioData[uatId] = data.fisiere || [];
     renderAudio(uatId);
-
   } catch(err) {
-    elAudio.innerHTML = `<div style="color:var(--eroare);font-size:12px">⚠️ Eroare: ${err.message}</div>`;
+    showLoadingError(elId, err.message);
   }
 }
 
@@ -2840,6 +2872,61 @@ window.addEventListener('popstate', function(e) {
     }
   }
 });
+
+// ─── LOADING PROGRESS VIZUAL ─────────────────────────────────
+function showLoading(elId, steps) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const stepsHtml = steps.map((s, i) =>
+    '<div id="lstep-' + elId + '-' + i + '" style="display:flex;align-items:center;gap:10px;padding:6px 0;opacity:0.35;transition:opacity .3s">'
+    + '<div style="width:18px;height:18px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px" id="lstep-icon-' + elId + '-' + i + '">○</div>'
+    + '<span style="font-size:12px;color:var(--text2)">' + s + '</span>'
+    + '</div>'
+  ).join('');
+
+  el.innerHTML = '<div style="padding:16px 4px">'
+    + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
+    + '<div class="spinner" style="width:20px;height:20px;border-width:2px;flex-shrink:0"></div>'
+    + '<span style="font-size:13px;font-weight:600;color:var(--text2)">Se încarcă…</span>'
+    + '</div>'
+    + stepsHtml
+    + '</div>';
+
+  // Activeaza primul pas
+  setLoadingStep(elId, 0, 'active');
+}
+
+function setLoadingStep(elId, stepIdx, status) {
+  const stepEl = document.getElementById('lstep-' + elId + '-' + stepIdx);
+  const iconEl = document.getElementById('lstep-icon-' + elId + '-' + stepIdx);
+  if (!stepEl) return;
+
+  if (status === 'active') {
+    stepEl.style.opacity = '1';
+    if (iconEl) iconEl.innerHTML = '<div class="spinner" style="width:12px;height:12px;border-width:2px"></div>';
+  } else if (status === 'done') {
+    stepEl.style.opacity = '1';
+    if (iconEl) { iconEl.textContent = '✓'; iconEl.style.background = 'var(--activ-bg)'; iconEl.style.color = 'var(--activ)'; }
+  } else if (status === 'error') {
+    stepEl.style.opacity = '1';
+    if (iconEl) { iconEl.textContent = '✕'; iconEl.style.background = 'rgba(239,68,68,0.15)'; iconEl.style.color = 'var(--eroare)'; }
+  }
+}
+
+function showLoadingError(elId, msg) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = '<div style="padding:16px 4px">'
+    + '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(239,68,68,0.1);border-radius:10px;border-left:3px solid var(--eroare)">'
+    + '<span style="font-size:18px">⚠️</span>'
+    + '<div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--eroare)">Eroare la încărcare</div>'
+    + '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + msg + '</div>'
+    + '</div>'
+    + '</div>'
+    + '<button onclick="location.reload()" style="margin-top:10px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit">↺ Reîncearcă</button>'
+    + '</div>';
+}
 
 // ─── GLOBAL SEARCH (Audio + Mail) ──────────────────────────
 let globalAudioData = null;  // top 30 recente (Drive API)
