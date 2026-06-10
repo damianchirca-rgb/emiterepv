@@ -3224,8 +3224,11 @@ function openEmailModal(itemJson) {
     atasEl.innerHTML = '<span style="font-size:11px;color:var(--text3)">⟳ ' + nrAtas + ' atașament(e)…</span>';
     fetch(API_URL + '?action=email_atasamente_list&email_id=' + encodeURIComponent(atasEmailId), {cache:'no-store'})
       .then(function(r) { return r.json(); })
-      .then(function(d) { _renderAtas(d.atasamente || []); })
-      .catch(function() { atasEl.innerHTML = ''; });
+      .then(function(d) {
+        console.log('[Atas] response:', JSON.stringify(d));
+        _renderAtas(d.atasamente || []);
+      })
+      .catch(function(e) { console.log('[Atas] error:', e); atasEl.innerHTML = ''; });
   } else {
     _renderAtas([]);
   }
