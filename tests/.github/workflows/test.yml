@@ -1,9 +1,10 @@
-name: Test Mentenanta PWA
+name: Test Mentenanță PWA
 
 on:
   push:
     paths:
       - 'index.html'
+      - 'sw.js'
       - 'tests/**'
   pull_request:
     paths:
@@ -21,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Rulează teste
         run: node tests/check.js
