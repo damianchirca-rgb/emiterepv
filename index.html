@@ -733,10 +733,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v6.5';
+const APP_VERSION = 'v6.6';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v6.6',
+    data: '10.06.2026',
+    titlu: 'Fix Actualizează la fiecare pornire',
+    items: [
+      'Bug: syncData() rula la fiecare pornire indiferent de cache',
+      'Fix: syncData() rulează doar când nu există cache local',
+      'Cu cache: pornire instantă + checkForUpdates în background'
+    ]
+  },
+
   {
     version: 'v6.5',
     data: '10.06.2026',
@@ -3468,10 +3479,12 @@ if(cached){
   renderCurrent();
   const d=ts?new Date(ts).toLocaleString('ro-RO'):'?';
   document.getElementById('last-sync').textContent=`Cache din ${d}`;
-      // Verificare silentioasa daca exista date noi
-      setTimeout(checkForUpdates, 2000);
+  // Verificare silentioasa daca exista date noi pe server
+  setTimeout(checkForUpdates, 2000);
+} else {
+  // Niciun cache - fetch de la server
+  syncData();
 }
-syncData();
 </script>
 </body>
 </html>
