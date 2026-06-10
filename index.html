@@ -733,10 +733,22 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v6.7';
+const APP_VERSION = 'v6.8';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v6.8',
+    data: '10.06.2026',
+    titlu: 'Cache localStorage per UAT',
+    items: [
+      'Mail, Audio, Fișiere contracte salvate în localStorage după primul fetch',
+      'La revenire: date afișate instant din cache, fără internet',
+      'Refresh silențios în background - toast dacă datele s-au schimbat',
+      'La eroare de rețea: afișează datele din cache dacă există'
+    ]
+  },
+
   {
     version: 'v6.7',
     data: '10.06.2026',
@@ -2032,6 +2044,29 @@ async function loadFullSumar(elId, fullName, btnId) {
 }
 
 // ─── CORESPONDENTA ──────────────────────────────────────────
+// ─── CACHE PER-UAT (localStorage) ───────────────────────────
+const UAT_CACHE_PREFIX = 'uat_data_';
+
+function saveUatCache(uatId, type, data) {
+  try {
+    const key = UAT_CACHE_PREFIX + type + '_' + uatId;
+    localStorage.setItem(key, JSON.stringify({ data: data, ts: Date.now() }));
+  } catch(e) {} // localStorage plin - ignoram
+}
+
+function loadUatCache(uatId, type) {
+  try {
+    const key = UAT_CACHE_PREFIX + type + '_' + uatId;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw).data;
+  } catch(e) { return null; }
+}
+
+function hasUatCache(uatId, type) {
+  return !!localStorage.getItem(UAT_CACHE_PREFIX + type + '_' + uatId);
+}
+
 let corsData   = {};
 let corsFilter = {};
 let audioData  = {}; // cache audio - incarcat o singura data per UAT
@@ -2041,18 +2076,24 @@ async function loadCorespondenta(uatId) {
   const elId = 'cors-list-' + uatId;
   const el = document.getElementById(elId);
   if (!el) return;
-  if (corsData[uatId]) { renderCorespondenta(uatId); return; }
 
-  showLoading(elId, [
-    'Conectare la server…',
-    'Se citesc emailurile…',
-    'Se procesează datele…'
-  ]);
+  // Incarca din localStorage instant
+  const cached = loadUatCache(uatId, 'mail');
+  if (cached && !corsData[uatId]) {
+    corsData[uatId] = cached;
+    corsFilter[uatId] = 'all';
+  }
+  if (corsData[uatId] && corsData[uatId] !== 'error') {
+    renderCorespondenta(uatId);
+    _bgRefreshCors(uatId); // refresh silentios in background
+    return;
+  }
 
+  showLoading(elId, ['Conectare la server…','Se citesc emailurile…','Se procesează datele…']);
   try {
     setLoadingStep(elId, 0, 'done');
     setLoadingStep(elId, 1, 'active');
-    const resp = await fetchWT(API_URL + '?action=corespondenta&uat_id=' + uatId, {cache:'no-store'});
+    const resp = await fetchWT(API_URL + '?action=corespondenta&uat_id=' + uatId, {});
     if (!resp.ok) throw new Error('Server ' + resp.status);
     setLoadingStep(elId, 1, 'done');
     setLoadingStep(elId, 2, 'active');
@@ -2061,10 +2102,29 @@ async function loadCorespondenta(uatId) {
     setLoadingStep(elId, 2, 'done');
     corsData[uatId] = data.items || [];
     corsFilter[uatId] = 'all';
+    saveUatCache(uatId, 'mail', corsData[uatId]);
     renderCorespondenta(uatId);
   } catch(e) {
-    showLoadingError(elId, e.message);
+    corsData[uatId] = null;
+    if (cached) { corsData[uatId] = cached; renderCorespondenta(uatId); }
+    else showLoadingError(elId, e.message);
   }
+}
+
+async function _bgRefreshCors(uatId) {
+  try {
+    const resp = await fetchWT(API_URL + '?action=corespondenta&uat_id=' + uatId, {});
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.error) return;
+    const newItems = data.items || [];
+    if (JSON.stringify(newItems) !== JSON.stringify(corsData[uatId])) {
+      corsData[uatId] = newItems;
+      saveUatCache(uatId, 'mail', newItems);
+      renderCorespondenta(uatId);
+      showToast('✉️ Corespondență actualizată');
+    }
+  } catch(e) {}
 }
 
 function setCorsFilter(uatId, filter, btn) {
@@ -2259,35 +2319,53 @@ async function loadAudioTab(uatId) {
   const elAudio = document.getElementById('audio-uat-' + uatId);
   if (!elAudio) return;
 
-  // Daca e deja incarcat, afiseaza instant din cache
-  if (audioData[uatId]) {
+  // Incarca din localStorage instant
+  const cachedAudio = loadUatCache(uatId, 'audio');
+  if (cachedAudio && !audioData[uatId]) audioData[uatId] = cachedAudio;
+
+  if (audioData[uatId] && audioData[uatId] !== 'error') {
     renderAudio(uatId);
+    _bgRefreshAudio(uatId);
     return;
   }
+  audioData[uatId] = null;
 
   const elId = 'audio-uat-' + uatId;
-  showLoading(elId, [
-    'Conectare la server…',
-    'Se citesc înregistrările…',
-    'Se pregătesc datele audio…'
-  ]);
-
+  showLoading(elId, ['Conectare la server…','Se citesc înregistrările…','Se pregătesc datele audio…']);
   try {
     setLoadingStep(elId, 0, 'done');
     setLoadingStep(elId, 1, 'active');
-    const resp = await fetchWT(API_URL + '?action=audio_uat&uat_id=' + uatId, {cache:'no-store'});
-    if (!resp.ok) throw new Error('Server a returnat ' + resp.status);
+    const resp = await fetchWT(API_URL + '?action=audio_uat&uat_id=' + uatId, {});
+    if (!resp.ok) throw new Error('Server ' + resp.status);
     setLoadingStep(elId, 1, 'done');
     setLoadingStep(elId, 2, 'active');
     const data = await resp.json();
     if (data.eroare) { showLoadingError(elId, data.eroare); return; }
     setLoadingStep(elId, 2, 'done');
     audioData[uatId] = data.fisiere || [];
+    saveUatCache(uatId, 'audio', audioData[uatId]);
     renderAudio(uatId);
   } catch(err) {
-    audioData[uatId] = 'error'; // permite retry la urmatoarea vizita
+    if (cachedAudio) { audioData[uatId] = cachedAudio; renderAudio(uatId); return; }
+    audioData[uatId] = 'error';
     showLoadingError(elId, err.message);
   }
+}
+
+async function _bgRefreshAudio(uatId) {
+  try {
+    const resp = await fetchWT(API_URL + '?action=audio_uat&uat_id=' + uatId, {});
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.error) return;
+    const newFisiere = data.fisiere || [];
+    if (JSON.stringify(newFisiere) !== JSON.stringify(audioData[uatId])) {
+      audioData[uatId] = newFisiere;
+      saveUatCache(uatId, 'audio', newFisiere);
+      renderAudio(uatId);
+      showToast('🎤 Audio actualizat');
+    }
+  } catch(e) {}
 }
 
 function renderAudio(uatId) {
@@ -2425,29 +2503,68 @@ async function loadFullTranscr(elId, fullName, btnId) {
 
 
 async function loadFisiere(uatId) {
-  const el = document.getElementById('fisiere-' + uatId);
-  if (!el || el.dataset.loaded === 'loading' || el.dataset.loaded === 'ok') return;
-  el.dataset.loaded = 'loading';
   const elId = 'fisiere-' + uatId;
-  showLoading(elId, [
-    'Conectare la server…',
-    'Se caută fișierele contractelor…',
-    'Se procesează lista…'
-  ]);
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (el.dataset.loaded === 'loading' || el.dataset.loaded === 'ok') return;
+
+  // Incarca din localStorage instant
+  const cached = loadUatCache(uatId, 'fisiere');
+  if (cached) {
+    renderFisiereContracte(el, cached);
+    el.dataset.loaded = 'ok';
+    _bgRefreshFisiere(uatId, el);
+    return;
+  }
+
+  el.dataset.loaded = 'loading';
+  showLoading(elId, ['Conectare la server…','Se caută fișierele contractelor…','Se procesează lista…']);
   try {
     setLoadingStep(elId, 0, 'done');
     setLoadingStep(elId, 1, 'active');
-    const resp = await fetchWT(API_URL + '?action=contracte_fisiere&uat_id=' + uatId, { cache: 'no-store' });
+    const resp = await fetchWT(API_URL + '?action=contracte_fisiere&uat_id=' + uatId, {});
     if (!resp.ok) throw new Error('Server ' + resp.status);
     setLoadingStep(elId, 1, 'done');
     setLoadingStep(elId, 2, 'active');
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
     setLoadingStep(elId, 2, 'done');
-    el.dataset.loaded = 'ok'; // marcheaza success
-    const fisiereActive = data.fisiere || [];
-    const fisiereArh = data.fisiereArhivate || [];
+    el.dataset.loaded = 'ok';
+    saveUatCache(uatId, 'fisiere', data);
+    renderFisiereContracte(el, data);
+  } catch(err) {
+    el.dataset.loaded = '';
+    showLoadingError(elId, err.message);
+  }
+}
 
+function renderFisiereContracte(el, data) {
+  const fisiereActive = data.fisiere || [];
+  const fisiereArh    = data.fisiereArhivate || [];
+  if (!fisiereActive.length && !fisiereArh.length) {
+    el.textContent = 'Niciun fișier găsit.';
+    return;
+  }
+  // Render din functia originala
+  _doRenderFisiere(el, fisiereActive, fisiereArh);
+}
+
+async function _bgRefreshFisiere(uatId, el) {
+  try {
+    const resp = await fetchWT(API_URL + '?action=contracte_fisiere&uat_id=' + uatId, {});
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.error) return;
+    const cached = loadUatCache(uatId, 'fisiere');
+    if (JSON.stringify(data) !== JSON.stringify(cached)) {
+      saveUatCache(uatId, 'fisiere', data);
+      renderFisiereContracte(el, data);
+      showToast('📄 Fișiere contracte actualizate');
+    }
+  } catch(e) {}
+}
+
+function _doRenderFisiere(el, fisiereActive, fisiereArh) {
     if (!fisiereActive.length && !fisiereArh.length) {
       el.textContent = 'Niciun fișier găsit.';
       return;
@@ -2482,10 +2599,8 @@ async function loadFisiere(uatId) {
     }
 
     el.innerHTML = html;
-  } catch(err) {
-    showLoadingError('fisiere-' + uatId, err.message);
-  }
 }
+
 
 // ─── NAV & FILTER ──────────────────────────────────────────
 function showView(v) {
