@@ -733,10 +733,19 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v6.8';
+const APP_VERSION = 'v6.9';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v6.9',
+    data: '10.06.2026',
+    titlu: 'Fix eroare uatId in fișiere contracte',
+    items: [
+      'Fix: uatId not defined în _doRenderFisiere - transmis ca parametru'
+    ]
+  },
+
   {
     version: 'v6.8',
     data: '10.06.2026',
@@ -2546,7 +2555,7 @@ function renderFisiereContracte(el, data) {
     return;
   }
   // Render din functia originala
-  _doRenderFisiere(el, fisiereActive, fisiereArh);
+  _doRenderFisiere(el, fisiereActive, fisiereArh, el.id.replace('fisiere-',''));
 }
 
 async function _bgRefreshFisiere(uatId, el) {
@@ -2564,7 +2573,7 @@ async function _bgRefreshFisiere(uatId, el) {
   } catch(e) {}
 }
 
-function _doRenderFisiere(el, fisiereActive, fisiereArh) {
+function _doRenderFisiere(el, fisiereActive, fisiereArh, uatId) {
     if (!fisiereActive.length && !fisiereArh.length) {
       el.textContent = 'Niciun fișier găsit.';
       return;
