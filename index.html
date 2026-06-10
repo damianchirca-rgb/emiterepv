@@ -3190,6 +3190,14 @@ function openEmailModal(itemJson) {
     (i.localitate ? '<span style="font-weight:600;color:var(--accent)">' + i.localitate + '</span> · ' : '') + metaParts;
 
   // Atașamente - foloseste deschideAtasament ca per-UAT
+  // Debug: arata structura in consola
+  console.log('[Modal] item:', JSON.stringify({
+    subiect: it.subiect,
+    atasamente: it.atasamente,
+    body_fisier: it.body_fisier,
+    id: it.id,
+    keys: Object.keys(it)
+  }));
   const atasEl = document.getElementById('eml-atasamente');
   atasEl.innerHTML = atas.length
     ? atas.map(function(a) {
