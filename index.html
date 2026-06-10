@@ -733,10 +733,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v7.0';
+const APP_VERSION = 'v7.1';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v7.1',
+    data: '10.06.2026',
+    titlu: 'Fix atașamente email în modal Căutare',
+    items: [
+      'Nou endpoint: email_atasamente_list - citește din corespondenta.json',
+      'Modalul detectează nr_atasamente și face fetch on-demand la lista atașamentelor',
+      'Nu mai depinde de merge backend - funcționează cu orice versiune de index'
+    ]
+  },
+
   {
     version: 'v7.0',
     data: '10.06.2026',
@@ -3189,22 +3200,35 @@ function openEmailModal(itemJson) {
   document.getElementById('eml-meta').innerHTML =
     (i.localitate ? '<span style="font-weight:600;color:var(--accent)">' + i.localitate + '</span> · ' : '') + metaParts;
 
-  // Atașamente - foloseste deschideAtasament ca per-UAT
-  // Debug: arata structura in consola
-  console.log('[Modal] item:', JSON.stringify({
-    subiect: it.subiect,
-    atasamente: it.atasamente,
-    body_fisier: it.body_fisier,
-    id: it.id,
-    keys: Object.keys(it)
-  }));
-  const atasEl = document.getElementById('eml-atasamente');
-  atasEl.innerHTML = atas.length
-    ? atas.map(function(a) {
-        const name = a.name || a.fisier || 'Atașament';
-        return '<button onclick="deschideAtasament(window._modalAtasamente[' + ai + '].fisier)" '
-          + 'style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit">📎 ' + name + '</button>';      }).join('')
-    : '';
+  // Atașamente
+  const atasEl   = document.getElementById('eml-atasamente');
+  const atasEmailId = it.id || '';
+  const nrAtas   = parseInt(it.nr_atasamente || 0);
+
+  function _renderAtas(list) {
+    window._modalAtasamente = list;
+    atasEl.innerHTML = list.length
+      ? list.map(function(a, ai) {
+          var name = a.name || a.fisier || 'Atașament';
+          return '<button onclick="deschideAtasament(window._modalAtasamente[' + ai + '].fisier)" '
+            + 'style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;'
+            + 'background:var(--surface2);border:1px solid var(--border);border-radius:8px;'
+            + 'font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit">📎 ' + name + '</button>';
+        }).join('')
+      : '';
+  }
+
+  if (atas.length) {
+    _renderAtas(atas);
+  } else if (nrAtas > 0 && atasEmailId) {
+    atasEl.innerHTML = '<span style="font-size:11px;color:var(--text3)">⟳ ' + nrAtas + ' atașament(e)…</span>';
+    fetch(API_URL + '?action=email_atasamente_list&email_id=' + encodeURIComponent(atasEmailId), {cache:'no-store'})
+      .then(function(r) { return r.json(); })
+      .then(function(d) { _renderAtas(d.atasamente || []); })
+      .catch(function() { atasEl.innerHTML = ''; });
+  } else {
+    _renderAtas([]);
+  }
 
   // Body
   const bodyEl = document.getElementById('eml-body-content');
