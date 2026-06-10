@@ -733,10 +733,22 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v6.3';
+const APP_VERSION = 'v6.4';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v6.4',
+    data: '10.06.2026',
+    titlu: 'Retry automat fetch Android',
+    items: [
+      'Fetch cu retry automat: 3 tentative × 20s timeout fiecare',
+      'Dacă prima tentativă eșuează, reîncearcă automat după 2 secunde',
+      'cache: no-cache în loc de no-store (mai compatibil pe Android)',
+      'Buton Reîncearcă mai vizibil la eroare'
+    ]
+  },
+
   {
     version: 'v6.3',
     data: '10.06.2026',
@@ -2185,7 +2197,7 @@ async function loadFisiereUtile(uatId) {
   try {
     setLoadingStep(elId, 0, 'done');
     setLoadingStep(elId, 1, 'active');
-    const resp = await fetch(API_URL + '?action=fisiere_utile&uat_id=' + uatId, {cache:'no-store'});
+    const resp = await fetchWT(API_URL + '?action=fisiere_utile&uat_id=' + uatId, {});
     const data = await resp.json();
     if (!data.fisiere || !data.fisiere.length) { el.textContent = 'Niciun fișier atașat.'; return; }
     const tipIcon = {pdf:'📄', imagine:'🖼', excel:'📊', word:'📝', text:'📋', fisier:'📎'};
@@ -3049,18 +3061,33 @@ function closeEmailModal() {
   document.body.style.overflow = '';
 }
 
-// ─── FETCH CU TIMEOUT ────────────────────────────────────────
-// Apps Script are cold start de 10-20s - timeout de 35s
-async function fetchWT(url, options) {
+// ─── FETCH CU RETRY ──────────────────────────────────────────
+// Retry automat de 3 ori cu timeout 20s per incercare
+async function fetchWT(url, options, _attempt) {
+  const attempt = _attempt || 1;
+  const TIMEOUT = 20000; // 20s per tentativa
+  const MAX_ATTEMPTS = 3;
+
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 35000);
+  const timer = setTimeout(() => controller.abort(), TIMEOUT);
+
   try {
-    const resp = await fetch(url, { ...options, signal: controller.signal });
+    const resp = await fetch(url, {
+      ...options,
+      cache: 'no-cache', // mai compatibil decat no-store pe Android
+      signal: controller.signal
+    });
     clearTimeout(timer);
+    if (!resp.ok) throw new Error('Server ' + resp.status);
     return resp;
   } catch(err) {
     clearTimeout(timer);
-    if (err.name === 'AbortError') throw new Error('Timeout - serverul nu răspunde (>35s). Încearcă din nou.');
+    if (attempt < MAX_ATTEMPTS) {
+      // Asteapta 2s si incearca din nou
+      await new Promise(r => setTimeout(r, 2000));
+      return fetchWT(url, options, attempt + 1);
+    }
+    if (err.name === 'AbortError') throw new Error('Serverul nu răspunde după ' + MAX_ATTEMPTS + ' încercări. Verifică conexiunea.');
     throw err;
   }
 }
@@ -3116,7 +3143,7 @@ function showLoadingError(elId, msg) {
     + '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + msg + '</div>'
     + '</div>'
     + '</div>'
-    + '<button onclick="location.reload()" style="margin-top:10px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit">↺ Reîncearcă</button>'
+    + '<button onclick="location.reload()" style="margin-top:10px;padding:10px 20px;background:var(--accent);border:none;border-radius:10px;color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;width:100%">↺ Reîncearcă</button>'
     + '</div>';
 }
 
