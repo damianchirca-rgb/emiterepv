@@ -733,10 +733,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v6.1';
+const APP_VERSION = 'v6.2';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v6.2',
+    data: '10.06.2026',
+    titlu: 'Fix modal email + timeout fetch Android',
+    items: [
+      'Modal email: body complet + atașamente cu buton deschidere corect',
+      'Timeout 35s pe toate fetch-urile (Apps Script cold start)',
+      'La timeout: mesaj clar "serverul nu răspunde" + buton Reîncearcă'
+    ]
+  },
+
   {
     version: 'v6.1',
     data: '10.06.2026',
@@ -1977,7 +1988,7 @@ async function loadCorespondenta(uatId) {
   try {
     setLoadingStep(elId, 0, 'done');
     setLoadingStep(elId, 1, 'active');
-    const resp = await fetch(API_URL + '?action=corespondenta&uat_id=' + uatId, {cache:'no-store'});
+    const resp = await fetchWT(API_URL + '?action=corespondenta&uat_id=' + uatId, {cache:'no-store'});
     if (!resp.ok) throw new Error('Server ' + resp.status);
     setLoadingStep(elId, 1, 'done');
     setLoadingStep(elId, 2, 'active');
@@ -2200,7 +2211,7 @@ async function loadAudioTab(uatId) {
   try {
     setLoadingStep(elId, 0, 'done');
     setLoadingStep(elId, 1, 'active');
-    const resp = await fetch(API_URL + '?action=audio_uat&uat_id=' + uatId, {cache:'no-store'});
+    const resp = await fetchWT(API_URL + '?action=audio_uat&uat_id=' + uatId, {cache:'no-store'});
     if (!resp.ok) throw new Error('Server a returnat ' + resp.status);
     setLoadingStep(elId, 1, 'done');
     setLoadingStep(elId, 2, 'active');
@@ -2361,7 +2372,7 @@ async function loadFisiere(uatId) {
   try {
     setLoadingStep(elId, 0, 'done');
     setLoadingStep(elId, 1, 'active');
-    const resp = await fetch(API_URL + '?action=contracte_fisiere&uat_id=' + uatId, { cache: 'no-store' });
+    const resp = await fetchWT(API_URL + '?action=contracte_fisiere&uat_id=' + uatId, { cache: 'no-store' });
     if (!resp.ok) throw new Error('Server ' + resp.status);
     setLoadingStep(elId, 1, 'done');
     setLoadingStep(elId, 2, 'active');
@@ -2960,66 +2971,62 @@ function _openMailByIdx(idx) {
 }
 
 function openEmailModal(itemJson) {
-  const i = typeof itemJson === 'string' ? JSON.parse(itemJson) : itemJson;
-  const it = i.item || i;
+  const i    = typeof itemJson === 'string' ? JSON.parse(itemJson) : itemJson;
+  const it   = i.item || i;
+  const emailId   = it.id || it.email_id || '';
+  const bodyFisier = it.body_fisier || '';
+  const preview   = (it.body_preview || '').trim();
+  const atas      = it.atasamente || [];
 
-  // Populeaza header
+  // Header
   document.getElementById('eml-subiect').textContent = it.subiect || '(fără subiect)';
-
   const dir = (it.directie||'').toLowerCase() === 'trimis' ? '↑ Trimis' : '↓ Primit';
-  const meta = [
-    dir,
+  const metaParts = [dir,
     it.de_la ? 'De la: ' + it.de_la : '',
     it.catre  ? 'Către: ' + it.catre : '',
     (it.data||'').substring(0,16)
   ].filter(Boolean).join(' · ');
-  document.getElementById('eml-meta').textContent = meta;
+  document.getElementById('eml-meta').innerHTML =
+    (i.localitate ? '<span style="font-weight:600;color:var(--accent)">' + i.localitate + '</span> · ' : '') + metaParts;
 
-  // Localitate badge
-  if (i.localitate) {
-    document.getElementById('eml-meta').innerHTML =
-      '<span style="font-weight:600;color:var(--accent)">' + i.localitate + '</span> · ' + meta;
-  }
-
-  // Atașamente
+  // Atașamente - foloseste deschideAtasament ca per-UAT
   const atasEl = document.getElementById('eml-atasamente');
-  const atas = it.atasamente || [];
-  atasEl.innerHTML = atas.map(function(a) {
-    const url = a.drive_id ? 'https://drive.google.com/file/d/' + a.drive_id + '/view' : a.url || '';
-    return url
-      ? '<a href="' + url + '" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);text-decoration:none">📎 ' + (a.name||'Atașament') + '</a>'
-      : '';
-  }).join('');
+  atasEl.innerHTML = atas.length
+    ? atas.map(function(a) {
+        const name = a.name || a.fisier || 'Atașament';
+        return '<button onclick="deschideAtasament(window._modalAtasamente[' + ai + '].fisier)" '
+          + 'style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit">📎 ' + name + '</button>';      }).join('')
+    : '';
 
-  // Body - arata preview imediat, incarca complet
+  // Body
   const bodyEl = document.getElementById('eml-body-content');
-  const preview = it.body_preview || it.body || '';
-  bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">' + preview + '</div>'
-    + (it.email_id ? '<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--text3);text-align:center" id="eml-loading-full">⟳ Se încarcă emailul complet…</div>' : '');
+  bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">'
+    + (preview || '<span style="color:var(--text3);font-style:italic">Se încarcă conținutul…</span>')
+    + '</div>';
 
   // Deschide modal
-  const _emo = document.getElementById('email-modal-overlay');
-  _emo.style.display = 'flex';
+  document.getElementById('email-modal-overlay').style.display = 'flex';
   setTimeout(() => { document.getElementById('email-modal').style.transform = 'translateY(0)'; }, 10);
   document.body.style.overflow = 'hidden';
 
-  // Fetch body complet
-  if (it.email_id) {
-    fetch(API_URL + '?action=email_body&email_id=' + encodeURIComponent(it.email_id), {cache:'no-store'})
+  // Fetch body complet (body_fisier = fisier Drive cu textul complet)
+  const fetchId = bodyFisier || emailId;
+  if (fetchId) {
+    const action = bodyFisier ? 'email_atasament' : 'email_body';
+    const param  = bodyFisier ? 'fisier' : 'email_id';
+    fetch(API_URL + '?action=' + action + '&' + param + '=' + encodeURIComponent(fetchId), {cache:'no-store'})
       .then(r => r.json())
       .then(data => {
-        const fullBody = data.body || data.text || '';
-        if (fullBody && fullBody.length > preview.length) {
+        const fullBody = data.body || data.text || data.url || '';
+        if (fullBody && fullBody.startsWith('http')) {
+          // E un URL Drive - deschide intr-un iframe sau link
+          bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">' + preview + '</div>'
+            + '<a href="' + fullBody + '" target="_blank" style="display:block;margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--accent);text-decoration:none;text-align:center">📄 Deschide email complet în Drive</a>';
+        } else if (fullBody && fullBody.length > preview.length) {
           bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">' + fullBody + '</div>';
-        } else {
-          const loadingEl = document.getElementById('eml-loading-full');
-          if (loadingEl) loadingEl.remove();
         }
       })
-      .catch(() => {
-        const loadingEl = document.getElementById('eml-loading-full');
-        if (loadingEl) loadingEl.textContent = '⚠️ Nu s-a putut încărca emailul complet';
-      });
+      .catch(() => {});
   }
 }
 
@@ -3027,6 +3034,22 @@ function closeEmailModal() {
   document.getElementById('email-modal').style.transform = 'translateY(100%)';
   setTimeout(() => { document.getElementById('email-modal-overlay').style.display = 'none'; }, 300);
   document.body.style.overflow = '';
+}
+
+// ─── FETCH CU TIMEOUT ────────────────────────────────────────
+// Apps Script are cold start de 10-20s - timeout de 35s
+async function fetchWT(url, options) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 35000);
+  try {
+    const resp = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return resp;
+  } catch(err) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') throw new Error('Timeout - serverul nu răspunde (>35s). Încearcă din nou.');
+    throw err;
+  }
 }
 
 // ─── LOADING PROGRESS VIZUAL ─────────────────────────────────
