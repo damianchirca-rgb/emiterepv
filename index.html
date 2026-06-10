@@ -733,10 +733,20 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v6.4';
+const APP_VERSION = 'v6.5';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v6.5',
+    data: '10.06.2026',
+    titlu: 'Fix banner actualizare la fiecare pornire',
+    items: [
+      'Bannerul "Date noi" apărea la fiecare pornire — acum ts-ul se salvează și la "Mai târziu"',
+      'Sheet-ul exclus din verificarea versiunii (se modifica la fiecare sync automat)'
+    ]
+  },
+
   {
     version: 'v6.4',
     data: '10.06.2026',
@@ -3338,7 +3348,11 @@ function showUpdateBanner(msg) {
 function dismissUpdate() {
   const banner = document.getElementById('update-banner');
   if (banner) banner.classList.remove('show');
-  // Nu uitam ts-ul - vom intreba din nou la urmatoarea sesiune
+  // Salveaza ts-ul ca sa nu mai apara bannerul la urmatoarea pornire
+  if (_pendingServerTs) {
+    localStorage.setItem('server_ts', String(_pendingServerTs));
+    _pendingServerTs = null;
+  }
 }
 
 async function applyUpdates() {
