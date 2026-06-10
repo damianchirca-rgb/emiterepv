@@ -733,10 +733,20 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v7.2';
+const APP_VERSION = 'v7.3';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v7.3',
+    data: '10.06.2026',
+    titlu: 'Fix atașamente - structură corespondenta.json',
+    items: [
+      'corespondenta.json e {uat_key: [emailuri]} nu {emailId: data}',
+      'getEmailAtasamenteList folosește acum emailMap identic cu getCorespondenta'
+    ]
+  },
+
   {
     version: 'v7.2',
     data: '10.06.2026',
