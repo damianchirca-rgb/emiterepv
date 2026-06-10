@@ -733,10 +733,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v6.6';
+const APP_VERSION = 'v6.7';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v6.7',
+    data: '10.06.2026',
+    titlu: 'Preîncărcare paralelă taburi UAT',
+    items: [
+      'Schimbare arhitectură: toate taburile se încarcă în background când deschizi un UAT',
+      'Nu mai aștepți la apăsarea tab-ului Mail/Audio/Contracte - data e deja gata',
+      'Cele 4 fetch-uri rulează în paralel cu 50ms delay după randarea Main'
+    ]
+  },
+
   {
     version: 'v6.6',
     data: '10.06.2026',
@@ -1543,7 +1554,7 @@ let currentTab = 'main';
 
 // Ordinea taburilor pentru swipe
 const TAB_ORDER = ['main','contracte','facturi','corespondenta','audio','utile'];
-// Actiunile de incarcare per tab (apelate la swipe)
+// Actiunile de incarcare per tab - pastrate pentru retry manual
 const TAB_LOAD = {
   contracte:    function(id) { loadFisiere(id); },
   corespondenta:function(id) { loadCorespondenta(id); },
@@ -1798,11 +1809,11 @@ function openUat(id) {
   document.getElementById('drawer-body').innerHTML=`
     <div class="tab-bar">
       <button class="tab-btn active" id="tab-btn-main" onclick="switchTab('main')">Main</button>
-      <button class="tab-btn" id="tab-btn-contracte" onclick="switchTab('contracte');loadFisiere('${id}')">Contracte</button>
+      <button class="tab-btn" id="tab-btn-contracte" onclick="switchTab('contracte')">Contracte</button>
       <button class="tab-btn" id="tab-btn-facturi" onclick="switchTab('facturi')">Facturi</button>
-      <button class="tab-btn" id="tab-btn-corespondenta" onclick="switchTab('corespondenta');loadCorespondenta('${id}')">Mail</button>
-      <button class="tab-btn" id="tab-btn-audio" onclick="switchTab('audio');loadAudioTab('${id}')">Audio</button>
-      <button class="tab-btn" id="tab-btn-utile" onclick="switchTab('utile');loadUtile('${id}')">Utile</button>
+      <button class="tab-btn" id="tab-btn-corespondenta" onclick="switchTab('corespondenta')">Mail</button>
+      <button class="tab-btn" id="tab-btn-audio" onclick="switchTab('audio')">Audio</button>
+      <button class="tab-btn" id="tab-btn-utile" onclick="switchTab('utile')">Utile</button>
     </div>
     <div id="tab-main" class="tab-content active">
 
@@ -1884,6 +1895,15 @@ function openUat(id) {
 
   `;
   document.getElementById('drawer').classList.add('open');
+
+  // Preincarca toate taburile in background imediat
+  // Mic delay (50ms) pentru a nu bloca randarea initiala a drawerului
+  setTimeout(function() {
+    loadFisiere(id);
+    loadCorespondenta(id);
+    loadAudioTab(id);
+    loadUtile(id);
+  }, 50);
 }
 
 async function doSaveNote(id) {
