@@ -733,10 +733,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v6.2';
+const APP_VERSION = 'v6.3';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v6.3',
+    data: '10.06.2026',
+    titlu: 'Fix blocare tab-uri după eroare rețea',
+    items: [
+      'Bug critic: după o eroare de rețea, tab-urile Contracte/Mail/Audio rămâneau blocate și nu mai afișau nimic',
+      'Fix: starea se resetează la eroare → retry automat la următoarea vizitare a tab-ului',
+      'loadFisiere: dataset.loaded setat doar la success nu înainte de fetch'
+    ]
+  },
+
   {
     version: 'v6.2',
     data: '10.06.2026',
@@ -2221,6 +2232,7 @@ async function loadAudioTab(uatId) {
     audioData[uatId] = data.fisiere || [];
     renderAudio(uatId);
   } catch(err) {
+    audioData[uatId] = 'error'; // permite retry la urmatoarea vizita
     showLoadingError(elId, err.message);
   }
 }
@@ -2361,8 +2373,8 @@ async function loadFullTranscr(elId, fullName, btnId) {
 
 async function loadFisiere(uatId) {
   const el = document.getElementById('fisiere-' + uatId);
-  if (!el || el.dataset.loaded) return;
-  el.dataset.loaded = '1';
+  if (!el || el.dataset.loaded === 'loading' || el.dataset.loaded === 'ok') return;
+  el.dataset.loaded = 'loading';
   const elId = 'fisiere-' + uatId;
   showLoading(elId, [
     'Conectare la server…',
@@ -2379,6 +2391,7 @@ async function loadFisiere(uatId) {
     const data = await resp.json();
     if (data.error) throw new Error(data.error);
     setLoadingStep(elId, 2, 'done');
+    el.dataset.loaded = 'ok'; // marcheaza success
     const fisiereActive = data.fisiere || [];
     const fisiereArh = data.fisiereArhivate || [];
 
