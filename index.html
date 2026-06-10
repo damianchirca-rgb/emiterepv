@@ -715,10 +715,20 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v5.9';
+const APP_VERSION = 'v6.0';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v6.0',
+    data: '10.06.2026',
+    titlu: 'Fix modal email - deschidere corectă',
+    items: [
+      'Fix click pe email în Căutare - modal se deschide corect',
+      'Înlocuit JSON în data-attribute cu index în array global (mai robust)'
+    ]
+  },
+
   {
     version: 'v5.9',
     data: '10.06.2026',
@@ -2916,6 +2926,11 @@ window.addEventListener('popstate', function(e) {
 });
 
 // ─── MODAL EMAIL GLOBAL ──────────────────────────────────────
+function _openMailByIdx(idx) {
+  const item = _mailModalItems[idx];
+  if (item) openEmailModal(item);
+}
+
 function openEmailModal(itemJson) {
   const i = typeof itemJson === 'string' ? JSON.parse(itemJson) : itemJson;
   const it = i.item || i;
@@ -3040,6 +3055,7 @@ function showLoadingError(elId, msg) {
 
 // ─── GLOBAL SEARCH (Audio + Mail) ──────────────────────────
 let globalAudioData = null;  // top 30 recente (Drive API)
+let _mailModalItems = [];    // stocheaza itemele pentru modal
 let allAudioData    = null;  // tot indexul audio (pentru cautare)
 let globalMailData  = null;  // top 50 recente
 let allMailData     = null;  // tot indexul mail (pentru cautare)
@@ -3139,6 +3155,7 @@ function renderGlobalAudio(q) {
 }
 
 function renderGlobalMail(q) {
+  _mailModalItems = []; // reset la fiecare render
   const el = document.getElementById('global-mail-list');
   if (!el || !globalMailData) return;
   const qn = norm(q || '');
@@ -3175,9 +3192,10 @@ function renderGlobalMail(q) {
     const col = dir==='trimis' ? 'var(--accent)' : 'var(--activ)';
     const icon = dir==='trimis' ? '↑' : '↓';
     const subprev = (it.body_preview||'').substring(0,80);
-    // Serializeaza itemul pentru onclick
-    const itemStr = JSON.stringify(i).replace(/\\/g,'\\\\').replace(/"/g,'&quot;');
-    out += '<div onclick="openEmailModal(JSON.parse(this.dataset.item))" data-item="' + itemStr + '" style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
+    // Stocheaza itemul in array global si referencieaza prin index
+    const mailIdx = _mailModalItems.length;
+    _mailModalItems.push(i);
+    out += '<div onclick="_openMailByIdx(' + mailIdx + ')" style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px">'
       + '<div style="flex:1;min-width:0">'
       + '<span style="font-size:13px;font-weight:700;color:' + col + '">' + (i.localitate||'') + '</span>'
