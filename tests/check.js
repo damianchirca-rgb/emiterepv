@@ -120,6 +120,15 @@ test('Setari view prezent', () => {
   assert(html.includes('id="setari-view"'), 'Setari view lipsește');
 });
 
+test('Service Worker inregistrat', () => {
+  assert(html.includes('serviceWorker'), 'Service Worker lipsește din HTML');
+});
+
+test('sw.js exista', () => {
+  const fs = require('fs');
+  assert(fs.existsSync('sw.js'), 'Fisierul sw.js lipseste din repository');
+});
+
 // ─── 5. VERSIONARE ──────────────────────────────────────────
 console.log('\n📋 5. Versionare');
 
