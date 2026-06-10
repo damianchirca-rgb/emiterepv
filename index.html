@@ -3,6 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <link rel="manifest" href="manifest.json">
+<script>
+  // Inregistreaza Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/emiterepv/sw.js')
+      .then(reg => {
+        // Verifica daca exista o versiune noua
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Versiune noua disponibila - notifica app-ul
+              if (confirm('Versiune nouă disponibilă! Actualizezi acum?')) {
+                newWorker.postMessage('skipWaiting');
+                window.location.reload();
+              }
+            }
+          });
+        });
+      });
+
+    // Reincarca pagina dupa ce SW preia controlul
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) { refreshing = true; window.location.reload(); }
+    });
+  }
+</script>
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -688,10 +715,22 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v5.4';
+const APP_VERSION = 'v5.5';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v5.5',
+    data: '09.06.2026',
+    titlu: 'Service Worker - cache automat',
+    items: [
+      'Adăugat Service Worker cu strategie Network-First',
+      'La update: dialog automat "Versiune nouă disponibilă"',
+      'Cache vechi șters automat la fiecare deploy',
+      'Nu mai e nevoie de ștergere manuală a cache-ului'
+    ]
+  },
+
   {
     version: 'v5.4',
     data: '09.06.2026',
