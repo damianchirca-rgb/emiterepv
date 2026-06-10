@@ -1,0 +1,28 @@
+name: Test Mentenanță PWA
+
+on:
+  push:
+    paths:
+      - 'index.html'
+      - 'sw.js'
+      - 'tests/**'
+  pull_request:
+    paths:
+      - 'index.html'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Verificare automată index.html
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Rulează teste
+        run: node tests/check.js
