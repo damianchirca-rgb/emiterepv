@@ -2635,7 +2635,187 @@ function renderGlobalAudio(q) {
   el.innerHTML = out;
 }
 
+// ─── NAV & VIEWS ─────────────────────────────────────────────
+currentView = currentView || 'lista';
 
+function showView(v) {
+  currentView = v;
+  document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+  const viewEl = document.getElementById(v + '-view');
+  const navEl  = document.getElementById('nav-' + v);
+  if (viewEl) viewEl.classList.add('active');
+  if (navEl)  navEl.classList.add('active');
+  // Ascunde/afiseaza bara de cautare pe tab Lista
+  const searchRow = document.getElementById('search-row');
+  if (searchRow) searchRow.style.display = (v === 'lista') ? '' : 'none';
+  if (v === 'setari') initSetari();
+  if (v === 'cautare' && !globalAudioData) loadGlobalData && loadGlobalData();
+}
+
+function renderCurrent() { showView(currentView); }
+
+// ─── FILTRARE LISTA ───────────────────────────────────────────
+let currentFilter = 'all';
+let currentSearch = '';
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderList();
+}
+
+function onSearch(val) {
+  currentSearch = val;
+  renderList();
+}
+
+// ─── STATS TOGGLE ────────────────────────────────────────────
+const STAT_SECTIONS = {
+  activ:   { listId: 'stat-list-activ',   scrollTo: 'stat-list-activ' },
+  inactiv: { listId: 'stat-list-inactiv', scrollTo: 'stat-list-inactiv' },
+  generat: { listId: 'stat-list-generat', scrollTo: 'stat-list-generat' },
+  urgente: { listId: 'stat-list-urgente', scrollTo: 'stat-list-urgente' }
+};
+let activeStatSection = null;
+
+function toggleStatList(key) {
+  const sec = STAT_SECTIONS[key];
+  if (!sec) return;
+  const el = document.getElementById(sec.listId);
+  if (!el) return;
+  if (activeStatSection === key) {
+    el.style.display = 'none';
+    activeStatSection = null;
+    return;
+  }
+  Object.entries(STAT_SECTIONS).forEach(function([k, s]) {
+    const other = document.getElementById(s.listId);
+    if (other && k !== key) other.style.display = 'none';
+  });
+  el.style.display = 'block';
+  activeStatSection = key;
+  setTimeout(function() {
+    const anchor = document.getElementById(sec.scrollTo);
+    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+}
+
+// ─── CAUTARE DOCUMENTE ────────────────────────────────────────
+let activeTips = new Set(['contract','factura','pv','util']);
+
+function toggleTip(tip, el) {
+  if (activeTips.has(tip)) { activeTips.delete(tip); el.classList.remove('active'); }
+  else { activeTips.add(tip); el.classList.add('active'); }
+}
+
+function doCautare() {
+  const q = (document.getElementById('cautare-input') || {}).value || '';
+  if (!q.trim()) return;
+  const qn = norm(q);
+  const el = document.getElementById('cautare-rezultate');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">Se caută…</div>';
+  fetch(API_URL + '?action=drive_search&q=' + encodeURIComponent(q), {cache:'no-store'})
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      const items = (data.items || []).filter(function(item) {
+        const t = (item.tip||'').toLowerCase();
+        return activeTips.has(t);
+      });
+      if (!items.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">Niciun rezultat.</div>'; return; }
+      el.innerHTML = items.map(function(item){
+        return '<div onclick="deschideFisier('' + (item.id||'') + '')" style="padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer">'
+          + '<div style="font-size:13px;font-weight:600">' + (item.name||'') + '</div>'
+          + '<div style="font-size:11px;color:var(--text3)">' + (item.uat||'') + ' · ' + (item.tip||'') + '</div>'
+          + '</div>';
+      }).join('');
+    })
+    .catch(function(e){ el.innerHTML = '<div style="color:var(--eroare);font-size:13px;padding:12px">Eroare: ' + e.message + '</div>'; });
+}
+
+function deschideFisier(id) {
+  if (!id) return;
+  window.open('https://drive.google.com/file/d/' + id + '/view', '_blank');
+}
+
+// ─── SETARI ───────────────────────────────────────────────────
+function initSetari() {
+  const infoUats = document.getElementById('info-uats');
+  const infoTs   = document.getElementById('info-ts');
+  const infoSize = document.getElementById('info-size');
+  const infoVer  = document.getElementById('info-version-label');
+  if (infoUats) infoUats.textContent = uats.length || '—';
+  if (infoTs) {
+    const ts = localStorage.getItem('uats_ts');
+    infoTs.textContent = ts ? new Date(ts).toLocaleString('ro-RO') : '—';
+  }
+  if (infoSize) {
+    const cache = localStorage.getItem('uats_cache') || '';
+    infoSize.textContent = (cache.length / 1024).toFixed(0) + ' KB';
+  }
+  if (infoVer) infoVer.textContent = APP_NAME + ' ' + APP_VERSION;
+  // Render changelog
+  const clEl = document.getElementById('changelog-list');
+  if (clEl && typeof CHANGELOG !== 'undefined') {
+    clEl.innerHTML = CHANGELOG.map(function(v) {
+      return '<div style="margin-bottom:12px;background:var(--surface2);border-radius:10px;padding:12px;border-left:3px solid var(--accent)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+        + '<span style="font-size:13px;font-weight:700">' + v.version + ' — ' + v.titlu + '</span>'
+        + '<span style="font-size:10px;color:var(--text3)">' + v.data + '</span>'
+        + '</div>'
+        + '<ul style="margin:0;padding-left:16px">'
+        + v.items.map(function(item) {
+            return '<li style="font-size:11px;color:var(--text2);margin-bottom:3px;line-height:1.4">' + item + '</li>';
+          }).join('')
+        + '</ul>'
+        + '</div>';
+    }).join('');
+  }
+}
+
+function currentTheme() {
+  return document.documentElement.classList.contains('light') ? 'light' : 'dark';
+}
+
+function applyThemeColors() {
+  const theme = currentTheme();
+  const saved = JSON.parse(localStorage.getItem('cardColors_' + theme) || 'null');
+  if (!saved) return;
+  const root = document.documentElement;
+  Object.entries(saved).forEach(function([k,v]) { root.style.setProperty(k, v); });
+}
+
+function setThemeMode(mode) {
+  if (mode === 'light') document.documentElement.classList.add('light');
+  else document.documentElement.classList.remove('light');
+  localStorage.setItem('theme', mode);
+  document.getElementById('theme-btn').textContent = mode === 'light' ? '☀️' : '🌙';
+  applyThemeColors();
+  if (typeof initSetari === 'function' && currentView === 'setari') initSetari();
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+// Aplica tema salvata
+const savedTheme = localStorage.getItem('theme') || 'dark';
+if (savedTheme === 'light') document.documentElement.classList.add('light');
+const themeBtnEl = document.getElementById('theme-btn');
+if (themeBtnEl) themeBtnEl.textContent = savedTheme === 'light' ? '☀️' : '🌙';
+applyThemeColors();
+
+const cached = localStorage.getItem('uats_cache');
+if (cached) {
+  uats = JSON.parse(cached);
+  const ts = localStorage.getItem('uats_ts');
+  showMainUI();
+  renderCurrent();
+  const d = ts ? new Date(ts).toLocaleString('ro-RO') : '?';
+  document.getElementById('last-sync').textContent = 'Cache din ' + d;
+  setTimeout(checkForUpdates, 2000);
+} else {
+  syncData();
+}
 </script>
 </body>
 </html>
