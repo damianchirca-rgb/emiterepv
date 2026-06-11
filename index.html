@@ -733,10 +733,20 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v7.8';
+const APP_VERSION = 'v7.9';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v7.9',
+    data: '11.06.2026',
+    titlu: 'Fix checkForUpdates + sistem update restaurat',
+    items: [
+      'Adăugate: checkForUpdates, applyUpdates, showUpdateBanner, dismissUpdate',
+      'Banner actualizare funcțional din nou'
+    ]
+  },
+
   {
     version: 'v7.8',
     data: '11.06.2026',
@@ -2815,6 +2825,42 @@ function setThemeMode(mode) {
   document.getElementById('theme-btn').textContent = mode === 'light' ? '☀️' : '🌙';
   applyThemeColors();
   if (typeof initSetari === 'function' && currentView === 'setari') initSetari();
+}
+
+
+// ─── UPDATE SYSTEM ────────────────────────────────────────────
+var _pendingServerTs = null;
+
+async function checkForUpdates() {
+  try {
+    const resp = await fetch(API_URL + '?action=version', {cache:'no-store'});
+    const data = await resp.json();
+    const serverTs = data.ts || 0;
+    const localTs  = parseInt(localStorage.getItem('server_ts') || '0', 10);
+    if (serverTs > localTs) {
+      _pendingServerTs = serverTs;
+      showUpdateBanner();
+    }
+  } catch(e) {}
+}
+
+function showUpdateBanner() {
+  const b = document.getElementById('update-banner');
+  if (b) b.classList.add('show');
+}
+
+function dismissUpdate() {
+  const b = document.getElementById('update-banner');
+  if (b) b.classList.remove('show');
+  if (_pendingServerTs) {
+    localStorage.setItem('server_ts', String(_pendingServerTs));
+    _pendingServerTs = null;
+  }
+}
+
+async function applyUpdates() {
+  dismissUpdate();
+  await syncData();
 }
 
 // ─── INIT ────────────────────────────────────────────────────
