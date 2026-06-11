@@ -816,10 +816,20 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v10.3';
+const APP_VERSION = 'v10.4';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v10.4',
+    data: '11.06.2026',
+    titlu: 'Fix buton Back Android',
+    items: [
+      'Butonul Back Android inchide drawer-ul UAT in loc sa inchida aplicatia',
+      'History API: pushState la deschidere UAT, popstate handler la inchidere'
+    ]
+  },
+
   {
     version: 'v10.3',
     data: '11.06.2026',
@@ -1891,7 +1901,7 @@ function renderList() {
     const badgeClass = isActiv ? 'status-ACTIV' : 'status-INACTIV';
     const badgeText = isActiv ? '✓ ACTIV' : '✕ INACTIV';
 
-    return `<div class="uat-card ${urgCls}" onclick="openUat('${id}')">
+    return `<div class="uat-card ${urgCls}" onclick="openUatWithHistory('${id}')">
       <div class="uat-card-inner">
         <div class="card-top">
           <div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
@@ -3775,7 +3785,7 @@ function renderMentenanta() {
   // Lista UAT-uri
   out += '<div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:8px">PRIMĂRII</div>';
   rows.forEach(function(r) {
-    out += '<div data-uid="' + (r.id||'') + '" onclick="openUat(this.dataset.uid)" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border-radius:10px;margin-bottom:6px;cursor:pointer">';
+    out += '<div data-uid="' + (r.id||'') + '" onclick="openUatWithHistory(this.dataset.uid)" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border-radius:10px;margin-bottom:6px;cursor:pointer">';
     out += '<div><div style="font-size:13px;font-weight:600">' + r.loc + '</div>';
     out += '<div style="font-size:10px;color:var(--text3)">' + r.jud + (r.activ?'':' · INACTIV') + '</div></div>';
     out += '<div style="font-size:14px;font-weight:700;color:var(--accent)">' + fmt(r.val) + '</div>';
@@ -3816,7 +3826,7 @@ function renderContacte() {
     var col = x.days < 0 ? 'var(--eroare)' : x.days <= 7 ? 'var(--inactiv)' : x.days <= 30 ? 'var(--accent)' : 'var(--text3)';
     var label = x.days < 0 ? 'Depășit cu ' + Math.abs(x.days) + 'z' : x.days === 0 ? 'Azi' : 'Peste ' + x.days + 'z';
     var uid = x.u.id || '';
-    return '<div data-uid="' + uid + '" onclick="openUat(this.dataset.uid)" style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
+    return '<div data-uid="' + uid + '" onclick="openUatWithHistory(this.dataset.uid)" style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
       + '<div style="display:flex;justify-content:space-between;align-items:center">'
       + '<div><div style="font-size:13px;font-weight:700">' + (getField(x.u,'Localitate')||x.u.localitate||'') + '</div>'
       + '<div style="font-size:11px;color:var(--text3)">' + (getField(x.u,'CodJudet')||getField(x.u,'Judet')||x.u.judet||'') + ' · ' + x.prog + '</div></div>'
@@ -3872,6 +3882,32 @@ async function applyUpdates() {
   await syncData();
 }
 
+
+
+// ─── ANDROID BACK BUTTON ─────────────────────────────────────
+// Cand deschidem un UAT, push state in history
+// Cand userul apasa Back, popstate inchide drawer-ul
+
+function openUatWithHistory(id) {
+  history.pushState({ uatOpen: true, uatId: id }, '', '');
+  openUat(id);
+}
+
+window.addEventListener('popstate', function(e) {
+  var drawer = document.getElementById('drawer');
+  if (drawer && drawer.classList.contains('open')) {
+    // Drawer deschis -> il inchidem
+    closeDrawer();
+    // Nu lasam browser-ul sa navigheze inapoi
+    history.pushState(null, '', '');
+  }
+});
+
+// Push state initial ca sa avem un entry in history
+// (previne inchiderea aplicatiei la primul back)
+window.addEventListener('load', function() {
+  history.replaceState({ app: true }, '', '');
+});
 
 // ─── SWIPE INTRE TABURI UAT ──────────────────────────────────
 (function() {
