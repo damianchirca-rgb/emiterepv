@@ -431,7 +431,7 @@
         <div class="num" id="s-generat">—</div><div class="lbl">Contracte expiră (&lt;30 zile)</div>
       </div>
       <div class="stat-card e" onclick="toggleStatList('urgente')" style="cursor:pointer">
-        <div class="num" id="s-urgente">—</div><div class="lbl">Contacte urgente</div>
+        <div class="num" id="s-urgente">—</div><div class="lbl">Programări urgente</div>
       </div>
     </div>
     <!-- Liste expandabile pentru carduri -->
@@ -678,7 +678,7 @@
     </button>
     <button class="nav-btn" id="nav-contacte" onclick="showView('contacte')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      <span>Contacte</span>
+      <span>Programări</span>
     </button>
     <button class="nav-btn" id="nav-cautare" onclick="showView('cautare')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -733,10 +733,20 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v7.3';
+const APP_VERSION = 'v7.4';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v7.4',
+    data: '10.06.2026',
+    titlu: 'Redenumire Contacte → Programări',
+    items: [
+      'Navbar: Contacte → Programări',
+      'Statistici: Contacte urgente → Programări urgente'
+    ]
+  },
+
   {
     version: 'v7.3',
     data: '10.06.2026',
@@ -975,7 +985,7 @@ const CHANGELOG = [
     titlu: 'Statistici unificate',
     items: [
       'Toate listele din statistici apar inline sub grid (același stil)',
-      'Eliminate secțiunile separate "Contacte depășite" și "Contracte care expiră"',
+      'Eliminate secțiunile separate "Programări depășite" și "Contracte care expiră"',
       'Click pe orice card → lista apare direct sub grid, click din nou → dispare'
     ]
   },
@@ -1077,7 +1087,7 @@ const CHANGELOG = [
       'Tab Audio: transcriere completă + sumar GPT integral din Drive',
       'Smart update: notificare la date noi, actualizare selectivă per UAT',
       'Cache audio persistent între taburi (instant la revenire)',
-      'Statistici: contracte care expiră + contacte depășite cu detalii',
+      'Statistici: contracte care expiră + programări depășite cu detalii',
       'Versioning aplicație cu changelog'
     ]
   },
@@ -1512,7 +1522,7 @@ function renderStats() {
   const urgenteEl = document.getElementById('stat-list-urgente');
   if (urgenteEl) {
     urgenteEl.innerHTML = urgenteList.length
-      ? '<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:0 2px">' + urgenteList.length + ' contacte depășite</div>'
+      ? '<div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:0 2px">' + urgenteList.length + ' programări depășite</div>'
       + urgenteList.map(u => {
           const d = getDaysUntil(getField(u,'DataUrmatorContact'));
           const loc = getField(u,'Localitate');
@@ -1525,7 +1535,7 @@ function renderStats() {
             + '<span style="font-size:11px;color:var(--eroare);font-weight:600">' + (-d) + 'z depășit</span>'
             + '</div>';
         }).join('')
-      : '<div style="font-size:12px;color:var(--activ);padding:8px">✅ Niciun contact depășit</div>';
+      : '<div style="font-size:12px;color:var(--activ);padding:8px">✅ Niciun programare depășită</div>';
   }
 
   // Lista contracte care expira curand
