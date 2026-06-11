@@ -733,10 +733,33 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v7.5';
+const APP_VERSION = 'v7.6';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v7.6',
+    data: '11.06.2026',
+    titlu: 'Audio carduri stil Mail - container unificat',
+    items: [
+      'Transcriere și Sumar GPT grupate într-un container cu border-left identic cu body-ul din Mail',
+      'Separator vizual între Transcriere și Sumar GPT',
+      'Aplicat în UAT Audio și Căutare Audio recente (renderGlobalAudio adaugat)'
+    ]
+  },
+
+  {
+    version: 'v7.5',
+    data: '10.06.2026',
+    titlu: 'Audio carduri stil Mail + Programări',
+    items: [
+      'Transcriere și Sumar GPT grupate într-un singur container (ca body-ul la Mail)',
+      'Separator vizual între Transcriere și Sumar GPT',
+      'Același stil aplicat în UAT Audio și Căutare Audio',
+      'Redenumit: Contacte → Programări în navbar și statistici'
+    ]
+  },
+
   {
     version: 'v7.5',
     data: '10.06.2026',
@@ -2462,1014 +2485,78 @@ function renderAudio(uatId) {
     const viewUrl = f.view || '';
     const fullName = (f.fullName || '');
 
-    // Card wrapper
-    html += '<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)">';
+    // Card — acelasi stil ca Mail
+    html += '<div style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:10px;border-left:3px solid var(--accent)">';
 
-    // Header: data + buton ascultare
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:' + (transcr||sumar?'10px':'0') + '">';
+    // Header: data + nume + play
+    html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:' + (transcr||sumar?'10px':'0') + '">';
     html += '<div style="flex:1;min-width:0">';
-    html += '<div style="font-size:13px;font-weight:600">🎤 ' + (dateRo || f.name.substring(0,30)) + '</div>';
-    html += '<div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.name + '</div>';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3">🎤 ' + (dateRo || f.name.substring(0,30)) + '</div>';
+    html += '<div style="font-size:10px;color:var(--text3);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.name + '</div>';
     html += '</div>';
     if (viewUrl) {
-      html += '<a href="' + viewUrl + '" target="_blank" style="flex-shrink:0;padding:8px 14px;background:var(--accent);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">▶ Ascultă</a>';
-    } else {
-      html += '<span style="font-size:10px;color:var(--eroare)">⚠️ fără ID</span>';
+      html += '<a href="' + viewUrl + '" target="_blank" style="flex-shrink:0;padding:6px 14px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">▶ Ascultă</a>';
     }
     html += '</div>';
 
-    // Transcriere
-    if (transcr) {
-      const tShort = transcr.length > 300 ? transcr.substring(0, 300) + '…' : transcr;
-      const tNeedsFull = transcr.length >= 300;
-      html += '<div style="background:var(--surface3);border-radius:8px;padding:10px;margin-bottom:' + (sumar?'8px':'0') + ';border-left:2px solid var(--text3)">';
-      html += '<div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:6px">📝 Transcriere</div>';
-      html += '<div id="tr-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.6;font-style:italic;white-space:pre-wrap"';
-      html += ' data-short="' + tShort.replace(/"/g, '&quot;') + '"';
-      html += ' data-full="' + transcr.replace(/"/g, '&quot;') + '"';
-      html += ' data-expanded="0">' + tShort + '</div>';
-      if (tNeedsFull && fullName) {
-        html += '<button id="tr-btn-' + k + '"';
-        html += ' data-elid="tr-text-' + k + '"';
-        html += ' data-fname="' + fullName.replace(/"/g, '&quot;') + '"';
-        html += ' data-btnid="tr-btn-' + k + '"';
-        html += ' onclick="loadFullTranscr(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"';
-        html += ' style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">📄 Citește tot</button>';
+    // Continut: Transcriere + Sumar in acelasi container (ca body-ul la mail)
+    if (transcr || sumar) {
+      html += '<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--text3)">';
+
+      // Transcriere
+      if (transcr) {
+        const tShort = transcr.length > 300 ? transcr.substring(0, 300) + '…' : transcr;
+        html += '<div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:4px">📝 Transcriere</div>';
+        html += '<div id="tr-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.6;font-style:italic;white-space:pre-wrap"'
+          + ' data-short="' + tShort.replace(/"/g,'&quot;') + '"'
+          + ' data-full="' + transcr.replace(/"/g,'&quot;') + '"'
+          + ' data-expanded="0">' + tShort + '</div>';
+        if (transcr.length >= 300 && fullName) {
+          html += '<button id="tr-btn-' + k + '" data-elid="tr-text-' + k + '" data-fname="' + fullName.replace(/"/g,'&quot;') + '" data-btnid="tr-btn-' + k + '"'
+            + ' onclick="loadFullTranscr(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"'
+            + ' style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">📄 Citește tot</button>';
+        }
+        if (sumar) html += '<div style="height:1px;background:var(--border);margin:10px 0"></div>';
       }
-      html += '</div>';
-      html += '</div>';
+
+      // Sumar GPT
+      if (sumar) {
+        const sShort = sumar.substring(0, 300) + (sumar.length >= 300 ? '…' : '');
+        html += '<div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:4px">🤖 Sumar GPT</div>';
+        html += '<div id="sm-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"'
+          + ' data-short="' + sShort.replace(/"/g,'&quot;') + '"'
+          + ' data-full="' + sumar.replace(/"/g,'&quot;') + '"'
+          + ' data-expanded="0">' + sShort + '</div>';
+        if (fullName) {
+          html += '<button id="sm-btn-' + k + '" data-elid="sm-text-' + k + '" data-fname="' + fullName.replace(/"/g,'&quot;') + '" data-btnid="sm-btn-' + k + '"'
+            + ' onclick="loadFullSumar(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"'
+            + ' style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent2);font-size:11px;cursor:pointer;font-family:inherit">🤖 Citește integral</button>';
+        }
+      }
+
+      html += '</div>'; // container continut
     }
 
-    // Sumar GPT - indexul are max ~300 chars, fisierul complet e _sumar.txt in Drive
-    if (sumar) {
-      const sShort = sumar.substring(0, 300) + (sumar.length >= 300 ? '…' : '');
-      html += '<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">';
-      html += '<div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:6px">🤖 Sumar GPT</div>';
-      html += '<div id="sm-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"';
-      html += ' data-short="' + sShort.replace(/"/g, '&quot;') + '"';
-      html += ' data-full="' + sumar.replace(/"/g, '&quot;') + '"';
-      html += ' data-expanded="0">' + sShort + '</div>';
-      html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">';
-      if (fullName) {
-        html += '<button id="sm-btn-' + k + '" data-elid="sm-text-' + k + '" data-fname="' + fullName.replace(/"/g, '&quot;') + '" data-btnid="sm-btn-' + k + '"';
-        html += ' onclick="loadFullSumar(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"';
-        html += ' style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent2);font-size:11px;cursor:pointer;font-family:inherit">🤖 Citește integral</button>';
-      }
-      html += '</div>';
-      html += '</div>';
-    }
-
-    html += '</div>'; // fine card
+    html += '</div>'; // card
   });
 
   elAudio.innerHTML = html;
 }
 
-function toggleExpand(elId, btn) {
-  const el = document.getElementById(elId);
-  if (!el) return;
-  const isExpanded = el.dataset.expanded === '1';
-  if (isExpanded) {
-    el.textContent = el.dataset.short || '';
-    el.dataset.expanded = '0';
-    if (btn) btn.textContent = '▼ Citește tot';
-  } else {
-    el.textContent = el.dataset.full || el.dataset.short || '';
-    el.dataset.expanded = '1';
-    if (btn) btn.textContent = '▲ Restrânge';
-  }
-}
-
-async function loadFullTranscr(elId, fullName, btnId) {
-  const el  = document.getElementById(elId);
-  const btn = document.getElementById(btnId);
-  if (!el || !fullName) return;
-
-  if (el.dataset.loaded === '1') { toggleExpand(elId, btn); return; }
-
-  if (btn) { btn.textContent = 'Se încarcă…'; btn.disabled = true; }
-
-  try {
-    const resp = await fetch(API_URL + '?action=transcriere&full_name=' + encodeURIComponent(fullName), {cache:'no-store'});
-    const data = await resp.json();
-    if (data.eroare) {
-      if (btn) { btn.textContent = '⚠️ ' + data.eroare; btn.disabled = false; }
-      return;
-    }
-    const fullText = data.text || '';
-    el.dataset.full    = fullText;
-    el.dataset.loaded  = '1';
-    el.dataset.expanded = '1';
-    el.textContent = fullText;
-    if (btn) {
-      btn.textContent = '▲ Restrânge';
-      btn.disabled = false;
-      btn.setAttribute('onclick', "toggleExpand('" + elId + "', this)");
-    }
-  } catch(err) {
-    if (btn) { btn.textContent = '⚠️ Eroare rețea'; btn.disabled = false; }
-  }
-}
-// ─── CORESPONDENTA ──────────────────────────────────────────
-
-
-
-async function loadFisiere(uatId) {
-  const elId = 'fisiere-' + uatId;
-  const el = document.getElementById(elId);
-  if (!el) return;
-  if (el.dataset.loaded === 'loading' || el.dataset.loaded === 'ok') return;
-
-  // Incarca din localStorage instant
-  const cached = loadUatCache(uatId, 'fisiere');
-  if (cached) {
-    renderFisiereContracte(el, cached);
-    el.dataset.loaded = 'ok';
-    _bgRefreshFisiere(uatId, el);
-    return;
-  }
-
-  el.dataset.loaded = 'loading';
-  showLoading(elId, ['Conectare la server…','Se caută fișierele contractelor…','Se procesează lista…']);
-  try {
-    setLoadingStep(elId, 0, 'done');
-    setLoadingStep(elId, 1, 'active');
-    const resp = await fetchWT(API_URL + '?action=contracte_fisiere&uat_id=' + uatId, {});
-    if (!resp.ok) throw new Error('Server ' + resp.status);
-    setLoadingStep(elId, 1, 'done');
-    setLoadingStep(elId, 2, 'active');
-    const data = await resp.json();
-    if (data.error) throw new Error(data.error);
-    setLoadingStep(elId, 2, 'done');
-    el.dataset.loaded = 'ok';
-    saveUatCache(uatId, 'fisiere', data);
-    renderFisiereContracte(el, data);
-  } catch(err) {
-    el.dataset.loaded = '';
-    showLoadingError(elId, err.message);
-  }
-}
-
-function renderFisiereContracte(el, data) {
-  const fisiereActive = data.fisiere || [];
-  const fisiereArh    = data.fisiereArhivate || [];
-  if (!fisiereActive.length && !fisiereArh.length) {
-    el.textContent = 'Niciun fișier găsit.';
-    return;
-  }
-  // Render din functia originala
-  _doRenderFisiere(el, fisiereActive, fisiereArh, el.id.replace('fisiere-',''));
-}
-
-async function _bgRefreshFisiere(uatId, el) {
-  try {
-    const resp = await fetchWT(API_URL + '?action=contracte_fisiere&uat_id=' + uatId, {});
-    if (!resp.ok) return;
-    const data = await resp.json();
-    if (data.error) return;
-    const cached = loadUatCache(uatId, 'fisiere');
-    if (JSON.stringify(data) !== JSON.stringify(cached)) {
-      saveUatCache(uatId, 'fisiere', data);
-      renderFisiereContracte(el, data);
-      showToast('📄 Fișiere contracte actualizate');
-    }
-  } catch(e) {}
-}
-
-function _doRenderFisiere(el, fisiereActive, fisiereArh, uatId) {
-    if (!fisiereActive.length && !fisiereArh.length) {
-      el.textContent = 'Niciun fișier găsit.';
-      return;
-    }
-
-    function fileRow(f, isArhivat) {
-      const icon = f.type === 'pdf' ? '📄' : '🖼';
-      const shortName = f.name.replace(/^\d+_[^_]+_/, '').replace(/\.(pdf|PDF|jpg|jpeg|png|JPG|JPEG|PNG)$/, '');
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${isArhivat?'color:var(--text3)':''}">${icon} ${shortName}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px">${f.name}</div>
-        </div>
-        <a href="${f.view}" target="_blank" style="flex-shrink:0;margin-left:10px;padding:6px 12px;background:${isArhivat?'var(--surface3)':'var(--accent)'};color:${isArhivat?'var(--text2)':'white'};border:${isArhivat?'1px solid var(--border)':'none'};border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">Deschide</a>
-      </div>`;
-    }
-
-    const arhSectId = 'fsarh-' + uatId;
-    let html = fisiereActive.map(f => fileRow(f, false)).join('');
-
-    if (fisiereArh.length) {
-      html += `<div style="margin-top:12px">
-        <div onclick="const b=document.getElementById('${arhSectId}');b.style.display=b.style.display==='none'?'block':'none';this.querySelector('.arr').textContent=b.style.display==='none'?'▼':'▲'"
-          style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface3);border-radius:8px;cursor:pointer;margin-bottom:4px">
-          <span style="font-size:12px;font-weight:600;color:var(--text2)">📦 Fișiere arhivate <span style="font-size:11px;background:var(--surface2);padding:1px 6px;border-radius:10px;margin-left:4px">${fisiereArh.length}</span></span>
-          <span class="arr" style="color:var(--text3);font-size:12px">▼</span>
-        </div>
-        <div id="${arhSectId}" style="display:none">
-          ${fisiereArh.map(f => fileRow(f, true)).join('')}
-        </div>
-      </div>`;
-    }
-
-    el.innerHTML = html;
-}
-
-
-// ─── NAV & FILTER ──────────────────────────────────────────
-function showView(v) {
-  currentView=v;
-  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
-  // Ascunde/afiseaza bara de cautare si filtre doar pe tab Lista
-  const searchRow = document.getElementById('search-row');
-  const filterBar = document.getElementById('filter-bar');
-  const filterBtn = document.getElementById('filter-btn');
-  if (searchRow) searchRow.style.display = v==='lista' ? '' : 'none';
-  if (filterBar && v!=='lista') { filterBar.style.display='none'; filterBarOpen=false; if(filterBtn) filterBtn.classList.remove('active'); }
-  if(v==='lista'){document.getElementById('list-view').classList.add('active');document.getElementById('nav-lista').classList.add('active');renderList();}
-  else if(v==='contacte'){document.getElementById('contacts-view').classList.add('active');document.getElementById('nav-contacte').classList.add('active');renderContacts();}
-  else if(v==='cautare'){document.getElementById('cautare-view').classList.add('active');document.getElementById('nav-cautare').classList.add('active');if(!globalAudioData)loadGlobalData();setTimeout(()=>document.getElementById('cautare-input').focus(),100);}
-  else if(v==='mentenanta'){document.getElementById('mentenanta-view').classList.add('active');document.getElementById('nav-mentenanta').classList.add('active');loadMentenanta();}
-  else if(v==='stats'){document.getElementById('stats-view').classList.add('active');document.getElementById('nav-stats').classList.add('active');renderStats();}
-  else if(v==='setari'){document.getElementById('setari-view').classList.add('active');document.getElementById('nav-setari').classList.add('active');initSetari();}
-}
-
-// ─── CAUTARE ───────────────────────────────────────────────
-let activeTips = new Set(['contract','factura','pv','util']);
-function toggleTip(tip, el) {
-  if(activeTips.has(tip)) { activeTips.delete(tip); el.classList.remove('active'); }
-  else { activeTips.add(tip); el.classList.add('active'); }
-}
-
-async function doCautare() {
-  const q = document.getElementById('cautare-input').value.trim();
-  if(q.length < 2) { showToast('Minim 2 caractere'); return; }
-  const el = document.getElementById('cautare-rezultate');
-  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3)"><div class="spinner" style="margin:0 auto 12px"></div>Se caută…</div>';
-  try {
-    const resp = await fetch(`${API_URL}?action=cautare&q=${encodeURIComponent(q)}`, {cache:'no-store'});
-    const data = await resp.json();
-    if(data.error) throw new Error(data.error);
-    const filtered = data.rezultate.filter(r => activeTips.has(r.tip));
-    if(!filtered.length) { el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">Niciun rezultat găsit</div>'; return; }
-    const tipIcon = {contract:'📄',factura:'💰',pv:'📋',util:'📁'};
-    const tipLabel = {contract:'Contract',factura:'Factură',pv:'Proces verbal',util:'Fișier util'};
-    el.innerHTML = `<div style="font-size:11px;color:var(--text3);padding:4px 0 10px">${filtered.length} rezultate pentru „${q}"</div>` +
-      filtered.map(r => {
-        const uat = r.uatId ? uats.find(u=>String(u['ID'])===r.uatId) : null;
-        const uatName = uat ? getField(uat,'Localitate') : '';
-        const shortName = r.filename
-          .replace(/^\d+_+(?:f1|f2|general)_+/i, '')
-          .replace(/\.(pdf|jpg|jpeg|png)$/i, '')
-          .replace(/_/g, ' ');
-        const highlighted = r.snippet.replace(new RegExp(q,'gi'), m=>`<mark style="background:rgba(99,102,241,0.3);color:var(--text);border-radius:3px">${m}</mark>`);
-        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
-            <div>
-              <span style="font-size:10px;padding:2px 7px;border-radius:8px;background:var(--surface2);color:var(--text2)">${tipIcon[r.tip]} ${tipLabel[r.tip]}</span>
-              ${uatName?`<span style="font-size:10px;margin-left:6px;color:var(--accent2)">${uatName}</span>`:''}
-            </div>
-            ${r.viewUrl?`<a href="${r.viewUrl}" target="_blank" style="flex-shrink:0;padding:5px 10px;background:var(--accent);color:white;border-radius:8px;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap">Deschide</a>`:''}
-          </div>
-          <div style="font-size:12px;font-weight:600;margin-bottom:4px;word-break:break-word">${shortName}</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.5">${highlighted}</div>
-        </div>`;
-      }).join('');
-  } catch(err) {
-    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
-  }
-}
-
-// ─── MENTENANTA ─────────────────────────────────────────────
-let mentenantaLoaded = false;
-async function loadMentenanta() {
-  if(mentenantaLoaded) return;
-  const el = document.getElementById('mentenanta-content');
-  try {
-    const resp = await fetch(`${API_URL}?action=mentenanta`, {cache:'no-store'});
-    const data = await resp.json();
-    if(data.error) throw new Error(data.error);
-    mentenantaLoaded = true;
-    el.innerHTML = `
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px">
-        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Total mentenanță / lună</div>
-        <div style="font-size:36px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--activ)">${data.totalGeneral.toLocaleString('ro-RO')} Lei</div>
-        <div style="display:flex;gap:16px;margin-top:12px">
-          <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px">
-            <div style="font-size:10px;color:var(--text3);margin-bottom:4px">Daily Business S.R.L.</div>
-            <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent2)">${data.totalF1.toLocaleString('ro-RO')} Lei</div>
-          </div>
-          <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px">
-            <div style="font-size:10px;color:var(--text3);margin-bottom:4px">Daily Business Technology</div>
-            <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--semnat)">${data.totalF2.toLocaleString('ro-RO')} Lei</div>
-          </div>
-        </div>
-      </div>
-      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;padding:4px 0 8px">Detaliu per UAT (${data.uatList.length})</div>
-      ${data.uatList.map(u=>`
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px" onclick="openUat('${u.id}')">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="font-size:14px;font-weight:600">${u.localitate}</div>
-              <div style="font-size:11px;color:var(--text3);margin-top:2px">${u.judet}</div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:15px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--activ)">${u.total.toLocaleString('ro-RO')} Lei</div>
-              <div style="font-size:10px;color:var(--text3)">/lună</div>
-            </div>
-          </div>
-          ${u.aplicatii.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${u.aplicatii.map(a=>`<span style="font-size:10px;padding:2px 8px;background:var(--surface2);border-radius:6px;color:var(--text2)">${a.nume} · ${a.pret} Lei</span>`).join('')}</div>`:''}
-        </div>
-      `).join('')}
-    `;
-  } catch(err) {
-    el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--eroare)">Eroare: ${err.message}</div>`;
-  }
-}
-function renderCurrent(){showView(currentView);}
-function setFilter(f,el){currentFilter=f;document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderList();if(currentView!=='lista')showView('lista');}
-function toggleFilterBar(){filterBarOpen=!filterBarOpen;document.getElementById('filter-bar').style.display=filterBarOpen?'flex':'none';document.getElementById('filter-btn').classList.toggle('active',filterBarOpen);}
-
-let searchTimer;
-document.getElementById('search').addEventListener('input',e=>{
-  clearTimeout(searchTimer);
-  searchTimer=setTimeout(()=>{currentSearch=e.target.value;renderList();if(currentView!=='lista')showView('lista');},150);
-});
-
-// Swipe to close: dezactivat (pagina full-screen)
-
-// ─── STATS TOGGLE ────────────────────────────────────────────
-const STAT_SECTIONS = {
-  activ:   { listId: 'stat-list-activ',   scrollTo: 'stat-list-activ' },
-  inactiv: { listId: 'stat-list-inactiv', scrollTo: 'stat-list-inactiv' },
-  generat: { listId: 'stat-list-generat', scrollTo: 'stat-list-generat' },
-  urgente: { listId: 'stat-list-urgente', scrollTo: 'stat-list-urgente' }
-};
-let activeStatSection = null;
-
-function toggleStatList(key) {
-  const sec = STAT_SECTIONS[key];
-  if (!sec) return;
-  const el = document.getElementById(sec.listId);
-  if (!el) return;
-
-  // Daca era deja deschis, inchide
-  if (activeStatSection === key) {
-    el.style.display = 'none';
-    activeStatSection = null;
-    return;
-  }
-
-  // Inchide orice alta sectiune deschisa
-  Object.entries(STAT_SECTIONS).forEach(function([k, s]) {
-    const other = document.getElementById(s.listId);
-    if (other && k !== key) other.style.display = 'none';
-  });
-
-  // Deschide aceasta sectiune
-  el.style.display = 'block';
-  activeStatSection = key;
-
-  // Scroll la sectiune
-  setTimeout(function() {
-    const anchor = document.getElementById(sec.scrollTo);
-    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 50);
-}
-
-// ─── SETARI ────────────────────────────────────────────────
-const ACCENT_PRESETS = [
-  { label: 'Indigo',   value: '#6366f1' },
-  { label: 'Violet',   value: '#8b5cf6' },
-  { label: 'Roz',      value: '#ec4899' },
-  { label: 'Cyan',     value: '#06b6d4' },
-  { label: 'Verde',    value: '#10b981' },
-  { label: 'Portoc.',  value: '#f59e0b' },
-  { label: 'Roșu',     value: '#ef4444' },
-  { label: 'Albastru', value: '#3b82f6' },
-];
-
-const DEFAULT_COLORS = {
-  dark:  { bg: '#0a0f1e', surface: '#111827', surface2: '#1e2a3a', surface3: '#243044' },
-  light: { bg: '#f1f5f9', surface: '#ffffff', surface2: '#f8fafc', surface3: '#e2e8f0' },
-};
-
-// Returneaza tema curenta
-function currentTheme() {
-  return document.documentElement.classList.contains('light') ? 'light' : 'dark';
-}
-
-// Salveaza/citeste culorile per tema
-function getThemeColors(theme) {
-  return JSON.parse(localStorage.getItem('cardColors_' + theme) || '{}');
-}
-function saveThemeColors(theme, colors) {
-  localStorage.setItem('cardColors_' + theme, JSON.stringify(colors));
-}
-
-// Aplica culorile unei teme pe document
-function applyThemeColors(theme) {
-  const def = DEFAULT_COLORS[theme];
-  const saved = getThemeColors(theme);
-  const colors = { ...def, ...saved };
-  Object.entries(colors).forEach(([k, v]) => {
-    document.documentElement.style.setProperty('--' + k, v);
-  });
-  return colors;
-}
-
-// Aplica culorile salvate din HSV store la pornire (mai precis decat hex)
-function applyHsvColors(theme) {
-  const store = getHsvStore(theme);
-  Object.entries(store).forEach(([varName, hsv]) => {
-    const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
-    document.documentElement.style.setProperty('--' + varName, hex);
-  });
-}
-
-// ─── HSV HELPERS ────────────────────────────────────────────
-function hsvToHex(h, s, v) {
-  s /= 100; v /= 100;
-  const f = (n, k=(n+h/60)%6) => v - v*s*Math.max(Math.min(k,4-k,1),0);
-  const r = Math.round(f(5)*255);
-  const g = Math.round(f(3)*255);
-  const b = Math.round(f(1)*255);
-  return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
-}
-
-function hexToHsv(hex) {
-  if (!hex || hex.length < 7) return { h:222, s:28, v:15 };
-  const r = parseInt(hex.slice(1,3),16)/255;
-  const g = parseInt(hex.slice(3,5),16)/255;
-  const b = parseInt(hex.slice(5,7),16)/255;
-  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
-  let h=0, s=max===0?0:d/max, v=max;
-  if(d!==0){
-    switch(max){
-      case r: h=((g-b)/d+6)%6; break;
-      case g: h=(b-r)/d+2; break;
-      case b: h=(r-g)/d+4; break;
-    }
-    h=Math.round(h*60);
-  }
-  return { h, s:Math.round(s*100), v:Math.round(v*100) };
-}
-
-// Salveaza/citeste HSV per variabila per tema
-function getHsvStore(theme) {
-  return JSON.parse(localStorage.getItem('hsvColors_' + theme) || '{}');
-}
-function saveHsvStore(theme, store) {
-  localStorage.setItem('hsvColors_' + theme, JSON.stringify(store));
-}
-
-function openHsvPicker(varName) {
-  const panel = document.getElementById('hsv-' + varName);
-  if (!panel) return;
-  const isOpen = panel.style.display !== 'none';
-  // Inchide toate celelalte
-  ['surface','surface2','bg'].forEach(v => {
-    const p = document.getElementById('hsv-' + v);
-    const s = document.getElementById('swatch-' + v);
-    if (p) p.style.display = 'none';
-    if (s) s.style.transform = '';
-  });
-  if (!isOpen) {
-    panel.style.display = 'block';
-    const swatch = document.getElementById('swatch-' + varName);
-    if (swatch) swatch.style.transform = 'scale(0.9)';
-    // Populeaza sliderele cu valorile salvate sau derivate din culoarea curenta
-    loadHsvSliders(varName);
-  }
-}
-
-function loadHsvSliders(varName) {
-  const theme = currentTheme();
-  const store = getHsvStore(theme);
-  let hsv;
-  if (store[varName]) {
-    hsv = store[varName]; // Pozitii memorate
-  } else {
-    // Deriva din culoarea CSS curenta
-    const computed = getComputedStyle(document.documentElement).getPropertyValue('--' + varName).trim();
-    hsv = hexToHsv(computed || '#111827');
-  }
-  const hEl = document.getElementById('h-' + varName);
-  const sEl = document.getElementById('s-' + varName);
-  const vEl = document.getElementById('v-' + varName);
-  if (hEl) hEl.value = hsv.h;
-  if (sEl) sEl.value = hsv.s;
-  if (vEl) vEl.value = hsv.v;
-  refreshHsvUI(varName, hsv);
-}
-
-function updateHsv(varName) {
-  const h = parseInt(document.getElementById('h-' + varName)?.value || 0);
-  const s = parseInt(document.getElementById('s-' + varName)?.value || 0);
-  const v = parseInt(document.getElementById('v-' + varName)?.value || 0);
-  const hsv = { h, s, v };
-  refreshHsvUI(varName, hsv);
-
-  // Aplica culoarea
-  const hex = hsvToHex(h, s, v);
-  document.documentElement.style.setProperty('--' + varName, hex);
-
-  // Salveaza atat HSV cat si culoarea per tema
-  const theme = currentTheme();
-  const hsvStore = getHsvStore(theme);
-  hsvStore[varName] = hsv;
-  saveHsvStore(theme, hsvStore);
-
-  const colorStore = getThemeColors(theme);
-  colorStore[varName] = hex;
-  saveThemeColors(theme, colorStore);
-
-  // Actualizeaza swatch-ul
-  const swatch = document.getElementById('swatch-' + varName);
-  if (swatch) swatch.style.background = hex;
-}
-
-function refreshHsvUI(varName, hsv) {
-  const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
-  const preview = document.getElementById('preview-' + varName);
-  const hexEl   = document.getElementById('hex-' + varName);
-  const hval    = document.getElementById('hval-' + varName);
-  const sval    = document.getElementById('sval-' + varName);
-  const vval    = document.getElementById('vval-' + varName);
-  if (preview) preview.style.background = hex;
-  if (hexEl)   hexEl.textContent = hex.toUpperCase();
-  if (hval)    hval.textContent = hsv.h;
-  if (sval)    sval.textContent = hsv.s;
-  if (vval)    vval.textContent = hsv.v;
-}
-
-function initSwatches() {
-  ['surface','surface2','bg'].forEach(varName => {
-    const swatch = document.getElementById('swatch-' + varName);
-    if (!swatch) return;
-    const hex = getComputedStyle(document.documentElement).getPropertyValue('--' + varName).trim();
-    swatch.style.background = hex || '#111827';
-  });
-}
-
-function initSetari() {
-  // Presets accent
-  const container = document.getElementById('accent-presets');
-  if (container) {
-    const saved = localStorage.getItem('accentColor') || '#6366f1';
-    container.innerHTML = ACCENT_PRESETS.map(p =>
-      `<button onclick="applyAccentColor('${p.value}')" data-color="${p.value}"
-        style="padding:6px 12px;border-radius:8px;border:2px solid ${p.value === saved ? p.value : 'transparent'};
-               background:${p.value}22;color:${p.value};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
-        ${p.label}
-      </button>`
-    ).join('');
-    const picker = document.getElementById('accent-color-picker');
-    if (picker) picker.value = saved;
-  }
-
-  // Initializeaza swatch-urile cu culorile curente
-  initSwatches();
-
-  updateThemeButtons();
-
-  // Info tab
-  const infoUats = document.getElementById('info-uats');
-  const infoTs   = document.getElementById('info-ts');
-  const infoSize = document.getElementById('info-size');
-  const infoVer  = document.getElementById('info-version-label');
-  if (infoUats) infoUats.textContent = uats.length || '—';
-  if (infoTs) {
-    const ts = localStorage.getItem('uats_ts');
-    infoTs.textContent = ts ? new Date(ts).toLocaleString('ro-RO') : '—';
-  }
-  if (infoSize) {
-    const cache = localStorage.getItem('uats_cache') || '';
-    infoSize.textContent = (cache.length / 1024).toFixed(0) + ' KB';
-  }
-  if (infoVer) infoVer.textContent = APP_NAME + ' ' + APP_VERSION;
-
-  // Render changelog
-  const clEl = document.getElementById('changelog-list');
-  if (clEl) {
-    clEl.innerHTML = CHANGELOG.map(function(v) {
-      return '<div style="margin-bottom:12px;background:var(--surface2);border-radius:10px;padding:12px;border-left:3px solid var(--accent)">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
-        + '<span style="font-size:13px;font-weight:700">' + v.version + ' — ' + v.titlu + '</span>'
-        + '<span style="font-size:10px;color:var(--text3)">' + v.data + '</span>'
-        + '</div>'
-        + '<ul style="margin:0;padding-left:16px">'
-        + v.items.map(function(item) {
-            return '<li style="font-size:11px;color:var(--text2);margin-bottom:3px;line-height:1.4">' + item + '</li>';
-          }).join('')
-        + '</ul>'
-        + '</div>';
-    }).join('');
-  }
-}
-
-function showSetariTab(tab) {
-  document.getElementById('stab-culori').style.display = tab === 'culori' ? 'block' : 'none';
-  document.getElementById('stab-info').style.display   = tab === 'info'   ? 'block' : 'none';
-  ['culori','info'].forEach(t => {
-    const btn = document.getElementById('stab-btn-' + t);
-    if (btn) {
-      btn.style.background = t === tab ? 'var(--accent)' : 'transparent';
-      btn.style.color = t === tab ? 'white' : 'var(--text2)';
-    }
-  });
-}
-
-function applyAccentColor(color) {
-  document.documentElement.style.setProperty('--accent', color);
-  document.documentElement.style.setProperty('--accent2', color + 'cc');
-  localStorage.setItem('accentColor', color);
-  const picker = document.getElementById('accent-color-picker');
-  if (picker) picker.value = color;
-  document.querySelectorAll('#accent-presets button').forEach(btn => {
-    btn.style.borderColor = btn.dataset.color === color ? btn.dataset.color : 'transparent';
-  });
-}
-
-function resetAccentColor() { applyAccentColor('#6366f1'); }
-
-function applyCardColor(variable, value) {
-  document.documentElement.style.setProperty('--' + variable, value);
-  // Salveaza separat pentru tema curenta
-  const theme = currentTheme();
-  const saved = getThemeColors(theme);
-  saved[variable] = value;
-  saveThemeColors(theme, saved);
-}
-
-function resetCardColors() {
-  const theme = currentTheme();
-  localStorage.removeItem('cardColors_' + theme);
-  localStorage.removeItem('hsvColors_' + theme); // reseteaza si pozitiile HSV
-  const def = DEFAULT_COLORS[theme];
-  Object.entries(def).forEach(([k, v]) => {
-    document.documentElement.style.setProperty('--' + k, v);
-  });
-  // Inchide pickerele deschise si actualizeaza swatch-urile
-  ['surface','surface2','bg'].forEach(v => {
-    const p = document.getElementById('hsv-' + v);
-    const s = document.getElementById('swatch-' + v);
-    if (p) p.style.display = 'none';
-    if (s) { s.style.transform = ''; s.style.background = def[v] || ''; }
-  });
-  showToast('Culori ' + (theme === 'dark' ? 'întunecat' : 'luminos') + ' resetate');
-}
-
-function setThemeMode(mode) {
-  // Schimba tema fara sa reseteze culorile custom
-  if (mode === 'light') {
-    document.documentElement.classList.add('light');
-    localStorage.setItem('theme', 'light');
-  } else {
-    document.documentElement.classList.remove('light');
-    localStorage.setItem('theme', 'dark');
-  }
-  // Aplica culorile salvate pentru noua tema (sau default daca nu exista)
-  applyThemeColors(mode);
-  updateThemeButtons();
-  // Actualizeaza pickere cu culorile noii teme
-  setTimeout(initSetari, 30);
-}
-
-function updateThemeButtons() {
-  const isLight = currentTheme() === 'light';
-  const darkBtn  = document.getElementById('theme-dark-btn');
-  const lightBtn = document.getElementById('theme-light-btn');
-  if (darkBtn)  darkBtn.style.borderColor  = isLight ? 'var(--border)' : 'var(--accent)';
-  if (lightBtn) lightBtn.style.borderColor = isLight ? 'var(--accent)' : 'var(--border)';
-}
-
-async function runDiagnostic() {
-  const el = document.getElementById('diag-result');
-  if (!el) return;
-  el.innerHTML = '🔍 Se verifică…';
-  el.style.display = 'block';
-
-  const cache = localStorage.getItem('uats_cache');
-  const ts = localStorage.getItem('uats_ts');
-  const age = ts ? Math.round((Date.now() - new Date(ts).getTime()) / 60000) : null;
-  const darkColors  = Object.keys(getThemeColors('dark')).length;
-  const lightColors = Object.keys(getThemeColors('light')).length;
-
-  const lines = [
-    '<b>📱 Cache local</b>',
-    cache ? `✅ Cache prezent: ${(cache.length/1024).toFixed(0)} KB` : '❌ Cache local absent',
-    ts ? `🕐 Vârstă: ${age} min${age > 360 ? ' — <span style="color:var(--eroare)">recomandăm sincronizare</span>' : ' ✅'}` : '⚠️ Timestamp lipsă',
-    `📦 UAT-uri în memorie: ${uats.length}`,
-    '',
-    '<b>🎨 Teme</b>',
-    `Temă activă: ${currentTheme() === 'dark' ? '🌙 Întunecat' : '☀️ Luminos'}`,
-    `Culori custom întunecat: ${darkColors} câmpuri`,
-    `Culori custom luminos: ${lightColors} câmpuri`,
-  ];
-
-  el.innerHTML = lines.join('<br>');
-
-  // Verifica drive_index de pe server
-  try {
-    const resp = await fetch(`${API_URL}?action=index_status`, {cache:'no-store'});
-    const data = await resp.json();
-    const indexLines = [
-      '',
-      '<b>🗂️ Drive Index (server)</b>',
-      data.exists
-        ? `✅ drive_index.json: ${data.count} fișiere`
-        : '❌ drive_index.json absent — rulează buildIndexPart1() + buildIndexPart2()',
-      data.updated ? `🕐 Actualizat: ${data.updated}` : '',
-      data.eroare ? `⚠️ Eroare: ${data.eroare}` : '',
-    ].filter(Boolean);
-    el.innerHTML += indexLines.join('<br>');
-  } catch(e) {
-    el.innerHTML += '<br><br><b>🗂️ Drive Index</b><br>⚠️ Nu s-a putut verifica (offline?)';
-  }
-}
-
-// Aplica culorile salvate la pornire
-(function() {
-  const savedAccent = localStorage.getItem('accentColor');
-  if (savedAccent) applyAccentColor(savedAccent);
-  const theme = currentTheme();
-  applyThemeColors(theme);
-  applyHsvColors(theme); // Suprascrie cu valorile HSV exacte daca exista
-})();
-
-// ─── SUPORT BUTON BACK HARDWARE ─────────────────────────────
-// Cand se deschide un UAT, adauga o intrare in history
-// Cand userul apasa Back, revine la lista
-const origOpenUat = openUat;
-window.openUat = function(id) {
-  origOpenUat(id);
-  // Adauga in history ca sa suporte butonul Back hardware
-  history.pushState({ uat: id }, '', '#uat-' + id);
-};
-
-window.addEventListener('popstate', function(e) {
-  if (!e.state || !e.state.uat) {
-    // Userul a dat Back din UAT -> inchide pagina UAT
-    const drawer = document.getElementById('drawer');
-    if (drawer && drawer.classList.contains('open')) {
-      closeDrawer();
-    }
-  }
-});
-
-// ─── MODAL EMAIL GLOBAL ──────────────────────────────────────
-function _openMailByIdx(idx) {
-  const item = _mailModalItems[idx];
-  if (item) openEmailModal(item);
-}
-
-function openEmailModal(itemJson) {
-  const i    = typeof itemJson === 'string' ? JSON.parse(itemJson) : itemJson;
-  const it   = i.item || i;
-  console.log('[Modal] it.nr_atasamente=', it.nr_atasamente, 'it.atasamente=', it.atasamente, 'it.id=', it.id);
-  const emailId   = it.id || it.email_id || '';
-  const bodyFisier = it.body_fisier || '';
-  const preview   = (it.body_preview || '').trim();
-  const atas      = it.atasamente || [];
-
-  // Header
-  document.getElementById('eml-subiect').textContent = it.subiect || '(fără subiect)';
-  const dir = (it.directie||'').toLowerCase() === 'trimis' ? '↑ Trimis' : '↓ Primit';
-  const metaParts = [dir,
-    it.de_la ? 'De la: ' + it.de_la : '',
-    it.catre  ? 'Către: ' + it.catre : '',
-    (it.data||'').substring(0,16)
-  ].filter(Boolean).join(' · ');
-  document.getElementById('eml-meta').innerHTML =
-    (i.localitate ? '<span style="font-weight:600;color:var(--accent)">' + i.localitate + '</span> · ' : '') + metaParts;
-
-  // Atașamente
-  const atasEl   = document.getElementById('eml-atasamente');
-  const atasEmailId = it.id || '';
-  const nrAtas   = parseInt(it.nr_atasamente || '0', 10) || 0;
-
-  function _renderAtas(list) {
-    window._modalAtasamente = list;
-    atasEl.innerHTML = list.length
-      ? list.map(function(a, ai) {
-          var name = a.name || a.fisier || 'Atașament';
-          return '<button onclick="deschideAtasament(window._modalAtasamente[' + ai + '].fisier)" '
-            + 'style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;'
-            + 'background:var(--surface2);border:1px solid var(--border);border-radius:8px;'
-            + 'font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit">📎 ' + name + '</button>';
-        }).join('')
-      : '';
-  }
-
-  if (atas.length) {
-    _renderAtas(atas);
-  } else if (atasEmailId) {
-    // Fetch intotdeauna daca avem ID - nr_atasamente poate fi 0 chiar si cu atasamente
-    fetch(API_URL + '?action=email_atasamente_list&email_id=' + encodeURIComponent(atasEmailId), {cache:'no-store'})
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        console.log('[Atas] response:', JSON.stringify(d));
-        _renderAtas(d.atasamente || []);
-      })
-      .catch(function(e) { console.log('[Atas] error:', e); atasEl.innerHTML = ''; });
-  } else {
-    _renderAtas([]);
-  }
-
-  // Body
-  const bodyEl = document.getElementById('eml-body-content');
-  bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">'
-    + (preview || '<span style="color:var(--text3);font-style:italic">Se încarcă conținutul…</span>')
-    + '</div>';
-
-  // Deschide modal
-  document.getElementById('email-modal-overlay').style.display = 'flex';
-  setTimeout(() => { document.getElementById('email-modal').style.transform = 'translateY(0)'; }, 10);
-  document.body.style.overflow = 'hidden';
-
-  // Fetch body complet (body_fisier = fisier Drive cu textul complet)
-  const fetchId = bodyFisier || emailId;
-  if (fetchId) {
-    const action = bodyFisier ? 'email_atasament' : 'email_body';
-    const param  = bodyFisier ? 'fisier' : 'email_id';
-    fetch(API_URL + '?action=' + action + '&' + param + '=' + encodeURIComponent(fetchId), {cache:'no-store'})
-      .then(r => r.json())
-      .then(data => {
-        const fullBody = data.body || data.text || data.url || '';
-        if (fullBody && fullBody.startsWith('http')) {
-          // E un URL Drive - deschide intr-un iframe sau link
-          bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">' + preview + '</div>'
-            + '<a href="' + fullBody + '" target="_blank" style="display:block;margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--accent);text-decoration:none;text-align:center">📄 Deschide email complet în Drive</a>';
-        } else if (fullBody && fullBody.length > preview.length) {
-          bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">' + fullBody + '</div>';
-        }
-      })
-      .catch(() => {});
-  }
-}
-
-function closeEmailModal() {
-  document.getElementById('email-modal').style.transform = 'translateY(100%)';
-  setTimeout(() => { document.getElementById('email-modal-overlay').style.display = 'none'; }, 300);
-  document.body.style.overflow = '';
-}
-
-// ─── FETCH CU RETRY ──────────────────────────────────────────
-// Retry automat de 3 ori cu timeout 20s per incercare
-async function fetchWT(url, options, _attempt) {
-  const attempt = _attempt || 1;
-  const TIMEOUT = 20000; // 20s per tentativa
-  const MAX_ATTEMPTS = 3;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT);
-
-  try {
-    const resp = await fetch(url, {
-      ...options,
-      cache: 'no-cache', // mai compatibil decat no-store pe Android
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-    if (!resp.ok) throw new Error('Server ' + resp.status);
-    return resp;
-  } catch(err) {
-    clearTimeout(timer);
-    if (attempt < MAX_ATTEMPTS) {
-      // Asteapta 2s si incearca din nou
-      await new Promise(r => setTimeout(r, 2000));
-      return fetchWT(url, options, attempt + 1);
-    }
-    if (err.name === 'AbortError') throw new Error('Serverul nu răspunde după ' + MAX_ATTEMPTS + ' încercări. Verifică conexiunea.');
-    throw err;
-  }
-}
-
-// ─── LOADING PROGRESS VIZUAL ─────────────────────────────────
-function showLoading(elId, steps) {
-  const el = document.getElementById(elId);
-  if (!el) return;
-  const stepsHtml = steps.map((s, i) =>
-    '<div id="lstep-' + elId + '-' + i + '" style="display:flex;align-items:center;gap:10px;padding:6px 0;opacity:0.35;transition:opacity .3s">'
-    + '<div style="width:18px;height:18px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px" id="lstep-icon-' + elId + '-' + i + '">○</div>'
-    + '<span style="font-size:12px;color:var(--text2)">' + s + '</span>'
-    + '</div>'
-  ).join('');
-
-  el.innerHTML = '<div style="padding:16px 4px">'
-    + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
-    + '<div class="spinner" style="width:20px;height:20px;border-width:2px;flex-shrink:0"></div>'
-    + '<span style="font-size:13px;font-weight:600;color:var(--text2)">Se încarcă…</span>'
-    + '</div>'
-    + stepsHtml
-    + '</div>';
-
-  // Activeaza primul pas
-  setLoadingStep(elId, 0, 'active');
-}
-
-function setLoadingStep(elId, stepIdx, status) {
-  const stepEl = document.getElementById('lstep-' + elId + '-' + stepIdx);
-  const iconEl = document.getElementById('lstep-icon-' + elId + '-' + stepIdx);
-  if (!stepEl) return;
-
-  if (status === 'active') {
-    stepEl.style.opacity = '1';
-    if (iconEl) iconEl.innerHTML = '<div class="spinner" style="width:12px;height:12px;border-width:2px"></div>';
-  } else if (status === 'done') {
-    stepEl.style.opacity = '1';
-    if (iconEl) { iconEl.textContent = '✓'; iconEl.style.background = 'var(--activ-bg)'; iconEl.style.color = 'var(--activ)'; }
-  } else if (status === 'error') {
-    stepEl.style.opacity = '1';
-    if (iconEl) { iconEl.textContent = '✕'; iconEl.style.background = 'rgba(239,68,68,0.15)'; iconEl.style.color = 'var(--eroare)'; }
-  }
-}
-
-function showLoadingError(elId, msg) {
-  const el = document.getElementById(elId);
-  if (!el) return;
-  el.innerHTML = '<div style="padding:16px 4px">'
-    + '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(239,68,68,0.1);border-radius:10px;border-left:3px solid var(--eroare)">'
-    + '<span style="font-size:18px">⚠️</span>'
-    + '<div>'
-    + '<div style="font-size:13px;font-weight:600;color:var(--eroare)">Eroare la încărcare</div>'
-    + '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + msg + '</div>'
-    + '</div>'
-    + '</div>'
-    + '<button onclick="location.reload()" style="margin-top:10px;padding:10px 20px;background:var(--accent);border:none;border-radius:10px;color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;width:100%">↺ Reîncearcă</button>'
-    + '</div>';
-}
-
-// ─── GLOBAL SEARCH (Audio + Mail) ──────────────────────────
-let globalAudioData = null;  // top 30 recente (Drive API)
-let _mailModalItems = [];    // stocheaza itemele pentru modal
-let allAudioData    = null;  // tot indexul audio (pentru cautare)
-let globalMailData  = null;  // top 50 recente
-let allMailData     = null;  // tot indexul mail (pentru cautare)
-let globalMailFilter = 'all';
-
-async function loadGlobalData() {
-  try {
-    // Fetch paralel: recente (afisare) + indexuri complete (cautare)
-    const [rAudio, rMail, rAllAudio, rAllMail] = await Promise.all([
-      fetch(API_URL + '?action=recent_audio&n=50',  {cache:'no-store'}),
-      fetch(API_URL + '?action=recent_mail&n=50',   {cache:'no-store'}),
-      fetch(API_URL + '?action=all_audio_index',    {cache:'no-store'}),
-      fetch(API_URL + '?action=all_mail_index',     {cache:'no-store'})
-    ]);
-    const dAudio    = await rAudio.json();
-    const dMail     = await rMail.json();
-    const dAllAudio = await rAllAudio.json();
-    const dAllMail  = await rAllMail.json();
-
-    globalAudioData = dAudio.items    || [];
-    globalMailData  = dMail.items     || [];
-    allAudioData    = dAllAudio.items || globalAudioData;
-    allMailData     = dAllMail.items  || globalMailData;
-
-    renderGlobalAudio();
-    renderGlobalMail();
-  } catch(e) {
-    document.getElementById('global-audio-list').innerHTML = '<div style="color:var(--eroare);padding:16px">⚠️ Eroare încărcare: ' + e.message + '</div>';
-    document.getElementById('global-mail-list').innerHTML  = '<div style="color:var(--eroare);padding:16px">⚠️ Eroare încărcare: ' + e.message + '</div>';
-  }
-}
-
-function switchGlobalTab(tab) {
-  ['audio','mail','fisiere'].forEach(t => {
-    document.getElementById('gtab-' + t).style.display = t === tab ? (t==='fisiere'?'flex':'block') : 'none';
-    const btn = document.getElementById('gtab-btn-' + t);
-    if (btn) {
-      btn.style.background = t === tab ? 'var(--accent)' : 'transparent';
-      btn.style.color      = t === tab ? 'white' : 'var(--text2)';
-    }
-  });
-}
-
-function filterGlobal(q) {
-  renderGlobalAudio(q);
-  renderGlobalMail(q);
-}
-
-function setGlobalMailFilter(filter, btn) {
-  globalMailFilter = filter;
-  document.querySelectorAll('#gtab-mail .filter-chip').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  const q = document.getElementById('global-search-input')?.value || '';
-  renderGlobalMail(q);
-}
-
 function renderGlobalAudio(q) {
   const el = document.getElementById('global-audio-list');
-  if (!el || !globalAudioData) return;
+  if (!el) return;
   const qn = norm(q || '');
   const source = qn ? (allAudioData || globalAudioData || []) : (globalAudioData || []);
+  if (!source) { el.innerHTML = ''; return; }
+
   const items = qn
-    ? source.filter(f =>
-        norm(f.localitate||'').includes(qn) ||
-        norm(f.sumar||'').includes(qn) ||
-        norm(f.transcriere_preview||'').includes(qn) ||
-        norm(f.display_name||'').includes(qn))
+    ? source.filter(function(f) {
+        return norm(f.localitate||'').includes(qn)
+          || norm(f.sumar||'').includes(qn)
+          || norm(f.transcriere_preview||'').includes(qn)
+          || norm(f.display_name||'').includes(qn);
+      })
     : source;
 
   if (!items.length) {
@@ -3481,292 +2568,74 @@ function renderGlobalAudio(q) {
     ? items.length + ' rezultate din ' + (allAudioData||[]).length + ' înregistrări'
     : items.length + ' înregistrări recente';
 
-  // Foloseste acelasi stil ca renderAudio din UAT
-  // Genereaza ID-uri unice bazate pe index global
-  window._globalAudioItems = items;
   let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:10px">' + label + '</div>';
 
   items.forEach(function(f, gi) {
     const k = 'g_' + gi;
     const dateRo = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'long',year:'numeric'}) : '';
     const sumar   = (f.sumar || '').trim();
-    const transcr = (f.transcriere_preview || '').trim();
+    const transcr = (f.transcriere_preview || f.transcriere || '').trim();
     const viewUrl = f.view || (f.drive_id ? 'https://drive.google.com/file/d/' + f.drive_id + '/view' : '');
     const fullName = f.fullName || f.key || '';
     const localitate = f.localitate || '';
 
-    out += '<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)">';
+    // Card - acelasi stil ca Mail
+    out += '<div style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:10px;border-left:3px solid var(--accent)">';
 
-    // Header: localitate + data + play
-    out += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
+    // Header
+    out += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:' + (transcr||sumar?'10px':'0') + '">';
     out += '<div style="flex:1;min-width:0">';
     out += '<div style="display:flex;align-items:center;gap:8px">';
-    out += '<span onclick="openUat(' + f.uat_id + ')" style="font-size:14px;font-weight:700;color:var(--accent);cursor:pointer">' + localitate + '</span>';
-    out += '<span style="font-size:11px;color:var(--text3)">' + dateRo + '</span>';
+    if (localitate) out += '<span onclick="openUat(' + f.uat_id + ')" style="font-size:12px;font-weight:700;color:var(--accent);cursor:pointer">🎤 ' + localitate + '</span>';
+    out += '<span style="font-size:10px;color:var(--text3)">' + dateRo + '</span>';
     out += '</div>';
-    out += '<div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (f.display_name||f.key||'') + '</div>';
+    out += '<div style="font-size:10px;color:var(--text3);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (f.display_name||f.key||'') + '</div>';
     out += '</div>';
     if (viewUrl) {
-      out += '<a href="' + viewUrl + '" target="_blank" style="flex-shrink:0;padding:8px 14px;background:var(--accent);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">▶ Ascultă</a>';
+      out += '<a href="' + viewUrl + '" target="_blank" style="flex-shrink:0;padding:6px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">▶ Ascultă</a>';
     }
     out += '</div>';
 
-    // Transcriere
-    if (transcr) {
-      const tShort = transcr.length > 300 ? transcr.substring(0,300) + '…' : transcr;
-      out += '<div style="background:var(--surface3);border-radius:8px;padding:10px;margin-bottom:8px;border-left:2px solid var(--text3)">';
-      out += '<div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:6px">📝 Transcriere</div>';
-      out += '<div id="tr-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.6;font-style:italic;white-space:pre-wrap"'
-        + ' data-short="' + tShort.replace(/"/g,'&quot;') + '"'
-        + ' data-full="' + transcr.replace(/"/g,'&quot;') + '"'
-        + ' data-expanded="0">' + tShort + '</div>';
-      if (transcr.length >= 300 && fullName) {
-        out += '<button id="tr-btn-' + k + '" data-elid="tr-text-' + k + '" data-fname="' + fullName.replace(/"/g,'&quot;') + '" data-btnid="tr-btn-' + k + '"'
-          + ' onclick="loadFullTranscr(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"'
-          + ' style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">📄 Citește tot</button>';
+    // Continut: Transcriere + Sumar in container unificat cu border-left (ca Mail body)
+    if (transcr || sumar) {
+      out += '<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--text3)">';
+      if (transcr) {
+        const tShort = transcr.length > 300 ? transcr.substring(0,300) + '…' : transcr;
+        out += '<div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:4px">📝 Transcriere</div>';
+        out += '<div id="tr-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.6;font-style:italic;white-space:pre-wrap"'
+          + ' data-short="' + tShort.replace(/"/g,'&quot;') + '"'
+          + ' data-full="' + transcr.replace(/"/g,'&quot;') + '"'
+          + ' data-expanded="0">' + tShort + '</div>';
+        if (transcr.length >= 300 && fullName) {
+          out += '<button id="tr-btn-' + k + '" data-elid="tr-text-' + k + '" data-fname="' + fullName.replace(/"/g,'&quot;') + '" data-btnid="tr-btn-' + k + '"'
+            + ' onclick="loadFullTranscr(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"'
+            + ' style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">📄 Citește tot</button>';
+        }
+        if (sumar) out += '<div style="height:1px;background:var(--border);margin:10px 0"></div>';
       }
-      out += '</div>';
-    }
-
-    // Sumar GPT
-    if (sumar) {
-      const sShort = sumar.substring(0,300) + (sumar.length >= 300 ? '…' : '');
-      out += '<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">';
-      out += '<div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:6px">🤖 Sumar GPT</div>';
-      out += '<div id="sm-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"'
-        + ' data-short="' + sShort.replace(/"/g,'&quot;') + '"'
-        + ' data-full="' + sumar.replace(/"/g,'&quot;') + '"'
-        + ' data-expanded="0">' + sShort + '</div>';
-      if (fullName) {
-        out += '<button id="sm-btn-' + k + '" data-elid="sm-text-' + k + '" data-fname="' + fullName.replace(/"/g,'&quot;') + '" data-btnid="sm-btn-' + k + '"'
-          + ' onclick="loadFullSumar(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"'
-          + ' style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent2);font-size:11px;cursor:pointer;font-family:inherit">🤖 Citește integral</button>';
-      }
-      out += '</div>';
-    }
-
-    out += '</div>'; // card
-  });
-
-  el.innerHTML = out;
-}
-
-function renderGlobalMail(q) {
-  _mailModalItems = []; // reset la fiecare render
-  const el = document.getElementById('global-mail-list');
-  if (!el || !globalMailData) return;
-  const qn = norm(q || '');
-  // La cautare sau filtru foloseste indexul complet
-  const mailSource = (qn || globalMailFilter !== 'all')
-    ? (allMailData || globalMailData || [])
-    : (globalMailData || []);
-
-  let items = mailSource;
-  if (globalMailFilter !== 'all') {
-    items = items.filter(function(i) {
-      return ((i.item&&i.item.directie)||'').toLowerCase().includes(globalMailFilter);
-    });
-  }
-  if (qn) {
-    items = items.filter(function(i) {
-      const it = i.item || {};
-      return norm(it.subiect||'').includes(qn) || norm(it.de_la||'').includes(qn) ||
-             norm(it.catre||'').includes(qn) || norm(it.body_preview||'').includes(qn) ||
-             norm(i.localitate||'').includes(qn);
-    });
-  }
-
-  if (!items.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center">Niciun rezultat</div>';
-    return;
-  }
-
-  const mailLabel = qn ? items.length + ' rezultate din ' + (allMailData||[]).length + ' mesaje' : items.length + ' mesaje recente';
-  let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:8px">' + mailLabel + '</div>';
-  items.forEach(function(i) {
-    const it = i.item || {};
-    const dir = (it.directie||'').toLowerCase();
-    const col = dir==='trimis' ? 'var(--accent)' : 'var(--activ)';
-    const icon = dir==='trimis' ? '↑' : '↓';
-    const subprev = (it.body_preview||'').substring(0,80);
-    // Stocheaza itemul in array global si referencieaza prin index
-    const mailIdx = _mailModalItems.length;
-    _mailModalItems.push(i);
-    out += '<div onclick="_openMailByIdx(' + mailIdx + ')" style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
-      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px">'
-      + '<div style="flex:1;min-width:0">'
-      + '<span style="font-size:13px;font-weight:700;color:' + col + '">' + (i.localitate||'') + '</span>'
-      + ' <span style="font-size:11px;color:var(--text2)">' + icon + ' ' + (it.subiect||'') + '</span>'
-      + '</div>'
-      + '<span style="font-size:10px;color:var(--text3);white-space:nowrap">' + ((it.data||'').substring(0,10)) + '</span>'
-      + '</div>'
-      + (subprev ? '<div style="font-size:11px;color:var(--text3);line-height:1.4">' + subprev + '…</div>' : '')
-      + '</div>';
-  });
-  el.innerHTML = out;
-}
-
-// ─── SMART UPDATE SYSTEM ────────────────────────────────────
-let _pendingServerTs = null;
-
-// Verificare silentioasa in background dupa incarcare
-async function checkForUpdates() {
-  try {
-    const localTs = parseInt(localStorage.getItem('server_ts') || '0');
-    const resp = await fetch(`${API_URL}?action=version`, {cache: 'no-store'});
-    const data = await resp.json();
-    const serverTs = data.ts || 0;
-
-    if (serverTs > localTs) {
-      _pendingServerTs = serverTs;
-      showUpdateBanner('Modificări detectate pe server');
-    }
-  } catch(e) {
-    // Silentios - nu deranja userul daca nu e retea
-  }
-}
-
-function showUpdateBanner(msg) {
-  const banner = document.getElementById('update-banner');
-  const sub = document.getElementById('update-msg');
-  if (sub && msg) sub.textContent = msg;
-  if (banner) {
-    banner.classList.add('show');
-    // Auto-dismiss dupa 15 secunde daca nu e atins
-    clearTimeout(banner._autoDismiss);
-    banner._autoDismiss = setTimeout(() => banner.classList.remove('show'), 15000);
-  }
-}
-
-function dismissUpdate() {
-  const banner = document.getElementById('update-banner');
-  if (banner) banner.classList.remove('show');
-  // Salveaza ts-ul ca sa nu mai apara bannerul la urmatoarea pornire
-  if (_pendingServerTs) {
-    localStorage.setItem('server_ts', String(_pendingServerTs));
-    _pendingServerTs = null;
-  }
-}
-
-async function applyUpdates() {
-  const banner = document.getElementById('update-banner');
-  const btn = document.getElementById('update-btn-apply');
-  if (btn) { btn.textContent = 'Se încarcă…'; btn.disabled = true; }
-
-  try {
-    // Fetch date noi de la server
-    const resp = await fetch(`${API_URL}?action=uats`, {cache: 'no-store'});
-    const newData = await resp.json();
-    if (!newData.uats) throw new Error('Date invalide');
-
-    // Compara UAT cu UAT - actualizeaza doar ce s-a schimbat
-    let changedCount = 0;
-    const changedIds = new Set();
-
-    newData.uats.forEach(newUat => {
-      const id = String(newUat['ID'] || '');
-      const oldIdx = uats.findIndex(u => String(u['ID']) === id);
-
-      if (oldIdx === -1) {
-        // UAT nou
-        uats.push(newUat);
-        changedIds.add(id);
-        changedCount++;
-      } else {
-        // Compara campurile importante
-        const old = uats[oldIdx];
-        const changed = ['Localitate','Judet','Responsabil','EmailUAT','BeneficiarActiv',
-                         'Note','DataUrmatorContact','NoteCalendar','_contracte','_aplicatii']
-          .some(k => JSON.stringify(old[k]) !== JSON.stringify(newUat[k]));
-
-        if (changed) {
-          uats[oldIdx] = newUat;
-          changedIds.add(id);
-          changedCount++;
+      if (sumar) {
+        const sShort = sumar.substring(0,300) + (sumar.length >= 300 ? '…' : '');
+        out += '<div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:4px">🤖 Sumar GPT</div>';
+        out += '<div id="sm-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"'
+          + ' data-short="' + sShort.replace(/"/g,'&quot;') + '"'
+          + ' data-full="' + sumar.replace(/"/g,'&quot;') + '"'
+          + ' data-expanded="0">' + sShort + '</div>';
+        if (fullName) {
+          out += '<button id="sm-btn-' + k + '" data-elid="sm-text-' + k + '" data-fname="' + fullName.replace(/"/g,'&quot;') + '" data-btnid="sm-btn-' + k + '"'
+            + ' onclick="loadFullSumar(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"'
+            + ' style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent2);font-size:11px;cursor:pointer;font-family:inherit">🤖 Citește integral</button>';
         }
       }
-    });
-
-    // Audio si mail raman in cache - se schimba independent de datele UAT
-    // Actualizeaza localStorage
-    localStorage.setItem('uats_cache', JSON.stringify(newData));
-    localStorage.setItem('uats_ts', new Date().toISOString());
-    if (_pendingServerTs) {
-      localStorage.setItem('server_ts', String(_pendingServerTs));
-      _pendingServerTs = null;
+      out += '</div>';
     }
 
-    // Re-randeaza lista si ascunde banner-ul
-    renderList();
-    // Asteapta putin ca userul sa vada toastul inainte de dismiss banner
-    setTimeout(() => { if (banner) banner.classList.remove('show'); }, 500);
+    out += '</div>';
+  });
 
-    // Daca un drawer e deschis si apartine unui UAT modificat, re-randeaza
-    if (currentUat && changedIds.has(String(currentUat))) {
-      openUat(currentUat);
-    }
-
-    showToast(changedCount > 0
-      ? `✅ ${changedCount} UAT${changedCount===1?'':'uri'} actualizat${changedCount===1?'':'e'}`
-      : '✅ Totul era deja actualizat');
-
-  } catch(e) {
-    if (btn) { btn.textContent = 'Actualizează'; btn.disabled = false; }
-    showToast('⚠️ Eroare la actualizare: ' + e.message);
-  }
+  el.innerHTML = out;
 }
 
-// ─── SWIPE INTRE TABURI ──────────────────────────────────────
-(function() {
-  var startX = 0, startY = 0, startTime = 0;
-  var SWIPE_THRESHOLD = 60;   // minim px orizontal
-  var ANGLE_THRESHOLD = 35;   // maxim grade fata de orizontal
-  var TIME_THRESHOLD  = 400;  // maxim ms
 
-  document.addEventListener('touchstart', function(e) {
-    const drawer = document.getElementById('drawer');
-    if (!drawer || !drawer.classList.contains('open')) return;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    startTime = Date.now();
-  }, { passive: true });
-
-  document.addEventListener('touchend', function(e) {
-    const drawer = document.getElementById('drawer');
-    if (!drawer || !drawer.classList.contains('open')) return;
-    // Ignora swipe pe tab-bar sau scrollabile orizontal
-    const target = e.target;
-    if (target.closest('.tab-bar') || target.closest('audio') || target.closest('input')) return;
-
-    const dx = e.changedTouches[0].clientX - startX;
-    const dy = e.changedTouches[0].clientY - startY;
-    const dt = Date.now() - startTime;
-
-    if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-    if (dt > TIME_THRESHOLD) return;
-    const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
-    if (angle > ANGLE_THRESHOLD && angle < 180 - ANGLE_THRESHOLD) return;
-
-    swipeToTab(dx < 0 ? 'left' : 'right');
-  }, { passive: true });
-})();
-
-// ─── INIT ──────────────────────────────────────────────────
-// Încearcă cache offline primul, apoi sync
-const cached=localStorage.getItem('uats_cache');
-if(cached){
-  uats=JSON.parse(cached);
-  const ts=localStorage.getItem('uats_ts');
-  showMainUI();
-  renderCurrent();
-  const d=ts?new Date(ts).toLocaleString('ro-RO'):'?';
-  document.getElementById('last-sync').textContent=`Cache din ${d}`;
-  // Verificare silentioasa daca exista date noi pe server
-  setTimeout(checkForUpdates, 2000);
-} else {
-  // Niciun cache - fetch de la server
-  syncData();
-}
 </script>
 </body>
 </html>
