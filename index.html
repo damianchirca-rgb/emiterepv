@@ -283,6 +283,10 @@
     font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
   }
 
+
+  /* Global tab buttons */
+  .global-tab-btn { flex:1;padding:8px;border:none;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;border-radius:8px;background:transparent;color:var(--text2);transition:all .2s; }
+  .global-tab-btn.active { background:var(--surface2);color:var(--accent);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,0.12); }
 </style>
 </head>
 <body>
@@ -767,10 +771,20 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v9.2';
+const APP_VERSION = 'v9.3';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v9.3',
+    data: '11.06.2026',
+    titlu: 'Fix tab Căutare - active state',
+    items: [
+      'CSS .global-tab-btn.active restaurat',
+      'Butoanele Corespondență și Documente se evidențiază la apăsare'
+    ]
+  },
+
   {
     version: 'v9.2',
     data: '11.06.2026',
