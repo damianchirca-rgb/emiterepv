@@ -344,7 +344,8 @@
     </div>
   </div>
 
-  <div id="contacte-view" class="view">
+  <div id="contacte-view" class="view" style="overflow-y:auto;padding:16px">
+    <div style="font-size:18px;font-weight:700;margin-bottom:16px">📅 Programări</div>
     <div id="contacts-list"></div>
   </div>
 
@@ -373,12 +374,12 @@
     </div>
 
     <!-- Tab Audio recente -->
-    <div id="gtab-audio" style="flex:1;overflow-y:auto;padding:12px">
+    <div id="gtab-audio" class="global-tab-content" style="flex:1;overflow-y:auto;padding:12px">
       <div id="global-audio-list"><div style="color:var(--text3);font-size:13px;padding:20px;text-align:center"><div class="spinner" style="margin:0 auto 12px;width:24px;height:24px;border-width:2px"></div>Se încarcă…</div></div>
     </div>
 
     <!-- Tab Corespondenta -->
-    <div id="gtab-mail" style="flex:1;overflow-y:auto;padding:12px;display:none">
+    <div id="gtab-mail" class="global-tab-content" style="flex:1;overflow-y:auto;padding:12px;display:none">
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
         <button class="filter-chip active" id="gmf-all"   onclick="setGlobalMailFilter('all',this)">Toate</button>
         <button class="filter-chip"        id="gmf-primit" onclick="setGlobalMailFilter('primit',this)">↓ Primite</button>
@@ -388,7 +389,7 @@
     </div>
 
     <!-- Tab Documente (cautare existenta) -->
-    <div id="gtab-fisiere" style="flex:1;overflow-y:auto;padding:0;display:none;flex-direction:column">
+    <div id="gtab-fisiere" class="global-tab-content" style="flex:1;overflow-y:auto;padding:0;display:none;flex-direction:column">
       <div style="padding:12px 12px 0">
         <div style="display:flex;gap:8px;margin-bottom:8px">
           <input id="cautare-input" type="text" placeholder="Caută în toate documentele…"
@@ -733,10 +734,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v8.4';
+const APP_VERSION = 'v8.5';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v8.5',
+    data: '11.06.2026',
+    titlu: 'Fix navigare views + tabs Căutare',
+    items: [
+      'showView apelează renderList, renderStats, renderContacte la switch',
+      'Tab-urile Audio/Mail/Documente din Căutare: ascunse implicit, class global-tab-content adaugat',
+      'Programări: funcție renderContacte adaugată cu carduri sortate după dată'
+    ]
+  },
+
   {
     version: 'v8.4',
     data: '11.06.2026',
@@ -2760,7 +2772,10 @@ function showView(v) {
   // Ascunde/afiseaza bara de cautare pe tab Lista
   const searchRow = document.getElementById('search-row');
   if (searchRow) searchRow.style.display = (v === 'lista') ? '' : 'none';
-  if (v === 'setari') initSetari();
+  if (v === 'lista')    renderList && renderList();
+  if (v === 'stats')    renderStats && renderStats();
+  if (v === 'contacte') renderContacte && renderContacte();
+  if (v === 'setari')  initSetari && initSetari();
   if (v === 'cautare' && !globalAudioData) loadGlobalData && loadGlobalData();
 }
 
@@ -3103,6 +3118,59 @@ function resetCardColors() {
 function runDiagnostic() {
   var info = 'v:' + APP_VERSION + ' UAT:' + uats.length + ' cache:' + ((localStorage.getItem('uats_cache')||'').length/1024).toFixed(0) + 'KB';
   showToast(info);
+}
+
+
+// ─── PROGRAMARI ───────────────────────────────────────────────
+function renderContacte() {
+  const el = document.getElementById('contacts-list');
+  if (!el) return;
+  if (!uats.length) { el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:40px">Nu există date</div>'; return; }
+
+  const today = new Date();
+  const items = [];
+  uats.forEach(function(u) {
+    var prog = u.programare || u.program || u.contact_date || '';
+    if (!prog) return;
+    var d = parseRoDate(prog);
+    if (!d) return;
+    var days = Math.ceil((d - today) / 86400000);
+    items.push({ u: u, date: d, days: days, prog: prog });
+  });
+
+  items.sort(function(a, b) { return a.days - b.days; });
+
+  if (!items.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:40px">Nicio programare înregistrată</div>';
+    return;
+  }
+
+  var urgente = items.filter(function(x) { return x.days <= 30; });
+  var normale = items.filter(function(x) { return x.days > 30; });
+
+  function cardHtml(x) {
+    var col = x.days < 0 ? 'var(--eroare)' : x.days <= 7 ? 'var(--inactiv)' : x.days <= 30 ? 'var(--accent)' : 'var(--text3)';
+    var label = x.days < 0 ? 'Depășit cu ' + Math.abs(x.days) + 'z' : x.days === 0 ? 'Azi' : 'Peste ' + x.days + 'z';
+    var uid = x.u.id || '';
+    return '<div data-uid="' + uid + '" onclick="openUat(this.dataset.uid)" style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center">'
+      + '<div><div style="font-size:13px;font-weight:700">' + (x.u.localitate||x.u.uat||'') + '</div>'
+      + '<div style="font-size:11px;color:var(--text3)">' + (x.u.judet||'') + ' · ' + x.prog + '</div></div>'
+      + '<div style="font-size:12px;font-weight:700;color:' + col + '">' + label + '</div>'
+      + '</div></div>';
+  }
+
+  var out = '';
+  if (urgente.length) {
+    out += '<div style="font-size:11px;color:var(--eroare);font-weight:700;margin-bottom:8px">⚠️ URGENTE (' + urgente.length + ')</div>';
+    out += urgente.map(cardHtml).join('');
+    if (normale.length) out += '<div style="height:1px;background:var(--border);margin:16px 0"></div>';
+  }
+  if (normale.length) {
+    out += '<div style="font-size:11px;color:var(--text3);font-weight:700;margin-bottom:8px">PROGRAMATE (' + normale.length + ')</div>';
+    out += normale.map(cardHtml).join('');
+  }
+  el.innerHTML = out;
 }
 
 // ─── UPDATE SYSTEM ────────────────────────────────────────────
