@@ -775,10 +775,21 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v10.0';
+const APP_VERSION = 'v10.1';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v10.1',
+    data: '11.06.2026',
+    titlu: 'Restaurat swipe între taburi UAT',
+    items: [
+      'Handler-ul touchstart/touchend lipsea complet',
+      'Swipe stânga/dreapta între taburi Main/Contracte/Facturi/Mail/Audio/Utile',
+      'Ignorat pe: tab-bar, audio player, input-uri'
+    ]
+  },
+
   {
     version: 'v10.0',
     data: '11.06.2026',
@@ -3680,6 +3691,49 @@ async function applyUpdates() {
   dismissUpdate();
   await syncData();
 }
+
+
+// ─── SWIPE INTRE TABURI UAT ──────────────────────────────────
+(function() {
+  var startX = 0, startY = 0, startTime = 0;
+
+  document.addEventListener('touchstart', function(e) {
+    var t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    startTime = Date.now();
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    // Swipe doar in drawer (UAT deschis)
+    var drawer = document.getElementById('drawer');
+    if (!drawer || !drawer.classList.contains('open')) return;
+
+    var t = e.changedTouches[0];
+    var dx = t.clientX - startX;
+    var dy = t.clientY - startY;
+    var dt = Date.now() - startTime;
+
+    // Minim 50px orizontal, max 100ms, ratio orizontal/vertical > 1.5
+    if (Math.abs(dx) < 50 || dt > 400) return;
+    if (Math.abs(dy) > Math.abs(dx) * 0.7) return;
+
+    // Ignora swipe pe: tab-bar, player audio, input-uri
+    var target = e.target;
+    while (target && target !== document.body) {
+      var tag = target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'AUDIO' || tag === 'SELECT') return;
+      if (target.classList && (target.classList.contains('tab-bar') || target.classList.contains('tab-btn'))) return;
+      target = target.parentElement;
+    }
+
+    if (dx < 0) {
+      swipeToTab('left');   // swipe stanga -> tab urmator
+    } else {
+      swipeToTab('right');  // swipe dreapta -> tab anterior
+    }
+  }, { passive: true });
+})();
 
 // ─── INIT ────────────────────────────────────────────────────
 // Aplica tema salvata
