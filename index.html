@@ -775,10 +775,21 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v9.9';
+const APP_VERSION = 'v10.0';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v10.0',
+    data: '11.06.2026',
+    titlu: 'Audio recente - nume persoana in titlu',
+    items: [
+      '50 înregistrări recente încărcate',
+      'Titlul cardului = numele persoanei de contact (extras din filename)',
+      'Localitate și dată afișate sub titlu'
+    ]
+  },
+
   {
     version: 'v9.9',
     data: '11.06.2026',
@@ -3033,14 +3044,19 @@ function renderGlobalAudio(q) {
     // Card - acelasi stil ca Mail
     out += '<div style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:10px;border-left:3px solid var(--accent)">';
 
+    // Extrage numele persoanei din display_name (inainte de data)
+    var dispName = f.display_name || f.key || '';
+    var personName = dispName.replace(/\.m4a$/i,'').replace(/_\d{4}-\d{2}-\d{2}.*/,'').replace(/_/g,' ').trim();
+    if (!personName) personName = dispName;
+
     // Header
     out += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:' + (transcr||sumar?'10px':'0') + '">';
     out += '<div style="flex:1;min-width:0">';
+    out += '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">' + personName + '</div>';
     out += '<div style="display:flex;align-items:center;gap:8px">';
-    if (localitate) out += '<span onclick="openUat(' + f.uat_id + ')" style="font-size:12px;font-weight:700;color:var(--accent);cursor:pointer">🎤 ' + localitate + '</span>';
+    if (localitate) out += '<span onclick="openUat(' + f.uat_id + ')" style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:600">' + localitate + '</span>';
     out += '<span style="font-size:10px;color:var(--text3)">' + dateRo + '</span>';
     out += '</div>';
-    out += '<div style="font-size:10px;color:var(--text3);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (f.display_name||f.key||'') + '</div>';
     out += '</div>';
     if (viewUrl) {
       out += '<a href="' + viewUrl + '" target="_blank" style="flex-shrink:0;padding:6px 12px;background:var(--accent);color:white;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none">▶ Ascultă</a>';
