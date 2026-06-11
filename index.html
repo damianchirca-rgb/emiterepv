@@ -753,18 +753,35 @@
   <div id="drawer-handle"></div>
   <div id="drawer-header">
     <button id="drawer-back" onclick="closeDrawer()">←</button>
+    <div id="drawer-poza-wrap"><img id="drawer-poza" style="width:50px;height:50px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'"></div>
     <div id="drawer-title-wrap">
       <div id="drawer-title"></div>
       <div id="drawer-subtitle"></div>
     </div>
   </div>
-  <div i
+  <div id="drawer-tabs" style="display:flex;border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;flex-shrink:0"></div>
+  <div id="drawer-content" style="flex:1;overflow-y:auto"></div>
+
+<div id="toast"></div>
+
 <script>
+
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v9.0';
+const APP_VERSION = 'v9.1';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v9.1',
+    data: '11.06.2026',
+    titlu: 'Fix structura HTML + drawer complet',
+    items: [
+      'Fragmentul HTML rupt din drawer fixat',
+      'Tag script mutat corect la finalul body',
+      'Drawer: header + tabs + content + toast adaugate'
+    ]
+  },
+
   {
     version: 'v9.0',
     data: '11.06.2026',
@@ -3572,6 +3589,7 @@ if (cached) {
 } else {
   syncData();
 }
+
 </script>
 </body>
 </html>
