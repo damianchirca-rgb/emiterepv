@@ -627,23 +627,17 @@
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <span style="font-size:13px">🎨 Accent principal</span>
-        <input type="color" id="picker-accent"
-          oninput="document.documentElement.style.setProperty('--accent',this.value);saveColorPref('--accent',this.value)"
-          style="width:44px;height:32px;border:none;border-radius:8px;cursor:pointer;background:none">
+        <div id="picker-accent" onclick="openColorPicker('--accent',this)" style="width:44px;height:32px;border-radius:8px;cursor:pointer;border:2px solid var(--border)"></div>
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <span style="font-size:13px">🎨 Accent secundar</span>
-        <input type="color" id="picker-accent2"
-          oninput="document.documentElement.style.setProperty('--accent2',this.value);saveColorPref('--accent2',this.value)"
-          style="width:44px;height:32px;border:none;border-radius:8px;cursor:pointer;background:none">
+        <div id="picker-accent2" onclick="openColorPicker('--accent2',this)" style="width:44px;height:32px;border-radius:8px;cursor:pointer;border:2px solid var(--border)"></div>
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
         <span style="font-size:13px">🎨 Fundal card</span>
-        <input type="color" id="picker-surface2"
-          oninput="document.documentElement.style.setProperty('--surface2',this.value);saveColorPref('--surface2',this.value)"
-          style="width:44px;height:32px;border:none;border-radius:8px;cursor:pointer;background:none">
+        <div id="picker-surface2" onclick="openColorPicker('--surface2',this)" style="width:44px;height:32px;border-radius:8px;cursor:pointer;border:2px solid var(--border)"></div>
       </div>
 
       <div style="display:flex;gap:8px">
@@ -758,6 +752,52 @@
   </div>
 </div>
 
+<!-- Color Picker Modal -->
+<div id="color-picker-modal" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.7);align-items:flex-end;justify-content:center" onclick="if(event.target===this)closeColorPicker()">
+  <div style="width:100%;max-width:500px;background:var(--surface);border-radius:24px 24px 0 0;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom))">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-size:16px;font-weight:700" id="cp-title">Culoare</span>
+      <button onclick="closeColorPicker()" style="width:32px;height:32px;border-radius:50%;border:none;background:var(--surface2);color:var(--text);font-size:18px;cursor:pointer">✕</button>
+    </div>
+    <!-- Preview -->
+    <div id="cp-preview" style="width:100%;height:60px;border-radius:12px;margin-bottom:20px;border:2px solid var(--border)"></div>
+    <!-- H slider -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Nuanță (Hue)</div>
+      <input type="range" id="cp-h" min="0" max="360" step="1" oninput="cpUpdate()" style="width:100%;height:28px;cursor:pointer">
+    </div>
+    <!-- S slider -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Saturație</div>
+      <input type="range" id="cp-s" min="0" max="100" step="1" oninput="cpUpdate()" style="width:100%;height:28px;cursor:pointer">
+    </div>
+    <!-- L slider -->
+    <div style="margin-bottom:20px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Luminozitate</div>
+      <input type="range" id="cp-l" min="0" max="100" step="1" oninput="cpUpdate()" style="width:100%;height:28px;cursor:pointer">
+    </div>
+    <!-- Culori predefinite -->
+    <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Culori rapide</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px" id="cp-presets"></div>
+    <!-- Aplica -->
+    <button onclick="applyColorPicker()" style="width:100%;padding:14px;background:var(--accent);border:none;border-radius:12px;color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">✓ Aplică</button>
+  </div>
+</div>
+
+<div id="drawer" class="">
+  <div id="drawer-handle"></div>
+  <div id="drawer-header">
+    <button id="drawer-back" onclick="closeDrawer()">←</button>
+    <div id="drawer-poza-wrap"><img id="drawer-poza" style="width:50px;height:50px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'"></div>
+    <div id="drawer-title-wrap">
+      <div id="drawer-title"></div>
+      <div id="drawer-subtitle"></div>
+    </div>
+  </div>
+  <div id="drawer-body" style="flex:1;overflow-y:auto;display:flex;flex-direction:column"></div>
+</div>
+
+
 <div id="drawer">
   <div id="drawer-handle"></div>
   <div id="drawer-header">
@@ -775,10 +815,22 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v10.1';
+const APP_VERSION = 'v10.2';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v10.2',
+    data: '11.06.2026',
+    titlu: 'Color picker HSL touch-friendly',
+    items: [
+      'Înlocuit input type=color cu picker custom cu slidere H/S/L',
+      '16 culori predefinite pentru selectare rapida',
+      'Preview culoare in timp real',
+      'Funcționează pe orice telefon Android/iOS'
+    ]
+  },
+
   {
     version: 'v10.1',
     data: '11.06.2026',
@@ -3498,6 +3550,117 @@ function runDiagnostic() {
 
 
 // ─── COLOR PICKERS ────────────────────────────────────────────
+var _cpVar = '';  // variabila CSS curenta
+var _cpEl  = null; // elementul preview clickat
+
+var CP_PRESETS = [
+  '#4f46e5','#6366f1','#8b5cf6','#a855f7',
+  '#ec4899','#ef4444','#f97316','#eab308',
+  '#22c55e','#10b981','#14b8a6','#06b6d4',
+  '#3b82f6','#0ea5e9','#64748b','#94a3b8'
+];
+
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  var a = s * Math.min(l, 1 - l);
+  var f = function(n) {
+    var k = (n + h / 30) % 12;
+    var col = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * col).toString(16).padStart(2, '0');
+  };
+  return '#' + f(0) + f(8) + f(4);
+}
+
+function hexToHsl(hex) {
+  var r = parseInt(hex.slice(1,3),16)/255;
+  var g = parseInt(hex.slice(3,5),16)/255;
+  var b = parseInt(hex.slice(5,7),16)/255;
+  var max = Math.max(r,g,b), min = Math.min(r,g,b);
+  var l = (max+min)/2, s = 0, h = 0;
+  if (max !== min) {
+    var d = max - min;
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max) {
+      case r: h = ((g-b)/d + (g<b?6:0))/6; break;
+      case g: h = ((b-r)/d + 2)/6; break;
+      case b: h = ((r-g)/d + 4)/6; break;
+    }
+  }
+  return [Math.round(h*360), Math.round(s*100), Math.round(l*100)];
+}
+
+function cssColorToHex(cssVal) {
+  var val = cssVal.trim();
+  if (val.startsWith('#') && (val.length === 7 || val.length === 4)) {
+    if (val.length === 4) val = '#' + val[1]+val[1]+val[2]+val[2]+val[3]+val[3];
+    return val;
+  }
+  // Fallback
+  return '#4f46e5';
+}
+
+function openColorPicker(varName, el) {
+  _cpVar = varName;
+  _cpEl  = el;
+  var modal = document.getElementById('color-picker-modal');
+  if (!modal) return;
+
+  // Titlu
+  var titles = {'--accent':'Accent principal','--accent2':'Accent secundar','--surface2':'Fundal card'};
+  document.getElementById('cp-title').textContent = titles[varName] || varName;
+
+  // Culoarea curenta
+  var curHex = cssColorToHex(getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || '#4f46e5');
+  var hsl = hexToHsl(curHex);
+  document.getElementById('cp-h').value = hsl[0];
+  document.getElementById('cp-s').value = hsl[1];
+  document.getElementById('cp-l').value = hsl[2];
+  cpUpdate();
+
+  // Presets
+  var presetsEl = document.getElementById('cp-presets');
+  window._cpPresets = CP_PRESETS.slice();
+  presetsEl.innerHTML = CP_PRESETS.map(function(c, pi) {
+    return '<div data-pi="' + pi + '" onclick="cpSetHex(window._cpPresets[parseInt(this.dataset.pi)])" style="width:36px;height:36px;border-radius:8px;background:' + c + ';cursor:pointer;border:2px solid transparent"></div>';
+  }).join('');
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function cpUpdate() {
+  var h = parseInt(document.getElementById('cp-h').value);
+  var s = parseInt(document.getElementById('cp-s').value);
+  var l = parseInt(document.getElementById('cp-l').value);
+  var hex = hslToHex(h, s, l);
+  document.getElementById('cp-preview').style.background = hex;
+}
+
+function cpSetHex(hex) {
+  var hsl = hexToHsl(hex);
+  document.getElementById('cp-h').value = hsl[0];
+  document.getElementById('cp-s').value = hsl[1];
+  document.getElementById('cp-l').value = hsl[2];
+  cpUpdate();
+}
+
+function applyColorPicker() {
+  var h = parseInt(document.getElementById('cp-h').value);
+  var s = parseInt(document.getElementById('cp-s').value);
+  var l = parseInt(document.getElementById('cp-l').value);
+  var hex = hslToHex(h, s, l);
+  document.documentElement.style.setProperty(_cpVar, hex);
+  saveColorPref(_cpVar, hex);
+  if (_cpEl) _cpEl.style.background = hex;
+  closeColorPicker();
+}
+
+function closeColorPicker() {
+  var modal = document.getElementById('color-picker-modal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
 function saveColorPref(varName, value) {
   var theme = document.documentElement.classList.contains('light') ? 'light' : 'dark';
   var saved = JSON.parse(localStorage.getItem('cardColors_' + theme) || '{}');
@@ -3516,27 +3679,15 @@ function resetAllColors() {
 }
 
 function initColorPickers() {
-  // Seteaza valorile curente in input-uri
   var style = getComputedStyle(document.documentElement);
-  var pickers = {
-    'picker-accent':   '--accent',
-    'picker-accent2':  '--accent2',
-    'picker-surface2': '--surface2'
-  };
-  Object.entries(pickers).forEach(function(entry) {
-    var el = document.getElementById(entry[0]);
+  ['--accent','--accent2','--surface2'].forEach(function(v) {
+    var el = document.getElementById('picker-' + v.replace('--','').replace('2','2'));
     if (!el) return;
-    var val = style.getPropertyValue(entry[1]).trim();
-    // Converteste rgb la hex daca e nevoie
-    if (val.startsWith('rgb')) {
-      var m = val.match(/\d+/g);
-      if (m && m.length >= 3) {
-        val = '#' + m.slice(0,3).map(function(n) { return parseInt(n).toString(16).padStart(2,'0'); }).join('');
-      }
-    }
-    if (val) el.value = val;
+    var val = style.getPropertyValue(v).trim();
+    if (val) el.style.background = val;
   });
 }
+
 
 // ─── MENTENANTA ───────────────────────────────────────────────
 function renderMentenanta() {
