@@ -768,18 +768,36 @@
       <div id="drawer-subtitle"></div>
     </div>
   </div>
-  <div id="drawer-tabs" style="display:flex;border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;flex-shrink:0"></div>
-  <div id="drawer-content" style="flex:1;overflow-y:auto"></div>
+  <div id="drawer-body" style="flex:1;overflow-y:auto;display:flex;flex-direction:column"></div>
 
 <div id="toast"></div>
 
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v9.7';
+const APP_VERSION = 'v9.9';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v9.9',
+    data: '11.06.2026',
+    titlu: 'Fix acces date UAT',
+    items: [
+      'openUat scria in drawer-body dar HTML avea drawer-content',
+      'Redenumit drawer-content in drawer-body'
+    ]
+  },
+
+  {
+    version: 'v9.8',
+    data: '11.06.2026',
+    titlu: 'Fix butoane Întunecat/Luminos în Setări',
+    items: [
+      'setThemeMode actualizează border și culoare butoane la apăsare'
+    ]
+  },
+
   {
     version: 'v9.7',
     data: '11.06.2026',
@@ -3228,8 +3246,16 @@ function setThemeMode(mode) {
   if (mode === 'light') document.documentElement.classList.add('light');
   else document.documentElement.classList.remove('light');
   localStorage.setItem('theme', mode);
-  document.getElementById('theme-btn').textContent = mode === 'light' ? '☀️' : '🌙';
+  var themeBtn = document.getElementById('theme-btn');
+  if (themeBtn) themeBtn.textContent = mode === 'light' ? '☀️' : '🌙';
   applyThemeColors();
+  // Evidentiaza butonul activ
+  var darkBtn  = document.getElementById('theme-dark-btn');
+  var lightBtn = document.getElementById('theme-light-btn');
+  if (darkBtn)  darkBtn.style.border  = mode === 'dark'  ? '2px solid var(--accent)' : '1px solid var(--border)';
+  if (lightBtn) lightBtn.style.border = mode === 'light' ? '2px solid var(--accent)' : '1px solid var(--border)';
+  if (darkBtn)  darkBtn.style.color   = mode === 'dark'  ? 'var(--accent)' : 'var(--text)';
+  if (lightBtn) lightBtn.style.color  = mode === 'light' ? 'var(--accent)' : 'var(--text)';
   if (typeof initSetari === 'function' && currentView === 'setari') initSetari();
 }
 
