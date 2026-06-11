@@ -485,7 +485,7 @@
             ☀️ Luminos
           </button>
         </div>
-      </div>
+      
 
       <!-- Culoare accent -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
@@ -652,7 +652,9 @@
     </div>
 
     <!-- Tab info / diagnostic -->
-    <div id="stab-info" class="setari-tab-content" style="display:none">
+    </div>
+
+<div id="stab-info" class="setari-tab-content" style="display:none">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
         <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Aplicație</div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
@@ -774,10 +776,20 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v9.6';
+const APP_VERSION = 'v9.7';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v9.7',
+    data: '11.06.2026',
+    titlu: 'Fix Setări - color pickers în tab Teme',
+    items: [
+      'Color pickers (Accent, Accent2, Fundal) pluteau în afara tab-ului Teme',
+      'Mutate corect înăuntrul div-ului stab-culori'
+    ]
+  },
+
   {
     version: 'v9.6',
     data: '11.06.2026',
