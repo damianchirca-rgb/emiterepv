@@ -353,7 +353,7 @@
 
     <!-- Search bar global -->
     <div style="padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
-      <input id="global-search-input" type="text" placeholder="🔍 Caută în înregistrări audio și corespondență…"
+      <input id="global-search-input" type="text" oninput="renderGlobalAudio&&renderGlobalAudio(this.value);renderGlobalMail&&renderGlobalMail(this.value)" placeholder="🔍 Caută în înregistrări audio și corespondență…"
         style="width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;outline:none"
         oninput="filterGlobal(this.value)">
       <!-- Tab-uri sectiuni -->
@@ -392,7 +392,7 @@
     <div id="gtab-fisiere" class="global-tab-content" style="flex:1;overflow-y:auto;padding:0;display:none;flex-direction:column">
       <div style="padding:12px 12px 0">
         <div style="display:flex;gap:8px;margin-bottom:8px">
-          <input id="cautare-input" type="text" placeholder="Caută în toate documentele…"
+          <input id="cautare-input" type="text" oninput="doCautare()" placeholder="Caută în toate documentele…"
             style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:14px;padding:10px 14px;outline:none"
             onkeydown="if(event.key==='Enter')doCautare()">
           <button onclick="doCautare()" style="padding:10px 16px;background:var(--accent);border:none;border-radius:10px;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Caută</button>
@@ -764,10 +764,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v8.8';
+const APP_VERSION = 'v8.9';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v8.9',
+    data: '11.06.2026',
+    titlu: 'Mentenanță + Programări + Căutare fix',
+    items: [
+      'Mentenanță: total lunar, breakdown pe firme, lista primăriilor cu valoare',
+      'Programări: afișează corect Localitate și Județ (getField)',
+      'Căutare: oninput handlers adăugați - căutarea funcționează live'
+    ]
+  },
+
   {
     version: 'v8.8',
     data: '11.06.2026',
@@ -3372,48 +3383,62 @@ function renderMentenanta() {
   if (!el) return;
   if (!uats.length) { el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:40px">Nu există date</div>'; return; }
 
-  var today = new Date();
-  var overdue = [], upcoming = [], ok = [];
+  // Colecteaza contracte active cu valoare lunara
+  var rows = [];
+  var totalLunar = 0;
+  var perFirma = {};
 
   uats.forEach(function(u) {
-    var prog = getField(u,'DataUrmatorContact') || '';
-    if (!prog) return;
-    var d = parseRoDate(prog);
-    if (!d) return;
-    var days = Math.ceil((d - today) / 86400000);
-    if (days < 0) overdue.push({u:u, days:days, prog:prog});
-    else if (days <= 30) upcoming.push({u:u, days:days, prog:prog});
-    else ok.push({u:u, days:days, prog:prog});
+    var loc = getField(u,'Localitate') || u.localitate || '';
+    var jud = getField(u,'CodJudet') || getField(u,'Judet') || u.judet || '';
+    var activ = getField(u,'BeneficiarActiv') !== 'NU';
+    (u._contracte || []).forEach(function(c) {
+      if (c.arhivat_la) return; // skip arhivate
+      var val = parseFloat((c.valoare_lunara||'').toString().replace(/[^0-9.]/g,'')) || 0;
+      if (!val) return;
+      var firma = c.firma_id || 'DLY';
+      totalLunar += val;
+      perFirma[firma] = (perFirma[firma] || 0) + val;
+      rows.push({ loc:loc, jud:jud, val:val, firma:firma, id:u.id, activ:activ });
+    });
   });
 
-    function row(x) {
-    var col = x.days < 0 ? 'var(--eroare)' : x.days <= 7 ? 'var(--inactiv)' : 'var(--accent)';
-    var label = x.days < 0 ? Math.abs(x.days) + 'z depășit' : 'Peste ' + x.days + 'z';
-    var div = document.createElement('div');
-    div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border-radius:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid ' + col;
-    div.dataset.uid = x.u.id || '';
-    div.onclick = function() { openUat(this.dataset.uid); };
-    div.innerHTML = '<div><div style="font-size:13px;font-weight:600">' + (x.u.localitate||x.u.uat||'') + '</div>'
-      + '<div style="font-size:10px;color:var(--text3)">' + (x.u.judet||'') + ' · ' + x.prog + '</div></div>'
-      + '<div style="font-size:12px;font-weight:700;color:' + col + '">' + label + '</div>';
-    return div.outerHTML;
-  }
+  rows.sort(function(a,b) { return b.val - a.val; });
+
+  var fmt = function(n) { return n.toLocaleString('ro-RO',{minimumFractionDigits:0,maximumFractionDigits:0}) + ' Lei'; };
 
   var out = '';
-  if (overdue.length) {
-    out += '<div style="font-size:11px;color:var(--eroare);font-weight:700;margin:0 0 8px">⚠️ DEPĂȘITE (' + overdue.length + ')</div>';
-    out += overdue.sort(function(a,b){return a.days-b.days;}).map(row).join('');
-    out += '<div style="height:1px;background:var(--border);margin:14px 0"></div>';
+
+  // Card total
+  out += '<div style="background:var(--accent);border-radius:14px;padding:20px;margin-bottom:16px;color:white">';
+  out += '<div style="font-size:12px;opacity:0.8;margin-bottom:4px">Total mentenanță lunară</div>';
+  out += '<div style="font-size:28px;font-weight:800">' + fmt(totalLunar) + '</div>';
+  out += '<div style="font-size:11px;opacity:0.7;margin-top:4px">' + rows.length + ' contracte active</div>';
+  out += '</div>';
+
+  // Per firma
+  var firme = Object.entries(perFirma).sort(function(a,b){return b[1]-a[1];});
+  if (firme.length > 1) {
+    out += '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">';
+    firme.forEach(function(f) {
+      out += '<div style="flex:1;min-width:100px;background:var(--surface2);border-radius:10px;padding:12px;text-align:center">';
+      out += '<div style="font-size:11px;color:var(--text3);margin-bottom:4px">' + f[0] + '</div>';
+      out += '<div style="font-size:16px;font-weight:700;color:var(--accent)">' + fmt(f[1]) + '</div>';
+      out += '</div>';
+    });
+    out += '</div>';
   }
-  if (upcoming.length) {
-    out += '<div style="font-size:11px;color:var(--accent);font-weight:700;margin:0 0 8px">📅 ÎN CURÂND (' + upcoming.length + ')</div>';
-    out += upcoming.sort(function(a,b){return a.days-b.days;}).map(row).join('');
-  }
-  if (!overdue.length && !upcoming.length) {
-    out = '<div style="text-align:center;padding:40px;color:var(--activ)">✅ Toate mentenanțele la zi</div>';
-  }
-  out += '<div style="font-size:10px;color:var(--text3);margin-top:12px;text-align:right">'
-    + (overdue.length+upcoming.length+ok.length) + ' programări totale · ' + ok.length + ' la zi</div>';
+
+  // Lista UAT-uri
+  out += '<div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:8px">PRIMĂRII</div>';
+  rows.forEach(function(r) {
+    out += '<div data-uid="' + (r.id||'') + '" onclick="openUat(this.dataset.uid)" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border-radius:10px;margin-bottom:6px;cursor:pointer">';
+    out += '<div><div style="font-size:13px;font-weight:600">' + r.loc + '</div>';
+    out += '<div style="font-size:10px;color:var(--text3)">' + r.jud + (r.activ?'':' · INACTIV') + '</div></div>';
+    out += '<div style="font-size:14px;font-weight:700;color:var(--accent)">' + fmt(r.val) + '</div>';
+    out += '</div>';
+  });
+
   el.innerHTML = out;
 }
 
