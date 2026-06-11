@@ -733,10 +733,20 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v7.7';
+const APP_VERSION = 'v7.8';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v7.8',
+    data: '11.06.2026',
+    titlu: 'Fix Cannot access currentView before initialization',
+    items: [
+      'Variabilele de state (currentView, currentFilter etc.) convertite din let in var',
+      'var este hoisted - elimina temporal dead zone errors'
+    ]
+  },
+
   {
     version: 'v7.7',
     data: '11.06.2026',
@@ -1203,10 +1213,11 @@ function pozaOnerror(img, idOrUrl) {
 
 // ─── STATE ─────────────────────────────────────────────────
 let uats = [];
-currentFilter = currentFilter || 'all';
-currentSearch = currentSearch || '';
-let currentView = 'lista';
-let filterBarOpen = false;
+var currentView = 'lista';
+var currentFilter = 'all';
+var currentSearch = '';
+var activeStatSection = null;
+var filterBarOpen = false;
 
 // ─── HELPERS ───────────────────────────────────────────────
 function parseRoDate(s) {
@@ -2647,8 +2658,6 @@ function renderGlobalAudio(q) {
 }
 
 // ─── NAV & VIEWS ─────────────────────────────────────────────
-currentView = currentView || 'lista';
-
 function showView(v) {
   currentView = v;
   document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
@@ -2667,9 +2676,6 @@ function showView(v) {
 function renderCurrent() { showView(currentView); }
 
 // ─── FILTRARE LISTA ───────────────────────────────────────────
-let currentFilter = 'all';
-let currentSearch = '';
-
 function setFilter(f, el) {
   currentFilter = f;
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
@@ -2689,7 +2695,6 @@ const STAT_SECTIONS = {
   generat: { listId: 'stat-list-generat', scrollTo: 'stat-list-generat' },
   urgente: { listId: 'stat-list-urgente', scrollTo: 'stat-list-urgente' }
 };
-activeStatSection = activeStatSection || null;
 
 function toggleStatList(key) {
   const sec = STAT_SECTIONS[key];
@@ -2714,7 +2719,6 @@ function toggleStatList(key) {
 }
 
 // ─── CAUTARE DOCUMENTE ────────────────────────────────────────
-if (!activeTips) activeTips = new Set(['contract','factura','pv','util']);
 
 function toggleTip(tip, el) {
   if (activeTips.has(tip)) { activeTips.delete(tip); el.classList.remove('active'); }
