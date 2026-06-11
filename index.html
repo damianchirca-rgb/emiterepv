@@ -734,10 +734,20 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v8.6';
+const APP_VERSION = 'v8.7';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v8.7',
+    data: '11.06.2026',
+    titlu: 'Fix loadFisiere not defined',
+    items: [
+      'loadFisiere (contracte) era complet absentă din fișier',
+      'Adăugată cu cache localStorage + background refresh + retry'
+    ]
+  },
+
   {
     version: 'v8.6',
     data: '11.06.2026',
@@ -2599,6 +2609,62 @@ async function deschideAtasament(fisierName) {
   }
 }
 
+
+
+// ─── LOAD FISIERE CONTRACTE ───────────────────────────────────
+async function loadFisiere(uatId) {
+  const elId = 'fisiere-' + uatId;
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (el.dataset.loaded === 'loading' || el.dataset.loaded === 'ok') return;
+
+  // Incarca din cache localStorage
+  const cached = loadUatCache(uatId, 'fisiere');
+  if (cached) {
+    renderFisiereContracte(el, cached);
+    el.dataset.loaded = 'ok';
+    _bgRefreshFisiere(uatId, el);
+    return;
+  }
+
+  el.dataset.loaded = 'loading';
+  showLoading(elId, ['Conectare la server…', 'Se caută fișierele contractelor…', 'Se procesează lista…']);
+
+  try {
+    setLoadingStep(elId, 0, 'done');
+    setLoadingStep(elId, 1, 'active');
+    const resp = await fetchWT(API_URL + '?action=contracte_fisiere&uat_id=' + uatId, {});
+    if (!resp.ok) throw new Error('Server ' + resp.status);
+    setLoadingStep(elId, 1, 'done');
+    setLoadingStep(elId, 2, 'active');
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    setLoadingStep(elId, 2, 'done');
+    el.dataset.loaded = 'ok';
+    saveUatCache(uatId, 'fisiere', data);
+    renderFisiereContracte(el, data);
+  } catch(err) {
+    el.dataset.loaded = '';
+    const c = loadUatCache(uatId, 'fisiere');
+    if (c) { renderFisiereContracte(el, c); el.dataset.loaded = 'ok'; }
+    else showLoadingError(elId, err.message);
+  }
+}
+
+async function _bgRefreshFisiere(uatId, el) {
+  try {
+    const resp = await fetchWT(API_URL + '?action=contracte_fisiere&uat_id=' + uatId, {});
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.error) return;
+    const cached = loadUatCache(uatId, 'fisiere');
+    if (JSON.stringify(data) !== JSON.stringify(cached)) {
+      saveUatCache(uatId, 'fisiere', data);
+      renderFisiereContracte(el, data);
+      showToast('📄 Fișiere actualizate');
+    }
+  } catch(e) {}
+}
 
 async function loadFisiereUtile(uatId) {
   const elId = 'fisiere-utile-' + uatId;
