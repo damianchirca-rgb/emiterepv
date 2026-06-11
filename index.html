@@ -614,6 +614,36 @@
 
     </div>
 
+    <!-- Color Pickers -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px">Culori temă</div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:13px">🎨 Accent principal</span>
+        <input type="color" id="picker-accent"
+          oninput="document.documentElement.style.setProperty('--accent',this.value);saveColorPref('--accent',this.value)"
+          style="width:44px;height:32px;border:none;border-radius:8px;cursor:pointer;background:none">
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:13px">🎨 Accent secundar</span>
+        <input type="color" id="picker-accent2"
+          oninput="document.documentElement.style.setProperty('--accent2',this.value);saveColorPref('--accent2',this.value)"
+          style="width:44px;height:32px;border:none;border-radius:8px;cursor:pointer;background:none">
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span style="font-size:13px">🎨 Fundal card</span>
+        <input type="color" id="picker-surface2"
+          oninput="document.documentElement.style.setProperty('--surface2',this.value);saveColorPref('--surface2',this.value)"
+          style="width:44px;height:32px;border:none;border-radius:8px;cursor:pointer;background:none">
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button onclick="resetAllColors()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:none;color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit">↺ Resetează</button>
+      </div>
+    </div>
+
     <!-- Tab info / diagnostic -->
     <div id="stab-info" style="display:none">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
@@ -734,10 +764,22 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v8.7';
+const APP_VERSION = 'v8.8';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v8.8',
+    data: '11.06.2026',
+    titlu: 'Programări + Mentenanță + Color picker',
+    items: [
+      'Programări: câmpul corect DataUrmatorContact',
+      'Mentenanță: afișează programări depășite/urgente/la zi',
+      'Teme: color pickers funcționali pentru Accent, Accent2, Fundal card',
+      'Culori se salvează per temă și se resetează cu buton'
+    ]
+  },
+
   {
     version: 'v8.7',
     data: '11.06.2026',
@@ -2932,7 +2974,8 @@ function showView(v) {
   if (v === 'lista')    renderList && renderList();
   if (v === 'stats')    renderStats && renderStats();
   if (v === 'contacte') renderContacte && renderContacte();
-  if (v === 'setari')  initSetari && initSetari();
+  if (v === 'setari')    initSetari && initSetari();
+  if (v === 'mentenanta') renderMentenanta && renderMentenanta();
   if (v === 'cautare' && !globalAudioData) loadGlobalData && loadGlobalData();
 }
 
@@ -3040,6 +3083,7 @@ function initSetari() {
     infoSize.textContent = (cache.length / 1024).toFixed(0) + ' KB';
   }
   if (infoVer) infoVer.textContent = APP_NAME + ' ' + APP_VERSION;
+  initColorPickers();
   // Render changelog
   const clEl = document.getElementById('changelog-list');
   if (clEl && typeof CHANGELOG !== 'undefined') {
@@ -3279,6 +3323,100 @@ function runDiagnostic() {
 }
 
 
+
+
+// ─── COLOR PICKERS ────────────────────────────────────────────
+function saveColorPref(varName, value) {
+  var theme = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+  var saved = JSON.parse(localStorage.getItem('cardColors_' + theme) || '{}');
+  saved[varName] = value;
+  localStorage.setItem('cardColors_' + theme, JSON.stringify(saved));
+}
+
+function resetAllColors() {
+  var theme = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+  localStorage.removeItem('cardColors_' + theme);
+  ['--accent','--accent2','--surface2'].forEach(function(v) {
+    document.documentElement.style.removeProperty(v);
+  });
+  initColorPickers();
+  showToast('Culori resetate la valorile implicite');
+}
+
+function initColorPickers() {
+  // Seteaza valorile curente in input-uri
+  var style = getComputedStyle(document.documentElement);
+  var pickers = {
+    'picker-accent':   '--accent',
+    'picker-accent2':  '--accent2',
+    'picker-surface2': '--surface2'
+  };
+  Object.entries(pickers).forEach(function(entry) {
+    var el = document.getElementById(entry[0]);
+    if (!el) return;
+    var val = style.getPropertyValue(entry[1]).trim();
+    // Converteste rgb la hex daca e nevoie
+    if (val.startsWith('rgb')) {
+      var m = val.match(/\d+/g);
+      if (m && m.length >= 3) {
+        val = '#' + m.slice(0,3).map(function(n) { return parseInt(n).toString(16).padStart(2,'0'); }).join('');
+      }
+    }
+    if (val) el.value = val;
+  });
+}
+
+// ─── MENTENANTA ───────────────────────────────────────────────
+function renderMentenanta() {
+  var el = document.getElementById('mentenanta-content');
+  if (!el) return;
+  if (!uats.length) { el.innerHTML = '<div style="color:var(--text3);text-align:center;padding:40px">Nu există date</div>'; return; }
+
+  var today = new Date();
+  var overdue = [], upcoming = [], ok = [];
+
+  uats.forEach(function(u) {
+    var prog = getField(u,'DataUrmatorContact') || '';
+    if (!prog) return;
+    var d = parseRoDate(prog);
+    if (!d) return;
+    var days = Math.ceil((d - today) / 86400000);
+    if (days < 0) overdue.push({u:u, days:days, prog:prog});
+    else if (days <= 30) upcoming.push({u:u, days:days, prog:prog});
+    else ok.push({u:u, days:days, prog:prog});
+  });
+
+    function row(x) {
+    var col = x.days < 0 ? 'var(--eroare)' : x.days <= 7 ? 'var(--inactiv)' : 'var(--accent)';
+    var label = x.days < 0 ? Math.abs(x.days) + 'z depășit' : 'Peste ' + x.days + 'z';
+    var div = document.createElement('div');
+    div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border-radius:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid ' + col;
+    div.dataset.uid = x.u.id || '';
+    div.onclick = function() { openUat(this.dataset.uid); };
+    div.innerHTML = '<div><div style="font-size:13px;font-weight:600">' + (x.u.localitate||x.u.uat||'') + '</div>'
+      + '<div style="font-size:10px;color:var(--text3)">' + (x.u.judet||'') + ' · ' + x.prog + '</div></div>'
+      + '<div style="font-size:12px;font-weight:700;color:' + col + '">' + label + '</div>';
+    return div.outerHTML;
+  }
+
+  var out = '';
+  if (overdue.length) {
+    out += '<div style="font-size:11px;color:var(--eroare);font-weight:700;margin:0 0 8px">⚠️ DEPĂȘITE (' + overdue.length + ')</div>';
+    out += overdue.sort(function(a,b){return a.days-b.days;}).map(row).join('');
+    out += '<div style="height:1px;background:var(--border);margin:14px 0"></div>';
+  }
+  if (upcoming.length) {
+    out += '<div style="font-size:11px;color:var(--accent);font-weight:700;margin:0 0 8px">📅 ÎN CURÂND (' + upcoming.length + ')</div>';
+    out += upcoming.sort(function(a,b){return a.days-b.days;}).map(row).join('');
+  }
+  if (!overdue.length && !upcoming.length) {
+    out = '<div style="text-align:center;padding:40px;color:var(--activ)">✅ Toate mentenanțele la zi</div>';
+  }
+  out += '<div style="font-size:10px;color:var(--text3);margin-top:12px;text-align:right">'
+    + (overdue.length+upcoming.length+ok.length) + ' programări totale · ' + ok.length + ' la zi</div>';
+  el.innerHTML = out;
+}
+
 // ─── PROGRAMARI ───────────────────────────────────────────────
 function renderContacte() {
   const el = document.getElementById('contacts-list');
@@ -3288,7 +3426,7 @@ function renderContacte() {
   const today = new Date();
   const items = [];
   uats.forEach(function(u) {
-    var prog = u.programare || u.program || u.contact_date || '';
+    var prog = getField(u,'DataUrmatorContact') || u.programare || u.program || '';
     if (!prog) return;
     var d = parseRoDate(prog);
     if (!d) return;
