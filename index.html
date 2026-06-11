@@ -733,10 +733,22 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v7.4';
+const APP_VERSION = 'v7.5';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v7.5',
+    data: '10.06.2026',
+    titlu: 'Audio Căutare - carduri identice cu UAT',
+    items: [
+      'Cardurile din Căutare → Audio afișează transcriere + sumar GPT + buton Ascultă',
+      'Același stil ca tabul Audio din UAT: 📝 Transcriere, 🤖 Sumar GPT, ▶ Ascultă',
+      'Butoane Citește tot / Citește integral funcționale',
+      'Limită mărită: 30 → 50 înregistrări recente'
+    ]
+  },
+
   {
     version: 'v7.4',
     data: '10.06.2026',
@@ -3400,7 +3412,7 @@ async function loadGlobalData() {
   try {
     // Fetch paralel: recente (afisare) + indexuri complete (cautare)
     const [rAudio, rMail, rAllAudio, rAllMail] = await Promise.all([
-      fetch(API_URL + '?action=recent_audio&n=30',  {cache:'no-store'}),
+      fetch(API_URL + '?action=recent_audio&n=50',  {cache:'no-store'}),
       fetch(API_URL + '?action=recent_mail&n=50',   {cache:'no-store'}),
       fetch(API_URL + '?action=all_audio_index',    {cache:'no-store'}),
       fetch(API_URL + '?action=all_mail_index',     {cache:'no-store'})
@@ -3451,7 +3463,6 @@ function renderGlobalAudio(q) {
   const el = document.getElementById('global-audio-list');
   if (!el || !globalAudioData) return;
   const qn = norm(q || '');
-  // La cautare foloseste indexul complet, altfel top 30 recente
   const source = qn ? (allAudioData || globalAudioData || []) : (globalAudioData || []);
   const items = qn
     ? source.filter(f =>
@@ -3466,26 +3477,77 @@ function renderGlobalAudio(q) {
     return;
   }
 
-  const label = qn ? items.length + ' rezultate din ' + (allAudioData||[]).length + ' înregistrări' : items.length + ' înregistrări recente';
-  let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:8px">' + label + '</div>';
-  items.forEach(function(f) {
-    const dateRo = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'short',year:'numeric'}) : '';
-    const sumarShort = f.sumar ? f.sumar.substring(0,120) + (f.sumar.length>120?'…':'') : '';
-    // Titlu: localitate daca exista, altfel extragem din display_name
-    var title = f.localitate || (f.display_name||'').split(' ')[0] || 'UAT ' + f.uat_id;
-    var hasAudio = !!f.drive_id || !!f.view;
-    out += '<div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;border-left:3px solid var(--accent)">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
-      + '<span onclick="openUat(' + f.uat_id + ')" style="font-size:13px;font-weight:700;color:var(--accent);cursor:pointer">' + title + '</span>'
-      + '<div style="display:flex;align-items:center;gap:8px">'
-      + '<span style="font-size:11px;color:var(--text3)">' + dateRo + '</span>'
-      + (hasAudio ? '<a href="' + (f.view||'') + '" target="_blank" style="padding:4px 10px;background:var(--accent);color:white;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none">▶</a>' : '')
-      + '</div>'
-      + '</div>'
-      + '<div style="font-size:11px;color:var(--text3);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (f.display_name||'') + '</div>'
-      + (sumarShort ? '<div style="font-size:11px;color:var(--text2);line-height:1.4;font-style:italic">' + sumarShort + '</div>' : '')
-      + '</div>';
+  const label = qn
+    ? items.length + ' rezultate din ' + (allAudioData||[]).length + ' înregistrări'
+    : items.length + ' înregistrări recente';
+
+  // Foloseste acelasi stil ca renderAudio din UAT
+  // Genereaza ID-uri unice bazate pe index global
+  window._globalAudioItems = items;
+  let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:10px">' + label + '</div>';
+
+  items.forEach(function(f, gi) {
+    const k = 'g_' + gi;
+    const dateRo = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'long',year:'numeric'}) : '';
+    const sumar   = (f.sumar || '').trim();
+    const transcr = (f.transcriere_preview || '').trim();
+    const viewUrl = f.view || (f.drive_id ? 'https://drive.google.com/file/d/' + f.drive_id + '/view' : '');
+    const fullName = f.fullName || f.key || '';
+    const localitate = f.localitate || '';
+
+    out += '<div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid var(--accent)">';
+
+    // Header: localitate + data + play
+    out += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">';
+    out += '<div style="flex:1;min-width:0">';
+    out += '<div style="display:flex;align-items:center;gap:8px">';
+    out += '<span onclick="openUat(' + f.uat_id + ')" style="font-size:14px;font-weight:700;color:var(--accent);cursor:pointer">' + localitate + '</span>';
+    out += '<span style="font-size:11px;color:var(--text3)">' + dateRo + '</span>';
+    out += '</div>';
+    out += '<div style="font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (f.display_name||f.key||'') + '</div>';
+    out += '</div>';
+    if (viewUrl) {
+      out += '<a href="' + viewUrl + '" target="_blank" style="flex-shrink:0;padding:8px 14px;background:var(--accent);color:white;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">▶ Ascultă</a>';
+    }
+    out += '</div>';
+
+    // Transcriere
+    if (transcr) {
+      const tShort = transcr.length > 300 ? transcr.substring(0,300) + '…' : transcr;
+      out += '<div style="background:var(--surface3);border-radius:8px;padding:10px;margin-bottom:8px;border-left:2px solid var(--text3)">';
+      out += '<div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:6px">📝 Transcriere</div>';
+      out += '<div id="tr-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.6;font-style:italic;white-space:pre-wrap"'
+        + ' data-short="' + tShort.replace(/"/g,'&quot;') + '"'
+        + ' data-full="' + transcr.replace(/"/g,'&quot;') + '"'
+        + ' data-expanded="0">' + tShort + '</div>';
+      if (transcr.length >= 300 && fullName) {
+        out += '<button id="tr-btn-' + k + '" data-elid="tr-text-' + k + '" data-fname="' + fullName.replace(/"/g,'&quot;') + '" data-btnid="tr-btn-' + k + '"'
+          + ' onclick="loadFullTranscr(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"'
+          + ' style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit">📄 Citește tot</button>';
+      }
+      out += '</div>';
+    }
+
+    // Sumar GPT
+    if (sumar) {
+      const sShort = sumar.substring(0,300) + (sumar.length >= 300 ? '…' : '');
+      out += '<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--accent2)">';
+      out += '<div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:6px">🤖 Sumar GPT</div>';
+      out += '<div id="sm-text-' + k + '" style="font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap"'
+        + ' data-short="' + sShort.replace(/"/g,'&quot;') + '"'
+        + ' data-full="' + sumar.replace(/"/g,'&quot;') + '"'
+        + ' data-expanded="0">' + sShort + '</div>';
+      if (fullName) {
+        out += '<button id="sm-btn-' + k + '" data-elid="sm-text-' + k + '" data-fname="' + fullName.replace(/"/g,'&quot;') + '" data-btnid="sm-btn-' + k + '"'
+          + ' onclick="loadFullSumar(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"'
+          + ' style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent2);font-size:11px;cursor:pointer;font-family:inherit">🤖 Citește integral</button>';
+      }
+      out += '</div>';
+    }
+
+    out += '</div>'; // card
   });
+
   el.innerHTML = out;
 }
 
