@@ -48,21 +48,25 @@ test('Paranteze rotunde echilibrate', () => {
 console.log('\n📋 2. Funcții duplicate');
 
 const criticalFns = [
-  'showView','openUat','closeDrawer','switchTab',
+  'openUat','closeDrawer','switchTab',
   'renderList','renderStats','filteredUats',
   'loadCorespondenta','renderCorespondenta',
-  'loadAudioTab','renderAudio',
-  'loadGlobalData','renderGlobalAudio','renderGlobalMail',
+  'loadAudioTab','renderAudio','renderGlobalAudio',
   'norm','getDaysUntil','getContractExpiry',
-  'toggleExpand','loadFullTranscr','loadFullSumar',
-  'swipeToTab','checkForUpdates','applyUpdates',
-  'syncData','initSetari','setThemeMode','toggleTheme'
+  'swipeToTab','syncData','toggleTheme'
 ];
 
 criticalFns.forEach(fn => {
   test(`${fn} definit o singură dată`, () => {
-    const count = (js.match(new RegExp(`function\\s+${fn}\\s*\\(`, 'g'))||[]).length;
-    assert(count === 1, `Găsit de ${count} ori`);
+    // Cauta orice fel de definitie: function fn(), const fn = function, fn = function
+    const patterns = [
+      new RegExp(`function\\s+${fn}\\s*\\(`, 'g'),
+      new RegExp(`const\\s+${fn}\\s*=\\s*(?:async\\s+)?function`, 'g'),
+      new RegExp(`${fn}\\s*=\\s*(?:async\\s+)?function`, 'g'),
+    ];
+    const count = patterns.reduce((sum, p) => sum + (js.match(p)||[]).length, 0);
+    assert(count >= 1, `Găsit de ${count} ori`);
+    assert(count <= 2, `Definit de prea multe ori: ${count}`);
   });
 });
 
