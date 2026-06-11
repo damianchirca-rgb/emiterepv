@@ -767,10 +767,19 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v9.1';
+const APP_VERSION = 'v9.2';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v9.2',
+    data: '11.06.2026',
+    titlu: 'Fix Programari - afiseaza numele primariei',
+    items: [
+      'renderContacte: getField(Localitate) si getField(Judet) in loc de lowercase'
+    ]
+  },
+
   {
     version: 'v9.1',
     data: '11.06.2026',
@@ -3515,8 +3524,8 @@ function renderContacte() {
     var uid = x.u.id || '';
     return '<div data-uid="' + uid + '" onclick="openUat(this.dataset.uid)" style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
       + '<div style="display:flex;justify-content:space-between;align-items:center">'
-      + '<div><div style="font-size:13px;font-weight:700">' + (x.u.localitate||x.u.uat||'') + '</div>'
-      + '<div style="font-size:11px;color:var(--text3)">' + (x.u.judet||'') + ' · ' + x.prog + '</div></div>'
+      + '<div><div style="font-size:13px;font-weight:700">' + (getField(x.u,'Localitate')||x.u.localitate||'') + '</div>'
+      + '<div style="font-size:11px;color:var(--text3)">' + (getField(x.u,'CodJudet')||getField(x.u,'Judet')||x.u.judet||'') + ' · ' + x.prog + '</div></div>'
       + '<div style="font-size:12px;font-weight:700;color:' + col + '">' + label + '</div>'
       + '</div></div>';
   }
