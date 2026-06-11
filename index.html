@@ -733,10 +733,21 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v7.6';
+const APP_VERSION = 'v7.7';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v7.7',
+    data: '11.06.2026',
+    titlu: 'Fix showView not defined',
+    items: [
+      'Funcțiile de navigare lipseau din fișier (showView, initSetari, setThemeMode etc.)',
+      'Adăugate: showView, renderCurrent, setFilter, toggleStatList, doCautare, initSetari, setThemeMode, applyThemeColors',
+      'Fix cod de inițializare INIT restaurat'
+    ]
+  },
+
   {
     version: 'v7.6',
     data: '11.06.2026',
@@ -1192,8 +1203,8 @@ function pozaOnerror(img, idOrUrl) {
 
 // ─── STATE ─────────────────────────────────────────────────
 let uats = [];
-let currentFilter = 'all';
-let currentSearch = '';
+currentFilter = currentFilter || 'all';
+currentSearch = currentSearch || '';
 let currentView = 'lista';
 let filterBarOpen = false;
 
@@ -2678,7 +2689,7 @@ const STAT_SECTIONS = {
   generat: { listId: 'stat-list-generat', scrollTo: 'stat-list-generat' },
   urgente: { listId: 'stat-list-urgente', scrollTo: 'stat-list-urgente' }
 };
-let activeStatSection = null;
+activeStatSection = activeStatSection || null;
 
 function toggleStatList(key) {
   const sec = STAT_SECTIONS[key];
@@ -2703,7 +2714,7 @@ function toggleStatList(key) {
 }
 
 // ─── CAUTARE DOCUMENTE ────────────────────────────────────────
-let activeTips = new Set(['contract','factura','pv','util']);
+if (!activeTips) activeTips = new Set(['contract','factura','pv','util']);
 
 function toggleTip(tip, el) {
   if (activeTips.has(tip)) { activeTips.delete(tip); el.classList.remove('active'); }
@@ -2711,28 +2722,34 @@ function toggleTip(tip, el) {
 }
 
 function doCautare() {
-  const q = (document.getElementById('cautare-input') || {}).value || '';
+  const qEl = document.getElementById('cautare-input');
+  const q = qEl ? qEl.value : '';
   if (!q.trim()) return;
-  const qn = norm(q);
   const el = document.getElementById('cautare-rezultate');
   if (!el) return;
   el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">Se caută…</div>';
   fetch(API_URL + '?action=drive_search&q=' + encodeURIComponent(q), {cache:'no-store'})
-    .then(function(r){ return r.json(); })
-    .then(function(data){
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
       const items = (data.items || []).filter(function(item) {
-        const t = (item.tip||'').toLowerCase();
-        return activeTips.has(t);
+        return activeTips && activeTips.has((item.tip||'').toLowerCase());
       });
-      if (!items.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">Niciun rezultat.</div>'; return; }
-      el.innerHTML = items.map(function(item){
-        return '<div onclick="deschideFisier('' + (item.id||'') + '')" style="padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer">'
+      if (!items.length) {
+        el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">Niciun rezultat.</div>';
+        return;
+      }
+      window._cautareItems = items;
+      el.innerHTML = items.map(function(item, ci) {
+        return '<div onclick="window._cautareItems[' + ci + '] && deschideFisier(window._cautareItems[' + ci + '].id)"'
+          + ' style="padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer">'
           + '<div style="font-size:13px;font-weight:600">' + (item.name||'') + '</div>'
           + '<div style="font-size:11px;color:var(--text3)">' + (item.uat||'') + ' · ' + (item.tip||'') + '</div>'
           + '</div>';
       }).join('');
     })
-    .catch(function(e){ el.innerHTML = '<div style="color:var(--eroare);font-size:13px;padding:12px">Eroare: ' + e.message + '</div>'; });
+    .catch(function(e) {
+      el.innerHTML = '<div style="color:var(--eroare);font-size:13px;padding:12px">Eroare: ' + e.message + '</div>';
+    });
 }
 
 function deschideFisier(id) {
