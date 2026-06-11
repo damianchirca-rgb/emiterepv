@@ -460,11 +460,11 @@
     <!-- Subtaburi -->
     <div style="display:flex;gap:0;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:4px">
       <button id="stab-btn-culori" class="setari-tab-btn active" onclick="showSetariTab('culori')"
-        style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);color:white;transition:all .2s">
+        style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
         🎨 Teme
       </button>
       <button id="stab-btn-info" class="setari-tab-btn" onclick="showSetariTab('info')"
-        style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text2);transition:all .2s">
+        style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
         ℹ️ Info
       </button>
     </div>
@@ -774,10 +774,20 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v9.5';
+const APP_VERSION = 'v9.6';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v9.6',
+    data: '11.06.2026',
+    titlu: 'Fix Setări - Teme rămânea activ la Info',
+    items: [
+      'Eliminate inline background/color hardcodate de pe butoanele Teme/Info',
+      'Active state controlat exclusiv prin clase CSS'
+    ]
+  },
+
   {
     version: 'v9.5',
     data: '11.06.2026',
