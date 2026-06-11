@@ -286,7 +286,8 @@
 
   /* Global tab buttons */
   .global-tab-btn { flex:1;padding:8px;border:none;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;border-radius:8px;background:transparent;color:var(--text2);transition:all .2s; }
-  .global-tab-btn.active { background:var(--surface2);color:var(--accent);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,0.12); }
+  .global-tab-btn { color:var(--text2); }
+  .global-tab-btn.active { background:var(--accent) !important;color:white !important;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.2); }
 </style>
 </head>
 <body>
@@ -362,16 +363,16 @@
         oninput="filterGlobal(this.value)">
       <!-- Tab-uri sectiuni -->
       <div style="display:flex;gap:0;margin-top:10px;background:var(--surface2);border-radius:10px;padding:3px">
-        <button id="gtab-btn-audio" class="global-tab-btn" onclick="switchGlobalTab('audio')"
-          style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent);color:white;transition:all .2s">
+        <button id="gtab-btn-audio" class="global-tab-btn active" onclick="switchGlobalTab('audio')"
+          style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
           🎤 Audio recente
         </button>
         <button id="gtab-btn-mail" class="global-tab-btn" onclick="switchGlobalTab('mail')"
-          style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text2);transition:all .2s">
+          style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
           ✉️ Corespondență
         </button>
         <button id="gtab-btn-fisiere" class="global-tab-btn" onclick="switchGlobalTab('fisiere')"
-          style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text2);transition:all .2s">
+          style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
           📄 Documente
         </button>
       </div>
@@ -771,10 +772,21 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v9.3';
+const APP_VERSION = 'v9.4';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v9.4',
+    data: '11.06.2026',
+    titlu: 'Fix butoane Căutare - active state corect',
+    items: [
+      'Stilurile inline background:accent suprascrieau clasa CSS active',
+      'Eliminate background/color inline din butoane, folosite doar clase CSS',
+      'CSS .global-tab-btn.active cu !important pentru prioritate corectă'
+    ]
+  },
+
   {
     version: 'v9.3',
     data: '11.06.2026',
