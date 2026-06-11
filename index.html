@@ -733,10 +733,20 @@
 
 <script>
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v8.1';
+const APP_VERSION = 'v8.2';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v8.2',
+    data: '11.06.2026',
+    titlu: 'Restaurare funcționalitate Căutare globală',
+    items: [
+      'Adăugate: loadGlobalData, renderGlobalMail, _openMailByIdx, openEmailModal',
+      'Modal email cu atașamente funcțional în Căutare'
+    ]
+  },
+
   {
     version: 'v8.1',
     data: '11.06.2026',
@@ -2854,6 +2864,132 @@ function setThemeMode(mode) {
 }
 
 
+
+// ─── CAUTARE GLOBALA ────────────────────────────────────────
+async function loadGlobalData() {
+  const [r1, r2, r3, r4] = await Promise.allSettled([
+    fetchWT(API_URL + '?action=recent_audio&n=50', {}),
+    fetchWT(API_URL + '?action=recent_mail&n=50',  {}),
+    fetchWT(API_URL + '?action=all_audio_index',   {}),
+    fetchWT(API_URL + '?action=all_mail_index',    {})
+  ]);
+  if (r1.status === 'fulfilled' && r1.value.ok) {
+    try { const d = await r1.value.json(); globalAudioData = d.items || d.fisiere || []; } catch(e) {}
+  }
+  if (r2.status === 'fulfilled' && r2.value.ok) {
+    try { const d = await r2.value.json(); allMailData = d.items || []; } catch(e) {}
+  }
+  if (r3.status === 'fulfilled' && r3.value.ok) {
+    try { const d = await r3.value.json(); allAudioData = d.items || []; } catch(e) {}
+  }
+  if (r4.status === 'fulfilled' && r4.value.ok) {
+    try { const d = await r4.value.json(); allMailData = allMailData || d.items || []; } catch(e) {}
+  }
+  renderGlobalAudio && renderGlobalAudio('');
+  renderGlobalMail  && renderGlobalMail('');
+}
+
+function renderGlobalMail(q, filter) {
+  const el = document.getElementById('global-mail-list');
+  if (!el) return;
+  const src = allMailData || [];
+  const qn  = (typeof norm === 'function') ? norm(q || '') : (q||'').toLowerCase();
+  const f   = filter || _globalMailFilter || 'all';
+
+  let items = src;
+  if (qn) {
+    items = src.filter(function(i) {
+      const it = i.item || i;
+      return (typeof norm === 'function' ? norm : function(x){return x.toLowerCase()})(
+        (it.subiect||'') + ' ' + (it.de_la||'') + ' ' + (it.catre||'') + ' ' + (it.body_preview||'')
+      ).includes(qn);
+    });
+  }
+  if (f === 'trimis')  items = items.filter(function(i) { return ((i.item||i).directie||'').toLowerCase() === 'trimis'; });
+  if (f === 'primit')  items = items.filter(function(i) { return ((i.item||i).directie||'').toLowerCase() !== 'trimis'; });
+
+  if (!items.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center">Niciun mesaj</div>';
+    return;
+  }
+
+  _mailModalItems = items;
+  var label = (qn ? items.length + ' rezultate' : items.length + ' mesaje recente');
+  var out = '<div style="font-size:10px;color:var(--text3);margin-bottom:10px">' + label + '</div>';
+
+  items.forEach(function(i, idx) {
+    var it  = i.item || i;
+    var col = ((it.directie||'').toLowerCase() === 'trimis') ? 'var(--accent)' : 'var(--semnat)';
+    var icon = ((it.directie||'').toLowerCase() === 'trimis') ? '↑' : '↓';
+    var dateStr = (it.data||'').substring(0,10);
+
+    out += '<div onclick="_openMailByIdx(' + idx + ')" style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">';
+    out += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">';
+    out += '<div style="font-size:12px;font-weight:700;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (it.subiect||'(fără subiect)') + '</div>';
+    out += '<div style="text-align:right;flex-shrink:0"><div style="font-size:12px;color:' + col + ';font-weight:700">' + icon + '</div><div style="font-size:10px;color:var(--text3)">' + dateStr + '</div></div>';
+    out += '</div>';
+    if (i.localitate) out += '<div style="font-size:10px;color:var(--accent);margin-bottom:3px">' + i.localitate + '</div>';
+    out += '<div style="font-size:11px;color:var(--text3)">' + (it.directie==='trimis'?'Către: '+(it.catre||''):'De la: '+(it.de_la||'')) + '</div>';
+    if (it.body_preview) out += '<div style="font-size:11px;color:var(--text2);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + it.body_preview.substring(0,100) + '</div>';
+    out += '</div>';
+  });
+  el.innerHTML = out;
+}
+
+function _openMailByIdx(idx) {
+  var item = _mailModalItems[idx];
+  if (item) openEmailModal(item);
+}
+
+function openEmailModal(itemJson) {
+  var i  = (typeof itemJson === 'string') ? JSON.parse(itemJson) : itemJson;
+  var it = i.item || i;
+  var emailId = it.id || it.email_id || '';
+  var nrAtas  = parseInt(it.nr_atasamente || '0', 10) || 0;
+  var atas    = it.atasamente || [];
+  var preview = (it.body_preview || '').trim();
+
+  document.getElementById('eml-subiect').textContent = it.subiect || '(fără subiect)';
+  var dir = (it.directie||'').toLowerCase() === 'trimis' ? '↑ Trimis' : '↓ Primit';
+  var meta = [dir, it.de_la?'De la: '+it.de_la:'', it.catre?'Către: '+it.catre:'', (it.data||'').substring(0,16)].filter(Boolean).join(' · ');
+  document.getElementById('eml-meta').innerHTML = (i.localitate ? '<span style="font-weight:600;color:var(--accent)">' + i.localitate + '</span> · ' : '') + meta;
+
+  var atasEl = document.getElementById('eml-atasamente');
+  window._modalAtasamente = atas;
+
+  function _renderAtas(list) {
+    window._modalAtasamente = list;
+    atasEl.innerHTML = list.length ? list.map(function(a, ai) {
+      return '<button onclick="deschideAtasament(window._modalAtasamente[' + ai + '].fisier)" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit">📎 ' + (a.name||a.fisier||'Atașament') + '</button>';
+    }).join('') : '';
+  }
+
+  if (atas.length) {
+    _renderAtas(atas);
+  } else if (emailId) {
+    atasEl.innerHTML = '';
+    fetch(API_URL + '?action=email_atasamente_list&email_id=' + encodeURIComponent(emailId), {cache:'no-store'})
+      .then(function(r) { return r.json(); })
+      .then(function(d) { _renderAtas(d.atasamente || []); })
+      .catch(function() {});
+  }
+
+  var bodyEl = document.getElementById('eml-body-content');
+  bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">' + (preview || '<span style="color:var(--text3);font-style:italic">Se încarcă…</span>') + '</div>';
+
+  document.getElementById('email-modal-overlay').style.display = 'flex';
+  setTimeout(function() { document.getElementById('email-modal').style.transform = 'translateY(0)'; }, 10);
+  document.body.style.overflow = 'hidden';
+
+  if (emailId) {
+    fetch(API_URL + '?action=email_body&email_id=' + encodeURIComponent(emailId), {cache:'no-store'})
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var full = d.body || d.text || '';
+        if (full && full.length > preview.length) bodyEl.innerHTML = '<div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">' + full + '</div>';
+      }).catch(function() {});
+  }
+}
 
 // ─── MODAL EMAIL ──────────────────────────────────────────────
 function closeEmailModal() {
