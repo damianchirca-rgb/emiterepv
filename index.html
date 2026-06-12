@@ -839,10 +839,20 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v10.7';
+const APP_VERSION = 'v10.8';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v10.8',
+    data: '12.06.2026',
+    titlu: 'Programări - câmpul Notițe din UAT',
+    items: [
+      'Fiecare card programare afișează acum câmpul Note din UAT',
+      'Afișat cu fundal surface3 și iconiță 📝 sub dată/județ'
+    ]
+  },
+
   { version: 'v10.7', data: '11.06.2026', titlu: 'Fix căutare lista UAT', items: ['Input search lipsea oninput handler'] },
 
   {version:'v10.7',data:'11.06.2026',titlu:'Fix căutare lista UAT',items:['Input search lipsea oninput handler']},
@@ -3875,12 +3885,23 @@ function renderContacte() {
     var col = x.days < 0 ? 'var(--eroare)' : x.days <= 7 ? 'var(--inactiv)' : x.days <= 30 ? 'var(--accent)' : 'var(--text3)';
     var label = x.days < 0 ? 'Depășit cu ' + Math.abs(x.days) + 'z' : x.days === 0 ? 'Azi' : 'Peste ' + x.days + 'z';
     var uid = x.u.id || '';
-    return '<div data-uid="' + uid + '" onclick="openUatWithHistory(this.dataset.uid)" style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col + '">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center">'
-      + '<div><div style="font-size:13px;font-weight:700">' + (getField(x.u,'Localitate')||x.u.localitate||'') + '</div>'
-      + '<div style="font-size:11px;color:var(--text3)">' + (getField(x.u,'CodJudet')||getField(x.u,'Judet')||x.u.judet||'') + ' · ' + x.prog + '</div></div>'
-      + '<div style="font-size:12px;font-weight:700;color:' + col + '">' + label + '</div>'
-      + '</div></div>';
+    var loc = getField(x.u,'Localitate') || x.u.localitate || '';
+    var jud = getField(x.u,'CodJudet') || getField(x.u,'Judet') || x.u.judet || '';
+    var note = getField(x.u,'Note') || '';
+    var div = document.createElement('div');
+    div.dataset.uid = uid;
+    div.onclick = function() { openUatWithHistory(this.dataset.uid); };
+    div.style.cssText = 'background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;border-left:3px solid ' + col;
+    var inner = '<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:700">' + loc + '</div>'
+      + '<div style="font-size:11px;color:var(--text3);margin-top:2px">' + jud + ' · ' + x.prog + '</div>'
+      + (note ? '<div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;background:var(--surface3);border-radius:6px;padding:6px 8px">📝 ' + note + '</div>' : '')
+      + '</div>'
+      + '<div style="font-size:12px;font-weight:700;color:' + col + ';margin-left:8px;flex-shrink:0">' + label + '</div>'
+      + '</div>';
+    div.innerHTML = inner;
+    return div.outerHTML;
   }
 
   var out = '';
