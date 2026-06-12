@@ -367,11 +367,11 @@
       <div style="display:flex;gap:0;margin-top:10px;background:var(--surface2);border-radius:10px;padding:3px">
         <button id="gtab-btn-audio" class="global-tab-btn active" onclick="switchGlobalTab('audio')"
           style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
-          🎤 Audio recente
+          🎤 Audio
         </button>
         <button id="gtab-btn-mail" class="global-tab-btn" onclick="switchGlobalTab('mail')"
           style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
-          ✉️ Corespondență
+          ✉️ Mail
         </button>
         <button id="gtab-btn-fisiere" class="global-tab-btn" onclick="switchGlobalTab('fisiere')"
           style="flex:1;padding:8px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
@@ -839,10 +839,22 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v10.8';
+const APP_VERSION = 'v10.9';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v10.9',
+    data: '12.06.2026',
+    titlu: 'Căutare: cache + redenumire + stil Audio',
+    items: [
+      'Cache localStorage pentru Audio și Mail în Căutare',
+      'Redenumit: Audio recente → Audio, Corespondență → Mail',
+      'Stil fonturi Audio identic cu Mail',
+      'Nume persoană: bold doar înainte de paranteză (nr. telefon)'
+    ]
+  },
+
   {
     version: 'v10.8',
     data: '12.06.2026',
@@ -3188,16 +3200,21 @@ function renderGlobalAudio(q) {
 
     // Extrage numele persoanei din display_name (inainte de data)
     var dispName = f.display_name || f.key || '';
-    var personName = dispName.replace(/\.m4a$/i,'').replace(/_\d{4}-\d{2}-\d{2}.*/,'').replace(/_/g,' ').trim();
-    if (!personName) personName = dispName;
+    var rawName = dispName.replace(/\.m4a$/i,'').replace(/_\d{4}-\d{2}-\d{2}.*/,'').replace(/_/g,' ').trim();
+    if (!rawName) rawName = dispName;
+    // Bold doar pana la prima paranteza: "Ion Popescu (0730...)" -> <b>Ion Popescu</b> (0730...)
+    var parenIdx = rawName.indexOf('(');
+    var personName = parenIdx > 0
+      ? '<strong>' + rawName.substring(0, parenIdx).trim() + '</strong> ' + rawName.substring(parenIdx)
+      : '<strong>' + rawName + '</strong>';
 
-    // Header
-    out += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:' + (transcr||sumar?'10px':'0') + '">';
+    // Header - identic cu Mail
+    out += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:' + (transcr||sumar?'8px':'0') + '">';
     out += '<div style="flex:1;min-width:0">';
-    out += '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">' + personName + '</div>';
-    out += '<div style="display:flex;align-items:center;gap:8px">';
-    if (localitate) out += '<span onclick="openUat(' + f.uat_id + ')" style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:600">' + localitate + '</span>';
-    out += '<span style="font-size:10px;color:var(--text3)">' + dateRo + '</span>';
+    out += '<div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3">' + personName + '</div>';
+    out += '<div style="font-size:10px;color:var(--text3);margin-top:3px">';
+    if (localitate) out += '<span onclick="openUat(' + f.uat_id + ')" style="color:var(--accent);cursor:pointer;font-weight:600">' + localitate + '</span>';
+    out += (localitate ? ' · ' : '') + dateRo;
     out += '</div>';
     out += '</div>';
     if (viewUrl) {
@@ -3420,27 +3437,86 @@ function setThemeMode(mode) {
 
 
 // ─── CAUTARE GLOBALA ────────────────────────────────────────
-async function loadGlobalData() {
+var _globalDataLoading = false;
+
+async function loadGlobalData(forceRefresh) {
+  if (_globalDataLoading) return;
+
+  // Incarca din cache localStorage imediat
+  var cAudio = null, cMail = null;
+  try { cAudio = JSON.parse(localStorage.getItem('global_audio_cache') || 'null'); } catch(e) {}
+  try { cMail  = JSON.parse(localStorage.getItem('global_mail_cache')  || 'null'); } catch(e) {}
+
+  if (cAudio && !forceRefresh) { globalAudioData = cAudio.items; allAudioData = cAudio.allItems; renderGlobalAudio && renderGlobalAudio(''); }
+  if (cMail  && !forceRefresh) { allMailData = cMail.items; renderGlobalMail && renderGlobalMail(''); }
+
+  if ((cAudio && cMail) && !forceRefresh) {
+    // Date din cache - refresh in background silentios
+    _bgRefreshGlobalData();
+    return;
+  }
+
+  _globalDataLoading = true;
   const [r1, r2, r3, r4] = await Promise.allSettled([
     fetchWT(API_URL + '?action=recent_audio&n=50', {}),
     fetchWT(API_URL + '?action=recent_mail&n=50',  {}),
     fetchWT(API_URL + '?action=all_audio_index',   {}),
     fetchWT(API_URL + '?action=all_mail_index',    {})
   ]);
+  _globalDataLoading = false;
+
   if (r1.status === 'fulfilled' && r1.value.ok) {
     try { const d = await r1.value.json(); globalAudioData = d.items || d.fisiere || []; } catch(e) {}
-  }
-  if (r2.status === 'fulfilled' && r2.value.ok) {
-    try { const d = await r2.value.json(); allMailData = d.items || []; } catch(e) {}
   }
   if (r3.status === 'fulfilled' && r3.value.ok) {
     try { const d = await r3.value.json(); allAudioData = d.items || []; } catch(e) {}
   }
-  if (r4.status === 'fulfilled' && r4.value.ok) {
-    try { const d = await r4.value.json(); allMailData = allMailData || d.items || []; } catch(e) {}
+  if (r2.status === 'fulfilled' && r2.value.ok) {
+    try { const d = await r2.value.json(); allMailData = d.items || []; } catch(e) {}
   }
+  if (r4.status === 'fulfilled' && r4.value.ok) {
+    try { const d2 = await r4.value.json(); if (!allMailData || !allMailData.length) allMailData = d2.items || []; } catch(e) {}
+  }
+
+  // Salveaza in cache
+  try {
+    if (globalAudioData) localStorage.setItem('global_audio_cache', JSON.stringify({items: globalAudioData, allItems: allAudioData, ts: Date.now()}));
+    if (allMailData)     localStorage.setItem('global_mail_cache',  JSON.stringify({items: allMailData, ts: Date.now()}));
+  } catch(e) {}
+
   renderGlobalAudio && renderGlobalAudio('');
   renderGlobalMail  && renderGlobalMail('');
+}
+
+async function _bgRefreshGlobalData() {
+  try {
+    const [r1, r2, r3, r4] = await Promise.allSettled([
+      fetchWT(API_URL + '?action=recent_audio&n=50', {}),
+      fetchWT(API_URL + '?action=recent_mail&n=50',  {}),
+      fetchWT(API_URL + '?action=all_audio_index',   {}),
+      fetchWT(API_URL + '?action=all_mail_index',    {})
+    ]);
+    var newAudio = null, newMail = null, newAllAudio = null;
+    if (r1.status==='fulfilled'&&r1.value.ok) { const d=await r1.value.json(); newAudio=d.items||d.fisiere||[]; }
+    if (r3.status==='fulfilled'&&r3.value.ok) { const d=await r3.value.json(); newAllAudio=d.items||[]; }
+    if (r2.status==='fulfilled'&&r2.value.ok) { const d=await r2.value.json(); newMail=d.items||[]; }
+    if (r4.status==='fulfilled'&&r4.value.ok) { const d=await r4.value.json(); if (!newMail||!newMail.length) newMail=d.items||[]; }
+
+    var changed = false;
+    if (newAudio && JSON.stringify(newAudio) !== JSON.stringify(globalAudioData)) {
+      globalAudioData = newAudio; allAudioData = newAllAudio;
+      localStorage.setItem('global_audio_cache', JSON.stringify({items:newAudio,allItems:newAllAudio,ts:Date.now()}));
+      renderGlobalAudio && renderGlobalAudio((document.getElementById('global-search-input')||{}).value||'');
+      changed = true;
+    }
+    if (newMail && JSON.stringify(newMail) !== JSON.stringify(allMailData)) {
+      allMailData = newMail;
+      localStorage.setItem('global_mail_cache', JSON.stringify({items:newMail,ts:Date.now()}));
+      renderGlobalMail && renderGlobalMail((document.getElementById('global-search-input')||{}).value||'');
+      changed = true;
+    }
+    if (changed) showToast('🔄 Căutare actualizată');
+  } catch(e) {}
 }
 
 function renderGlobalMail(q, filter) {
