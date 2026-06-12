@@ -839,10 +839,21 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v10.9';
+const APP_VERSION = 'v11.0';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v11.0',
+    data: '12.06.2026',
+    titlu: 'Audio Căutare - stil identic cu screenshot',
+    items: [
+      'display_name complet in titlu (bold)',
+      'Localitate + data ca subtitlu',
+      'Transcriere si Sumar GPT cu labels identice cu screenshot-ul'
+    ]
+  },
+
   {
     version: 'v10.9',
     data: '12.06.2026',
@@ -3184,37 +3195,30 @@ function renderGlobalAudio(q) {
     ? items.length + ' rezultate din ' + (allAudioData||[]).length + ' înregistrări'
     : items.length + ' înregistrări recente';
 
-  let out = '<div style="font-size:10px;color:var(--text3);margin-bottom:10px">' + label + '</div>';
+  window._globalAudioItems = items;
+  let out = '<div style="font-size:11px;color:var(--text3);margin-bottom:10px">' + label + '</div>';
 
   items.forEach(function(f, gi) {
     const k = 'g_' + gi;
-    const dateRo = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'long',year:'numeric'}) : '';
-    const sumar   = (f.sumar || '').trim();
-    const transcr = (f.transcriere_preview || f.transcriere || '').trim();
-    const viewUrl = f.view || (f.drive_id ? 'https://drive.google.com/file/d/' + f.drive_id + '/view' : '');
-    const fullName = f.fullName || f.key || '';
+    const dispName  = f.display_name || f.key || '';
+    const dateRo    = f.data ? new Date(f.data).toLocaleDateString('ro-RO',{day:'2-digit',month:'long',year:'numeric'}) : '';
+    const sumar     = (f.sumar || '').trim();
+    const transcr   = (f.transcriere_preview || f.transcriere || '').trim();
+    const viewUrl   = f.view || (f.drive_id ? 'https://drive.google.com/file/d/' + f.drive_id + '/view' : '');
+    const fullName  = f.fullName || f.key || '';
     const localitate = f.localitate || '';
 
-    // Card - acelasi stil ca Mail
+    // Card identic cu screenshot-ul
     out += '<div style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:10px;border-left:3px solid var(--accent)">';
 
-    // Extrage numele persoanei din display_name (inainte de data)
-    var dispName = f.display_name || f.key || '';
-    var rawName = dispName.replace(/\.m4a$/i,'').replace(/_\d{4}-\d{2}-\d{2}.*/,'').replace(/_/g,' ').trim();
-    if (!rawName) rawName = dispName;
-    // Bold doar pana la prima paranteza: "Ion Popescu (0730...)" -> <b>Ion Popescu</b> (0730...)
-    var parenIdx = rawName.indexOf('(');
-    var personName = parenIdx > 0
-      ? '<strong>' + rawName.substring(0, parenIdx).trim() + '</strong> ' + rawName.substring(parenIdx)
-      : '<strong>' + rawName + '</strong>';
-
-    // Header - identic cu Mail
+    // Header: display_name (bold complet) + play
     out += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:' + (transcr||sumar?'8px':'0') + '">';
     out += '<div style="flex:1;min-width:0">';
-    out += '<div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3">' + personName + '</div>';
-    out += '<div style="font-size:10px;color:var(--text3);margin-top:3px">';
-    if (localitate) out += '<span onclick="openUat(' + f.uat_id + ')" style="color:var(--accent);cursor:pointer;font-weight:600">' + localitate + '</span>';
-    out += (localitate ? ' · ' : '') + dateRo;
+    out += '<div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.4">' + dispName + '</div>';
+    out += '<div style="font-size:11px;margin-top:3px">';
+    var _uid = f.uat_id || ''; if (localitate) out += '<span data-uid="' + _uid + '" onclick="openUatWithHistory(this.dataset.uid)" style="color:var(--accent);cursor:pointer;font-weight:600">' + localitate + '</span>';
+    if (localitate && dateRo) out += ' · ';
+    out += '<span style="color:var(--text3)">' + dateRo + '</span>';
     out += '</div>';
     out += '</div>';
     if (viewUrl) {
@@ -3222,9 +3226,10 @@ function renderGlobalAudio(q) {
     }
     out += '</div>';
 
-    // Continut: Transcriere + Sumar in container unificat cu border-left (ca Mail body)
+    // Transcriere + Sumar in container cu border-left
     if (transcr || sumar) {
       out += '<div style="background:var(--surface3);border-radius:8px;padding:10px;border-left:2px solid var(--text3)">';
+
       if (transcr) {
         const tShort = transcr.length > 300 ? transcr.substring(0,300) + '…' : transcr;
         out += '<div style="font-size:10px;color:var(--text3);font-weight:600;margin-bottom:4px">📝 Transcriere</div>';
@@ -3239,6 +3244,7 @@ function renderGlobalAudio(q) {
         }
         if (sumar) out += '<div style="height:1px;background:var(--border);margin:10px 0"></div>';
       }
+
       if (sumar) {
         const sShort = sumar.substring(0,300) + (sumar.length >= 300 ? '…' : '');
         out += '<div style="font-size:10px;color:var(--accent2);font-weight:600;margin-bottom:4px">🤖 Sumar GPT</div>';
@@ -3249,13 +3255,14 @@ function renderGlobalAudio(q) {
         if (fullName) {
           out += '<button id="sm-btn-' + k + '" data-elid="sm-text-' + k + '" data-fname="' + fullName.replace(/"/g,'&quot;') + '" data-btnid="sm-btn-' + k + '"'
             + ' onclick="loadFullSumar(this.dataset.elid,this.dataset.fname,this.dataset.btnid)"'
-            + ' style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent2);font-size:11px;cursor:pointer;font-family:inherit">🤖 Citește integral</button>';
+            + ' style="margin-top:6px;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent2);font-size:11px;cursor:pointer;font-family:inherit">🤖 Citește integral</button>';
         }
       }
-      out += '</div>';
+
+      out += '</div>'; // container
     }
 
-    out += '</div>';
+    out += '</div>'; // card
   });
 
   el.innerHTML = out;
