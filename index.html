@@ -1849,7 +1849,15 @@ async function syncData() {
   } catch(err) {
     console.error(err);
     // Încearcă din cache
-    const cached = localStorage.getItem('uats_cache');
+    // Invalideaza cache global daca versiunea s-a schimbat
+var _cachedVersion = localStorage.getItem('app_version_cached');
+if (_cachedVersion !== APP_VERSION) {
+  localStorage.removeItem('global_audio_cache');
+  localStorage.removeItem('global_mail_cache');
+  localStorage.setItem('app_version_cached', APP_VERSION);
+}
+
+const cached = localStorage.getItem('uats_cache');
     if (cached) {
       uats = JSON.parse(cached);
       const ts = localStorage.getItem('uats_ts');
