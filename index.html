@@ -3226,13 +3226,21 @@ function renderGlobalAudio(q) {
     const fullName  = f.fullName || f.key || '';
     const localitate = f.localitate || '';
 
+    // Separa numele de metadata (tot ce e dupa primul '(')
+    const parenIdx = dispName.indexOf('(');
+    const namePart = parenIdx > 0 ? dispName.substring(0, parenIdx).trim() : dispName;
+    const metaPart = parenIdx > 0 ? dispName.substring(parenIdx) : '';
+
     // Card identic cu screenshot-ul
     out += '<div style="background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:10px;border-left:3px solid var(--accent)">';
 
     // Header: display_name (bold complet) + play
     out += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:' + (transcr||sumar?'8px':'0') + '">';
     out += '<div style="flex:1;min-width:0">';
-    out += '<div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.4">' + dispName + '</div>';
+    out += '<div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.4">'
+      + namePart
+      + (metaPart ? '<span style="font-weight:400;font-size:11px;color:var(--text3);margin-left:4px">' + metaPart + '</span>' : '')
+      + '</div>';
     out += '<div style="font-size:11px;margin-top:3px">';
     var _uid = f.uat_id || ''; if (localitate) out += '<span data-uid="' + _uid + '" onclick="openUatWithHistory(this.dataset.uid)" style="color:var(--accent);cursor:pointer;font-weight:600">' + localitate + '</span>';
     if (localitate && dateRo) out += ' · ';
