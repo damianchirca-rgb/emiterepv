@@ -839,10 +839,20 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v11.0';
+const APP_VERSION = 'v11.1';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v11.1',
+    data: '15.06.2026',
+    titlu: 'Audio recent - merge cu index complet',
+    items: [
+      'globalAudioData se imbogateste cu sumar/transcriere din allAudioData',
+      'Inregistrarile recente vor afisa transcriere si sumar daca exista in index'
+    ]
+  },
+
   {
     version: 'v11.0',
     data: '12.06.2026',
@@ -3462,7 +3472,7 @@ async function loadGlobalData(forceRefresh) {
   try { cAudio = JSON.parse(localStorage.getItem('global_audio_cache') || 'null'); } catch(e) {}
   try { cMail  = JSON.parse(localStorage.getItem('global_mail_cache')  || 'null'); } catch(e) {}
 
-  if (cAudio && !forceRefresh) { globalAudioData = cAudio.items; allAudioData = cAudio.allItems; renderGlobalAudio && renderGlobalAudio(''); }
+  if (cAudio && !forceRefresh) { globalAudioData = cAudio.items; allAudioData = cAudio.allItems; mergeAudioData && mergeAudioData(); renderGlobalAudio && renderGlobalAudio(''); }
   if (cMail  && !forceRefresh) { allMailData = cMail.items; renderGlobalMail && renderGlobalMail(''); }
 
   if ((cAudio && cMail) && !forceRefresh) {
@@ -3499,8 +3509,25 @@ async function loadGlobalData(forceRefresh) {
     if (allMailData)     localStorage.setItem('global_mail_cache',  JSON.stringify({items: allMailData, ts: Date.now()}));
   } catch(e) {}
 
+  // Merge globalAudioData cu allAudioData pentru sumar/transcriere
+  mergeAudioData();
   renderGlobalAudio && renderGlobalAudio('');
   renderGlobalMail  && renderGlobalMail('');
+}
+
+function mergeAudioData() {
+  if (!globalAudioData || !allAudioData || !allAudioData.length) return;
+  // Construieste map dupa key/fullName
+  var byKey = {};
+  allAudioData.forEach(function(a) {
+    if (a.key) byKey[a.key] = a;
+    if (a.fullName) byKey[a.fullName] = a;
+  });
+  globalAudioData = globalAudioData.map(function(item) {
+    var match = byKey[item.key] || byKey[item.fullName] || byKey[item.display_name] || null;
+    if (!match) return item;
+    return Object.assign({}, match, item); // item suprascrie (pastreaza localitate/data de la recent)
+  });
 }
 
 async function _bgRefreshGlobalData() {
@@ -3530,7 +3557,7 @@ async function _bgRefreshGlobalData() {
       renderGlobalMail && renderGlobalMail((document.getElementById('global-search-input')||{}).value||'');
       changed = true;
     }
-    if (changed) showToast('🔄 Căutare actualizată');
+    if (changed) { mergeAudioData(); showToast('🔄 Căutare actualizată'); }
   } catch(e) {}
 }
 
