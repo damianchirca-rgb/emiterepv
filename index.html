@@ -839,10 +839,53 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v11.1';
+const APP_VERSION = 'v11.5';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v11.5',
+    data: '16.06.2026',
+    titlu: 'Audio UAT: sync bidirecțional (adăugiri + eliminări)',
+    items: [
+      'Cache se actualizează când apar înregistrări noi SAU când sunt eliminate',
+      'Serverul e sursa de adevăr — cache-ul nu rămâne niciodată desincronizat',
+      'Toast diferențiat: noi / eliminate / ambele'
+    ]
+  },
+
+  {
+    version: 'v11.4',
+    data: '16.06.2026',
+    titlu: 'Audio UAT: sync incremental + invalidare cache la versiune nouă',
+    items: [
+      'Cache audio per-UAT invalidat automat la schimbare versiune aplicație',
+      'Fix: înregistrările noi din audio_search_index apar după ↺ Actualizează',
+      'Versionare restaurată în CHANGELOG'
+    ]
+  },
+
+  {
+    version: 'v11.3',
+    data: '16.06.2026',
+    titlu: 'Buton ↺ Actualizează: sync audio UAT activ',
+    items: [
+      'La apăsare ↺: dacă tab Audio e activ în UAT, face _bgRefreshAudio imediat',
+      'Audio UAT: cache persistent + merge incremental (doar înregistrări noi adăugate)'
+    ]
+  },
+
+  {
+    version: 'v11.2',
+    data: '16.06.2026',
+    titlu: 'Căutare Audio + stil recente identic cu rezultate căutare',
+    items: [
+      'Numele persoanei rămâne bold, metadata (nr. telefon, fișier) apare discret gri',
+      'Cele 15 înregistrări recente au același stil cu rezultatele căutării',
+      'Buton ↺ Actualizează forțează refresh audio + mail în Căutare'
+    ]
+  },
+
   {
     version: 'v11.1',
     data: '15.06.2026',
@@ -1872,6 +1915,10 @@ var _cachedVersion = localStorage.getItem('app_version_cached');
 if (_cachedVersion !== APP_VERSION) {
   localStorage.removeItem('global_audio_cache');
   localStorage.removeItem('global_mail_cache');
+  // Invalidează și cache-ul audio per-UAT la schimbare versiune
+  Object.keys(localStorage).forEach(function(k) {
+    if (k.startsWith('uat_data_audio_')) localStorage.removeItem(k);
+  });
   localStorage.setItem('app_version_cached', APP_VERSION);
 }
 
@@ -3111,18 +3158,27 @@ async function _bgRefreshAudio(uatId) {
     const serverFisiere = data.fisiere || [];
     const cached = audioData[uatId] || [];
 
-    // Găsește înregistrările noi (după f.name ca cheie unică)
     const cachedNames = new Set(cached.map(f => f.name));
-    const added = serverFisiere.filter(f => !cachedNames.has(f.name));
+    const serverNames = new Set(serverFisiere.map(f => f.name));
 
-    if (added.length > 0) {
-      // Adaugă înregistrările noi la începutul listei (sunt mai recente)
-      audioData[uatId] = [...added, ...cached];
+    // Înregistrări noi pe server (lipsesc din cache)
+    const added = serverFisiere.filter(f => !cachedNames.has(f.name));
+    // Înregistrări șterse de pe server (sunt în cache dar nu pe server)
+    const removed = cached.filter(f => !serverNames.has(f.name));
+
+    if (added.length > 0 || removed.length > 0) {
+      // Rebuild: păstrează ordinea serverului (sursa de adevăr)
+      audioData[uatId] = serverFisiere;
       saveUatCache(uatId, 'audio', audioData[uatId]);
       renderAudio(uatId);
-      showToast('🎤 ' + added.length + ' înregistrări noi adăugate');
+      if (added.length > 0 && removed.length === 0)
+        showToast('🎤 ' + added.length + ' înregistrări noi');
+      else if (removed.length > 0 && added.length === 0)
+        showToast('🎤 ' + removed.length + ' înregistrări eliminate din index');
+      else
+        showToast('🎤 Index audio actualizat (' + added.length + ' noi, ' + removed.length + ' eliminate)');
     }
-    // Dacă nu sunt items noi, cache-ul rămâne intact — fără re-render
+    // Dacă listele sunt identice — cache rămâne, fără re-render
   } catch(e) {}
 }
 
