@@ -839,10 +839,21 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v11.8';
+const APP_VERSION = 'v11.9';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v11.9',
+    data: '16.06.2026',
+    titlu: 'Fix rebuild index: timeout 120s + filtrare corecta',
+    items: [
+      'Buton Actualizează index: timeout extins la 120s (rebuild dura 65s)',
+      'Backend: citește txt doar pentru fișierele noi, nu pentru toate 139',
+      'Fix: rebuildAudioIndex folosește fetch direct nu fetchWT (20s)'
+    ]
+  },
+
   {
     version: 'v11.8',
     data: '16.06.2026',
@@ -3186,7 +3197,12 @@ async function rebuildAudioIndex(uatId) {
   const statusEl = document.getElementById('audio-sync-status-' + uatId);
   if (statusEl) statusEl.textContent = '⟳ reconstruiesc index…';
   try {
-    const resp = await fetchWT(API_URL + '?action=rebuild_audio_uat&uat_id=' + uatId, {});
+    // Timeout extins la 120s pentru rebuild (operatie lenta)
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 120000);
+    const resp = await fetch(API_URL + '?action=rebuild_audio_uat&uat_id=' + uatId,
+      { cache: 'no-cache', signal: controller.signal });
+    clearTimeout(timer);
     if (!resp.ok) throw new Error('Server ' + resp.status);
     const data = await resp.json();
     if (data.eroare) throw new Error(data.eroare);
