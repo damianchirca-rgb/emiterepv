@@ -1859,13 +1859,9 @@ async function syncData() {
     // Refresh și înregistrări audio + mail din Căutare
     loadGlobalData && loadGlobalData(true);
 
-    // Dacă e deschis un UAT, forțează reload audio (șterge cache memorie + localStorage)
-    if (currentUat) {
-      audioData[currentUat] = null;
-      localStorage.removeItem('uat_data_audio_' + currentUat);
-      if (currentTab === 'audio') {
-        loadAudioTab(currentUat);
-      }
+    // Dacă e deschis un UAT și tab-ul Audio e activ — sync incremental
+    if (currentUat && currentTab === 'audio') {
+      _bgRefreshAudio(currentUat);
     }
 
   } catch(err) {
@@ -3071,17 +3067,19 @@ async function loadAudioTab(uatId) {
   const elAudio = document.getElementById('audio-uat-' + uatId);
   if (!elAudio) return;
 
-  // Incarca din localStorage instant
+  // Afișează cache instant (din memorie sau localStorage)
   const cachedAudio = loadUatCache(uatId, 'audio');
   if (cachedAudio && !audioData[uatId]) audioData[uatId] = cachedAudio;
 
   if (audioData[uatId] && audioData[uatId] !== 'error') {
     renderAudio(uatId);
+    // Sync incremental în background — adaugă doar înregistrările noi
     _bgRefreshAudio(uatId);
     return;
   }
-  audioData[uatId] = null;
 
+  // Prima încărcare (fără cache) — arată spinner
+  audioData[uatId] = null;
   const elId = 'audio-uat-' + uatId;
   showLoading(elId, ['Conectare la server…','Se citesc înregistrările…','Se pregătesc datele audio…']);
   try {
@@ -3109,14 +3107,22 @@ async function _bgRefreshAudio(uatId) {
     const resp = await fetchWT(API_URL + '?action=audio_uat&uat_id=' + uatId, {});
     if (!resp.ok) return;
     const data = await resp.json();
-    if (data.error) return;
-    const newFisiere = data.fisiere || [];
-    if (JSON.stringify(newFisiere) !== JSON.stringify(audioData[uatId])) {
-      audioData[uatId] = newFisiere;
-      saveUatCache(uatId, 'audio', newFisiere);
+    if (data.error || data.eroare) return;
+    const serverFisiere = data.fisiere || [];
+    const cached = audioData[uatId] || [];
+
+    // Găsește înregistrările noi (după f.name ca cheie unică)
+    const cachedNames = new Set(cached.map(f => f.name));
+    const added = serverFisiere.filter(f => !cachedNames.has(f.name));
+
+    if (added.length > 0) {
+      // Adaugă înregistrările noi la începutul listei (sunt mai recente)
+      audioData[uatId] = [...added, ...cached];
+      saveUatCache(uatId, 'audio', audioData[uatId]);
       renderAudio(uatId);
-      showToast('🎤 Audio actualizat');
+      showToast('🎤 ' + added.length + ' înregistrări noi adăugate');
     }
+    // Dacă nu sunt items noi, cache-ul rămâne intact — fără re-render
   } catch(e) {}
 }
 
