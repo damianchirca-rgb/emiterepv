@@ -839,10 +839,21 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v12.0';
+const APP_VERSION = 'v12.1';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v12.1',
+    data: '16.06.2026',
+    titlu: 'Fix: buton Citește tot transcriere în Căutare',
+    items: [
+      'loadFullTranscr era referențiată dar nu exista ca funcție',
+      'Adăugată funcție loadFullTranscr — apelează endpoint transcriere din backend',
+      'Buton Citește tot afișează acum transcrierea completă identic cu Citește integral la sumar'
+    ]
+  },
+
   {
     version: 'v12.0',
     data: '16.06.2026',
@@ -2805,6 +2816,37 @@ async function loadUtile(uatId) {
   const fe = document.getElementById('fisiere-utile-' + uatId);
   if (fe) { fe.dataset.loaded = ''; fe.textContent = 'Se încarcă…'; }
   loadFisiereUtile(uatId);
+}
+
+async function loadFullTranscr(elId, fullName, btnId) {
+  const el  = document.getElementById(elId);
+  const btn = document.getElementById(btnId);
+  if (!el || !fullName) return;
+
+  if (el.dataset.transcrLoaded === '1') { toggleExpand(elId, btn); return; }
+
+  if (btn) { btn.textContent = 'Se încarcă…'; btn.disabled = true; }
+
+  try {
+    const resp = await fetch(API_URL + '?action=transcriere&full_name=' + encodeURIComponent(fullName), {cache:'no-store'});
+    const data = await resp.json();
+    if (data.eroare) {
+      if (btn) { btn.textContent = '⚠️ ' + data.eroare; btn.disabled = false; }
+      return;
+    }
+    const fullText = data.text || '';
+    el.dataset.full = fullText;
+    el.dataset.transcrLoaded = '1';
+    el.dataset.expanded = '1';
+    el.textContent = fullText;
+    if (btn) {
+      btn.textContent = '▲ Restrânge';
+      btn.disabled = false;
+      btn.setAttribute('onclick', 'toggleExpand("' + elId + '", this)');
+    }
+  } catch(err) {
+    if (btn) { btn.textContent = '⚠️ Eroare rețea'; btn.disabled = false; }
+  }
 }
 
 async function loadFullSumar(elId, fullName, btnId) {
