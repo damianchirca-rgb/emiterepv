@@ -839,10 +839,21 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v11.6';
+const APP_VERSION = 'v11.7';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v11.7',
+    data: '16.06.2026',
+    titlu: 'Buton Actualizează index audio per UAT',
+    items: [
+      'Buton ⟳ Actualizează index în tab Audio — reconstruiește audio_search_index.json pentru UAT-ul curent',
+      'Înregistrările noi apar imediat fără să aștepți triggerul de noapte',
+      'Revert: eliminat scan folder drive_index care genera 134 înregistrări greșit'
+    ]
+  },
+
   {
     version: 'v11.6',
     data: '16.06.2026',
@@ -3161,6 +3172,30 @@ async function loadAudioTab(uatId) {
   }
 }
 
+async function rebuildAudioIndex(uatId) {
+  const statusEl = document.getElementById('audio-sync-status-' + uatId);
+  if (statusEl) statusEl.textContent = '⟳ reconstruiesc index…';
+  try {
+    const resp = await fetchWT(API_URL + '?action=rebuild_audio_uat&uat_id=' + uatId, {});
+    if (!resp.ok) throw new Error('Server ' + resp.status);
+    const data = await resp.json();
+    if (data.eroare) throw new Error(data.eroare);
+    if (data.added > 0) {
+      showToast('✅ ' + data.added + ' înregistrări noi adăugate în index (' + data.elapsed_sec + 's)');
+      // Reîncarcă audio după rebuild
+      audioData[uatId] = null;
+      localStorage.removeItem('uat_data_audio_' + uatId);
+      loadAudioTab(uatId);
+    } else {
+      if (statusEl) statusEl.textContent = '✓ index complet ' + new Date().toLocaleTimeString('ro-RO', {hour:'2-digit',minute:'2-digit'});
+      showToast('✓ Indexul e deja la zi (' + data.total + ' înregistrări)');
+    }
+  } catch(e) {
+    if (statusEl) statusEl.textContent = '⚠ eroare rebuild';
+    showToast('⚠ Eroare: ' + e.message);
+  }
+}
+
 async function _bgRefreshAudio(uatId) {
   // Arată spinner în status bar
   const statusEl = document.getElementById('audio-sync-status-' + uatId);
@@ -3218,10 +3253,13 @@ function renderAudio(uatId) {
 
   const syncTs = localStorage.getItem('uat_audio_sync_' + uatId);
   const syncStr = syncTs ? new Date(parseInt(syncTs)).toLocaleTimeString('ro-RO', {hour:'2-digit',minute:'2-digit'}) : null;
-  let html = '<div id="audio-sync-bar-' + uatId + '" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+  let html = '<div id="audio-sync-bar-' + uatId + '" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">'
     + '<span style="font-size:11px;color:var(--text3)">' + fisiere.length + ' înregistrări</span>'
+    + '<div style="display:flex;align-items:center;gap:8px">'
     + '<span id="audio-sync-status-' + uatId + '" style="font-size:10px;color:var(--text3)">'
     + (syncStr ? '✓ sincronizat ' + syncStr : '') + '</span>'
+    + '<button onclick="rebuildAudioIndex(' + JSON.stringify(uatId) + ')" style="font-size:10px;padding:3px 8px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-family:inherit">⟳ Actualizează index</button>'
+    + '</div>'
     + '</div>';
 
   fisiere.forEach(function(f, i) {
