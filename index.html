@@ -839,10 +839,22 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v11.9';
+const APP_VERSION = 'v12.0';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v12.0',
+    data: '16.06.2026',
+    titlu: 'Audio UAT: rebuild automat silențios + eliminat buton manual',
+    items: [
+      'Eliminat butonul Actualizează index — rebuild se face automat',
+      'La deschidere tab Audio: verifică diferențe, dacă nu sunt → rebuild silențios în background',
+      'Dacă rebuild găsește fișiere noi → reîncarcă lista automat cu toast notificare',
+      'Flux complet automat fără intervenție utilizator'
+    ]
+  },
+
   {
     version: 'v11.9',
     data: '16.06.2026',
@@ -3258,12 +3270,35 @@ async function _bgRefreshAudio(uatId) {
       else
         showToast('🎤 Audio actualizat: +' + added.length + ' / -' + removed.length);
     } else {
-      // Nicio schimbare — actualizăm doar statusul
+      // Nicio schimbare vizibilă — rulează rebuild silențios să prindă fișiere noi neindexate
       if (statusEl) statusEl.textContent = '✓ sincronizat ' + syncStr;
+      _bgRebuildAudio(uatId, serverFisiere.length, statusEl, syncStr);
     }
   } catch(e) {
     console.error('[Audio UAT ' + uatId + '] bg refresh error:', e);
     if (statusEl) statusEl.textContent = '⚠ offline';
+  }
+}
+
+async function _bgRebuildAudio(uatId, currentCount, statusEl, syncStr) {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 120000);
+    const resp = await fetch(API_URL + '?action=rebuild_audio_uat&uat_id=' + uatId,
+      { cache: 'no-cache', signal: controller.signal });
+    clearTimeout(timer);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data.ok || data.added === 0) return;
+    // Fișiere noi găsite — reîncarcă lista
+    console.log('[Audio UAT ' + uatId + '] rebuild: +' + data.added + ' fișiere noi în index');
+    audioData[uatId] = null;
+    localStorage.removeItem('uat_data_audio_' + uatId);
+    await loadAudioTab(uatId);
+    showToast('🎤 ' + data.added + ' înregistrări noi descoperite');
+  } catch(e) {
+    // Silențios — rebuild e opțional
+    console.log('[Audio UAT ' + uatId + '] rebuild silențios eșuat:', e.message);
   }
 }
 
@@ -3284,7 +3319,6 @@ function renderAudio(uatId) {
     + '<div style="display:flex;align-items:center;gap:8px">'
     + '<span id="audio-sync-status-' + uatId + '" style="font-size:10px;color:var(--text3)">'
     + (syncStr ? '✓ sincronizat ' + syncStr : '') + '</span>'
-    + '<button onclick="rebuildAudioIndex(' + JSON.stringify(uatId) + ')" style="font-size:10px;padding:3px 8px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-family:inherit">⟳ Actualizează index</button>'
     + '</div>'
     + '</div>';
 
