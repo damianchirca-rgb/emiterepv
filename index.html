@@ -1856,6 +1856,9 @@ async function syncData() {
     btn.className = 'ok';
     setTimeout(() => { btn.className = ''; }, 3000);
 
+    // Refresh și înregistrări audio + mail din Căutare
+    loadGlobalData && loadGlobalData(true);
+
   } catch(err) {
     console.error(err);
     // Încearcă din cache
