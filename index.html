@@ -1859,6 +1859,15 @@ async function syncData() {
     // Refresh și înregistrări audio + mail din Căutare
     loadGlobalData && loadGlobalData(true);
 
+    // Dacă e deschis un UAT, forțează reload audio (șterge cache memorie + localStorage)
+    if (currentUat) {
+      audioData[currentUat] = null;
+      localStorage.removeItem('uat_data_audio_' + currentUat);
+      if (currentTab === 'audio') {
+        loadAudioTab(currentUat);
+      }
+    }
+
   } catch(err) {
     console.error(err);
     // Încearcă din cache
