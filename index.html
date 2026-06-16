@@ -839,10 +839,22 @@
 <script>
 
 // ─── CONFIG ────────────────────────────────────────────────
-const APP_VERSION = 'v11.5';
+const APP_VERSION = 'v11.6';
 const APP_NAME    = 'Mentenanță';
 
 const CHANGELOG = [
+  {
+    version: 'v11.6',
+    data: '16.06.2026',
+    titlu: 'Audio UAT: status sincronizare vizibil',
+    items: [
+      'Header audio arată nr. înregistrări + ora ultimei sincronizări',
+      'Spinner ⟳ se verifică… cât timp face request la server',
+      'console.log detaliat: cache vs server vs diferențe',
+      '✓ sincronizat HH:MM când totul e la zi'
+    ]
+  },
+
   {
     version: 'v11.5',
     data: '16.06.2026',
@@ -3150,36 +3162,48 @@ async function loadAudioTab(uatId) {
 }
 
 async function _bgRefreshAudio(uatId) {
+  // Arată spinner în status bar
+  const statusEl = document.getElementById('audio-sync-status-' + uatId);
+  if (statusEl) statusEl.innerHTML = '<span style="color:var(--text3)">⟳ se verifică…</span>';
+
   try {
     const resp = await fetchWT(API_URL + '?action=audio_uat&uat_id=' + uatId, {});
-    if (!resp.ok) return;
+    if (!resp.ok) { if (statusEl) statusEl.textContent = '⚠ eroare server'; return; }
     const data = await resp.json();
-    if (data.error || data.eroare) return;
+    if (data.error || data.eroare) { if (statusEl) statusEl.textContent = '⚠ ' + (data.error||data.eroare); return; }
     const serverFisiere = data.fisiere || [];
     const cached = audioData[uatId] || [];
 
     const cachedNames = new Set(cached.map(f => f.name));
     const serverNames = new Set(serverFisiere.map(f => f.name));
 
-    // Înregistrări noi pe server (lipsesc din cache)
-    const added = serverFisiere.filter(f => !cachedNames.has(f.name));
-    // Înregistrări șterse de pe server (sunt în cache dar nu pe server)
+    const added   = serverFisiere.filter(f => !cachedNames.has(f.name));
     const removed = cached.filter(f => !serverNames.has(f.name));
 
+    console.log('[Audio UAT ' + uatId + '] cache=' + cached.length + ' server=' + serverFisiere.length + ' noi=' + added.length + ' eliminate=' + removed.length);
+
+    const now = Date.now();
+    localStorage.setItem('uat_audio_sync_' + uatId, String(now));
+    const syncStr = new Date(now).toLocaleTimeString('ro-RO', {hour:'2-digit',minute:'2-digit'});
+
     if (added.length > 0 || removed.length > 0) {
-      // Rebuild: păstrează ordinea serverului (sursa de adevăr)
       audioData[uatId] = serverFisiere;
       saveUatCache(uatId, 'audio', audioData[uatId]);
       renderAudio(uatId);
       if (added.length > 0 && removed.length === 0)
-        showToast('🎤 ' + added.length + ' înregistrări noi');
+        showToast('🎤 ' + added.length + ' înregistrări noi adăugate');
       else if (removed.length > 0 && added.length === 0)
-        showToast('🎤 ' + removed.length + ' înregistrări eliminate din index');
+        showToast('🎤 ' + removed.length + ' înregistrări eliminate');
       else
-        showToast('🎤 Index audio actualizat (' + added.length + ' noi, ' + removed.length + ' eliminate)');
+        showToast('🎤 Audio actualizat: +' + added.length + ' / -' + removed.length);
+    } else {
+      // Nicio schimbare — actualizăm doar statusul
+      if (statusEl) statusEl.textContent = '✓ sincronizat ' + syncStr;
     }
-    // Dacă listele sunt identice — cache rămâne, fără re-render
-  } catch(e) {}
+  } catch(e) {
+    console.error('[Audio UAT ' + uatId + '] bg refresh error:', e);
+    if (statusEl) statusEl.textContent = '⚠ offline';
+  }
 }
 
 function renderAudio(uatId) {
@@ -3192,7 +3216,13 @@ function renderAudio(uatId) {
     return;
   }
 
-  let html = '<div style="font-size:10px;color:var(--text3);margin-bottom:10px">' + fisiere.length + ' înregistrări</div>';
+  const syncTs = localStorage.getItem('uat_audio_sync_' + uatId);
+  const syncStr = syncTs ? new Date(parseInt(syncTs)).toLocaleTimeString('ro-RO', {hour:'2-digit',minute:'2-digit'}) : null;
+  let html = '<div id="audio-sync-bar-' + uatId + '" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    + '<span style="font-size:11px;color:var(--text3)">' + fisiere.length + ' înregistrări</span>'
+    + '<span id="audio-sync-status-' + uatId + '" style="font-size:10px;color:var(--text3)">'
+    + (syncStr ? '✓ sincronizat ' + syncStr : '') + '</span>'
+    + '</div>';
 
   fisiere.forEach(function(f, i) {
     const k = uatId + '_' + i;
