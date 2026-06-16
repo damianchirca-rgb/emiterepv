@@ -1,5 +1,5 @@
 // ─── Service Worker Mentenanță PWA v12.0 ──────────────────────
-const CACHE_NAME = 'mentenanta-v12.0';
+const CACHE_NAME = 'mentenanta-v12.1';
 const ASSETS = ['/emiterepv/', '/emiterepv/index.html', '/emiterepv/icon.svg', '/emiterepv/manifest.json'];
 
 // La instalare
