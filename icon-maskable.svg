@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fundal negru complet — fara rx, umple tot pentru maskable -->
+  <rect width="512" height="512" fill="#18181b"/>
+  <!-- Continut centrat in safe zone (72% din 512 = ~368px, deci padding ~72px) -->
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#f59e0b" stroke-width="14"/>
+  <path d="M278 118 L196 252 L256 252 L234 378 L318 232 L258 232 Z" fill="#f59e0b"/>
+</svg>
