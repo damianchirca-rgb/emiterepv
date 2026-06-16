@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fundal negru fara colturi rotunjite — Android aplica el forma -->
   <rect width="512" height="512" fill="#18181b"/>
-  <circle cx="256" cy="256" r="220" fill="none" stroke="#f59e0b" stroke-width="20"/>
-  <path d="M296 60 L160 280 L256 280 L216 452 L360 220 L264 220 Z" fill="#f59e0b"/>
+  <!-- Fulger mare centrat, umple bine spatiul -->
+  <path d="M300 40 L140 290 L250 290 L210 472 L372 210 L262 210 Z" fill="#f59e0b"/>
 </svg>
